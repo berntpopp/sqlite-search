@@ -1,3 +1,4 @@
+// src/background.js
 'use strict'
 
 import { app, protocol, BrowserWindow } from 'electron'
@@ -16,7 +17,7 @@ async function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      
+      preload: path.join(__dirname, 'preload.js'),
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
@@ -79,3 +80,33 @@ if (isDevelopment) {
     })
   }
 }
+
+import sqlite3 from 'sqlite3';
+import path from 'path';
+
+// TODO: remove hardcoded path
+const dbPath = path.resolve('C:/development/sqlite-search/db/er.sqlite');
+const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+  if (err) {
+    console.error(err.message);
+  }
+  console.log('Connected to the sqlite database.');
+});
+
+import { ipcMain } from 'electron';
+
+ipcMain.on('perform-search', (event, searchTerm) => {
+  const query = `SELECT * FROM tblBeratungBriefFTS5 WHERE Beurteilung MATCH ?`;
+
+  // Running the query
+  db.all(query, [searchTerm], (err, rows) => {
+    if (err) {
+      console.error("Database error:", err);
+      event.reply('search-error', err.message); // Sending back error message
+      return;
+    }
+
+    // returning the rows to the renderer process
+    event.reply('search-results', rows);
+  });
+});

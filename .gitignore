@@ -4,6 +4,7 @@ node_modules
 
 # database folder
 /db
+/src/db
 
 # local env files
 .env.local
