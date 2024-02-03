@@ -2,12 +2,28 @@
 <template>
   <v-app>
     <v-app-bar app>
-      <!-- Search Field and Button -->
-      <v-text-field label="Search..." outlined dense hide-details v-model="searchTerm"></v-text-field>
-      <v-btn icon @click="performSearch"><v-icon>mdi-magnify</v-icon></v-btn>
+      <v-toolbar-title>sqlite-search</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn text @click="selectDatabase">Select Database</v-btn>
     </v-app-bar>
 
     <v-main>
+      <!-- Search Field -->
+        <v-row justify="center" class="mb-3 mt-3">
+          <v-col cols="12" sm="8" md="6">
+            <v-text-field
+              label="Search..."
+              outlined
+              hide-details
+              v-model="searchTerm"
+              append-inner-icon="mdi-magnify"
+              @keyup.enter="performSearch"
+              @click:append-inner="performSearch"
+            ></v-text-field>
+          </v-col>
+        </v-row>
+      <v-divider></v-divider>
+
       <!-- Results Table -->
       <v-data-table
         :headers="headers"
@@ -103,6 +119,9 @@ export default {
     };
   },
   methods: {
+    selectDatabase() {
+      // Logic for opening a file dialog and selecting a database will go here
+    },
     performSearch() {
       window.electronAPI.performSearch(this.searchTerm);
     },
