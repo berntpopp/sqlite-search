@@ -81,10 +81,12 @@ if (isDevelopment) {
   }
 }
 
+// importing sqlite3 and path
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
 // TODO: remove hardcoded path
+// Connecting to the database
 const dbPath = path.resolve('C:/development/sqlite-search/db/er.sqlite');
 const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
   if (err) {
@@ -93,10 +95,12 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
   console.log('Connected to the sqlite database.');
 });
 
+// importing ipcMain
 import { ipcMain } from 'electron';
 
-ipcMain.on('perform-search', (event, searchTerm) => {
-  const query = `SELECT * FROM tblBeratungBriefFTS5 WHERE Beurteilung MATCH ?`;
+// Handling the search request
+ipcMain.on('perform-search', (event, searchTerm, selectedTable) => {
+  const query = `SELECT * FROM ${selectedTable} WHERE Beurteilung MATCH ?`;
 
   // Running the query
   db.all(query, [searchTerm], (err, rows) => {
@@ -108,5 +112,39 @@ ipcMain.on('perform-search', (event, searchTerm) => {
 
     // returning the rows to the renderer process
     event.reply('search-results', rows);
+  });
+});
+
+// Handling the table list request
+// TODO allow non FTS5 tables
+ipcMain.on('get-table-list', async (event) => {
+  const fts5TableListQuery = `
+    SELECT name 
+    FROM sqlite_master 
+    WHERE type='table' 
+      AND sql LIKE '%USING FTS5%'`;
+
+  db.all(fts5TableListQuery, [], (err, tables) => {
+    if (err) {
+      console.error("Database error:", err);
+      event.reply('table-list-error', err.message);
+    } else {
+      event.reply('table-list', tables.map(t => t.name));
+    }
+  });
+});
+
+// Handling the column list request
+ipcMain.on('get-columns', async (event, tableName) => {
+  const columnListQuery = `PRAGMA table_info(${tableName});`;
+  db.all(columnListQuery, [], (err, columns) => {
+    if (err) {
+      console.error("Database error:", err);
+      event.reply('column-list-error', err.message);
+    } else {
+      // Extract column names from the PRAGMA result
+      const columnNames = columns.map(col => col.name);
+      event.reply('column-list', columnNames);
+    }
   });
 });
