@@ -4,6 +4,13 @@
   <v-app>
     <!-- Application bar with title and database selection -->
     <v-app-bar app>
+      <v-img 
+        src="logo.webp"
+        class="mr-3 app-logo"
+        contain
+        max-height="48"
+        max-width="48"
+      ></v-img>
       <v-toolbar-title>sqlite-search</v-toolbar-title>
       <v-spacer></v-spacer>
       <!-- Button to trigger database file selection -->
@@ -357,5 +364,18 @@ export default {
 .v-icon.mdi-arrow-right {
   vertical-align: middle;
   margin: 0 20px;
+}
+</style>
+
+
+<style scoped>
+/**
+ * Styles for the application logo.
+ * Sets a maximum width, adds right margin, and applies the fadeIn animation.
+ */
+.app-logo {
+  max-width: 92px; /* Fixed maximum width for consistency */
+  margin-right: 10px; /* Spacing between logo and title */
+  animation: fadeIn 2s ease-out forwards; /* Applies the fadeIn animation */
 }
 </style>

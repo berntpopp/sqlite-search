@@ -19,10 +19,12 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow() {
+  console.log(path.join(__dirname, '../public/logo.ico'));
   // Create the browser window.
   const win = new BrowserWindow({
     width: 800,
     height: 600,
+    icon: path.join(__dirname, '../public/favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       // Use pluginOptions.nodeIntegration, leave this alone
