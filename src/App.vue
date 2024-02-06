@@ -7,7 +7,7 @@
       <v-toolbar-title>sqlite-search</v-toolbar-title>
       <v-spacer></v-spacer>
       <!-- Button to trigger database file selection -->
-      <v-btn text @click="selectDatabase">Select Database</v-btn>
+      <v-btn text @click="selectDatabase">{{ selectDatabaseButtonText }}</v-btn>
     </v-app-bar>
 
     <!-- Main content area -->
@@ -176,6 +176,7 @@
 export default {
   data() {
     return {
+      databasePath: '', // Store the selected database file path here
       searchTerm: '',
       searchResults: [],
       selectedItem: {},
@@ -199,9 +200,36 @@ export default {
       ],
     };
   },
+  computed: {
+    selectDatabaseButtonText() {
+      if (this.databasePath) {
+        const pathParts = this.databasePath.split(/[/\\]/); // Split the path
+        const fileName = pathParts.pop(); // Get the file name
+        return `Selected DB: ${fileName}`; // Prepend with 'Selected DB: '
+      }
+      return 'Select Database'; // Default text when no database is selected
+    }
+  },
   methods: {
     selectDatabase() {
-      // Logic for opening a file dialog and selecting a database will go here
+      window.electronAPI.openFileDialog().then((filePath) => {
+        if (filePath) {
+          this.databasePath = filePath;
+
+          window.electronAPI.changeDatabase(filePath);
+          
+          // Reset tables and selected columns as the database has changed
+          this.tables = [];
+          this.selectedColumns = [];
+
+          // Fetch the tables from the new database
+          window.electronAPI.getTableList();
+        }
+      }).catch(err => {
+        console.error('File selection error:', err);
+        this.snackbarText = 'Failed to select database.';
+        this.snackbar = true;
+      });
     },
     performSearch() {
       // Check if both a table and search term are selected
@@ -296,6 +324,17 @@ export default {
   created() {
     window.electronAPI.onSearchResults((event, searchResults) => {
       this.searchResults = searchResults;
+    });
+    window.electronAPI.onTableList((event, tables) => {
+      this.tables = tables.map(t => t.name);
+    });
+    window.electronAPI.onColumnsList((event, columns) => {
+      this.columns = columns;
+    });
+    window.electronAPI.onDatabaseError((event, errorMessage) => {
+      console.error('Database connection error:', errorMessage);
+      this.snackbarText = errorMessage;
+      this.snackbar = true;
     });
   },
   mounted() {
