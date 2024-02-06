@@ -272,6 +272,7 @@ export default {
           if (columns && columns.length > 0) {
             this.columns = columns; // Update columns data property
             this.headers = columns.map(column => ({
+              title: column,
               text: column,
               value: column,
               sortable: true
