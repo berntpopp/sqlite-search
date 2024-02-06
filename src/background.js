@@ -99,18 +99,32 @@ const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
 import { ipcMain } from 'electron';
 
 // Handling the search request
-ipcMain.on('perform-search', (event, searchTerm, selectedTable) => {
-  const query = `SELECT * FROM ${selectedTable} WHERE Beurteilung MATCH ?`;
+ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns) => {
+  // Logging the received parameters for debugging
+  console.log('Search Term:', searchTerm);
+  console.log('Selected Table:', selectedTable);
+  console.log('Selected Columns:', selectedColumns);
 
-  // Running the query
-  db.all(query, [searchTerm], (err, rows) => {
+  // Construct the MATCH part of the query
+  const searchColumns = selectedColumns.map(col => `${col}`).join(' ');
+  const matchQuery = `{${searchColumns}}: ${searchTerm}`;
+  
+  // Construct the full SQL query
+  const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`;
+
+  // Logging the constructed queries
+  console.log('Full Query:', query);
+  console.log('Match Query:', matchQuery);
+
+  // Execute the query
+  db.all(query, [matchQuery], (err, rows) => {
     if (err) {
       console.error("Database error:", err);
-      event.reply('search-error', err.message); // Sending back error message
+      event.reply('search-error', err.message); // Send error to renderer
       return;
     }
 
-    // returning the rows to the renderer process
+    // Send the results back to the renderer process
     event.reply('search-results', rows);
   });
 });

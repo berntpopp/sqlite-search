@@ -14,20 +14,46 @@
     <v-main>
       <!-- Container for search functionality -->
       <v-container>
-        <!-- Row for table selection dropdown -->
-        <v-row justify="center" class="mb-2">
-          <v-col cols="12" md="4">
+        <v-row justify="center" class="mb-2 align-center">
+          <!-- Combined row for table and column selection dropdowns -->
+          <v-col cols="12" sm="6" md="3">
             <!-- Dropdown for selecting tables -->
             <v-select
               :items="tables"
               label="Select Table"
               v-model="selectedTable"
-              @change="onTableSelect"
-              solo
+              @update:modelValue="onTableSelect"
+              variant="outlined"
               dense
             ></v-select>
           </v-col>
+
+          <v-col cols="12" sm="6" md="1">
+            <!-- Arrow or visual cue between selects, shown only when a table is selected -->
+            <v-icon>mdi-arrow-right</v-icon>
+          </v-col>
+
+          <v-col cols="12" sm="6" md="3">
+            <!-- Dropdown for selecting columns, shown only when a table is selected -->
+            <v-select
+              :items="columns"
+              label="Select Columns"
+              v-model="selectedColumns"
+              multiple
+              chips
+              variant="outlined"
+              dense
+            >
+            </v-select>
+          </v-col>
+
         </v-row>
+
+        <!-- Divider with padding for visual separation -->
+        <div class="my-4">
+          <v-divider></v-divider>
+        </div>
+
         <!-- Row for search input field -->
         <v-row justify="center" class="mb-3">
           <v-col cols="12" sm="8" md="6">
@@ -41,11 +67,11 @@
               @keyup.enter="performSearch"
               @click:append-inner="performSearch"
               solo
+              variant="outlined"
               dense
             ></v-text-field>
           </v-col>
         </v-row>
-        <v-divider></v-divider>
       </v-container>
 
       <!-- Divider line -->
@@ -156,6 +182,8 @@ export default {
       detailsDialog: false,
       tables: [],
       selectedTable: '',
+      columns: [],
+      selectedColumns: [],
       snackbar: false,
       snackbarText: '',
       headers: [
@@ -176,11 +204,32 @@ export default {
       // Logic for opening a file dialog and selecting a database will go here
     },
     performSearch() {
-      if (this.selectedTable) {
-        window.electronAPI.performSearch(this.searchTerm, this.selectedTable);
+      // Check if both a table and search term are selected
+      if (this.selectedTable && this.searchTerm) {
+        // Construct an object to send to the backend
+        const searchParams = {
+          searchTerm: this.searchTerm,
+          selectedTable: this.selectedTable,
+          selectedColumns: Array.from(this.selectedColumns)
+        };
+
+        // Send the search request to the backend
+        window.electronAPI.performSearch(searchParams.searchTerm, searchParams.selectedTable, searchParams.selectedColumns);
+
+        // Handle the search results
+        window.electronAPI.onSearchResults((event, searchResults) => {
+          this.searchResults = searchResults;
+        });
+
+        // Handle any search error
+        window.electronAPI.onSearchError((event, errorMessage) => {
+          this.snackbarText = errorMessage;
+          this.snackbar = true;
+        });
       } else {
-        this.snackbarText = 'Please select a table to search in.';
-        this.snackbar = true; // Show the snackbar
+        // Show a notification if the table or search term is missing
+        this.snackbarText = 'Please select a table and enter a search term.';
+        this.snackbar = true;
       }
     },
     showDetails(item) {
@@ -213,19 +262,23 @@ export default {
     onTableSelect() {
       // Clear previous search results and possibly the search term
       this.searchResults = [];
-      // this.searchTerm = ''; // Uncomment this if you want to clear the search term as well
+      // this.searchTerm = ''; // Uncomment if you want to clear the search term as well
 
       if (this.selectedTable) {
         // Fetch columns (headers) for the new table
         window.electronAPI.getColumns(this.selectedTable);
+
         window.electronAPI.onColumnsList((event, columns) => {
-          if (columns.length > 0) {
-            // Update headers for the data table
+          if (columns && columns.length > 0) {
+            this.columns = columns; // Update columns data property
             this.headers = columns.map(column => ({
               text: column,
               value: column,
               sortable: true
             }));
+
+            // Optionally set selectedColumns to all columns by default
+            this.selectedColumns = columns; // Or use columns.slice(0, 5) for the first 5
           } else {
             // If no columns found, show feedback
             this.snackbarText = 'The selected table has no columns or is not searchable.';
@@ -233,7 +286,7 @@ export default {
           }
         });
       } else {
-        // Provide feedback if no table is selected (should not occur as this method is triggered on selection)
+        // Provide feedback if no table is selected
         this.snackbarText = 'No table selected.';
         this.snackbar = true;
       }
@@ -253,3 +306,16 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+/* Add custom styles for the arrow icon */
+.my-4 {
+  padding: 20px 0;
+}
+
+/* Style the arrow icon */
+.v-icon.mdi-arrow-right {
+  vertical-align: middle;
+  margin: 0 20px;
+}
+</style>
