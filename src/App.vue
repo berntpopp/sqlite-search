@@ -72,6 +72,7 @@
               clearable
               variant="outlined"
               dense
+              @update:modelValue="onColumnSelect"
             >
               <template v-slot:selection="{ item, index }">
                 <v-chip v-if="index < 2" size="small">
@@ -247,15 +248,15 @@ export default {
   data() {
     return {
       version: packageInfo.version,
-      databasePath: '', // Store the selected database file path here
+      databasePath: localStorage.getItem('databasePath') || '', // Load from local storage
       searchTerm: '',
       searchResults: [],
       selectedItem: {},
       detailsDialog: false,
       tables: [],
-      selectedTable: '',
+      selectedTable: localStorage.getItem('selectedTable') || '', // Load from local storage
       columns: [],
-      selectedColumns: [],
+      selectedColumns: JSON.parse(localStorage.getItem('selectedColumns')) || [],
       snackbar: false,
       snackbarText: '',
       isDarkTheme: false,
@@ -282,6 +283,17 @@ export default {
       window.electronAPI.openFileDialog().then((filePath) => {
         if (filePath) {
           this.databasePath = filePath;
+          localStorage.setItem('databasePath', this.databasePath);
+
+          // Reset tables, selectedTable, and selectedColumns
+          this.tables = [];
+          this.selectedTable = '';
+          this.selectedColumns = [];
+
+          // Update local storage
+          localStorage.removeItem('selectedTable');
+          localStorage.removeItem('selectedColumns');
+
           window.electronAPI.changeDatabase(filePath);
           this.resetDatabaseDependentData();
           window.electronAPI.getTableList();
@@ -349,12 +361,19 @@ export default {
     onTableSelect() {
       // Clear previous search results and possibly the search term
       this.searchResults = [];
-      // this.searchTerm = ''; // Uncomment if you want to clear the search term as well
+
+      // Save the selected table to local storage
+      localStorage.setItem('selectedTable', this.selectedTable);
 
       if (this.selectedTable) {
         // Fetch columns (headers) for the new table
         window.electronAPI.getColumns(this.selectedTable);
 
+        // Reset selectedColumns
+        this.selectedColumns = [];
+        localStorage.removeItem('selectedColumns');
+
+        // Set up a listener for the columns list
         window.electronAPI.onColumnsList((event, columns) => {
           if (columns && columns.length > 0) {
             this.columns = columns; // Update columns data property
@@ -402,7 +421,11 @@ export default {
     getFileName(filePath) {
       const pathParts = filePath.split(/[/\\]/);
       return pathParts.pop();
-    }
+    },
+    onColumnSelect() {
+      // Save the selected columns to local storage
+      localStorage.setItem('selectedColumns', JSON.stringify(this.selectedColumns));
+    },
   },
   created() {
     // Initialize application
@@ -428,6 +451,15 @@ export default {
       console.error('Database connection error:', errorMessage);
       this.showError(errorMessage);
     });
+  },
+  watch: {
+    // Watchers to update local storage when selected columns change
+    selectedColumns(newVal, oldVal) {
+      // Trigger only if there is a real change in selected columns
+      if (newVal.length !== oldVal.length || newVal.some((val, index) => val !== oldVal[index])) {
+        this.onColumnSelect();
+      }
+    },
   },
   mounted() {
     // Call this when the database is selected and you want to fetch the table list
