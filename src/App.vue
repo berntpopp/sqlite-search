@@ -172,9 +172,20 @@
 
     </v-main>
 
-    <!-- Optional Footer -->
-    <v-footer fixed padless>
-      <!-- Footer content -->
+    <!-- Footer with contact information and copyright notice -->
+    <v-footer app padless class="elevation-3">
+      <v-container>
+        <v-row justify="center">
+          <!-- Example link -->
+          <v-btn text :href="'https://example.com'" target="_blank">
+            Contact Us
+          </v-btn>
+          <!-- Additional links or content here -->
+        </v-row>
+        <v-row justify="center">
+          <span>&copy; 2024 sqlite-search. All rights reserved.</span>
+        </v-row>
+      </v-container>
     </v-footer>
   </v-app>
 </template>
@@ -365,10 +376,7 @@ export default {
   vertical-align: middle;
   margin: 0 20px;
 }
-</style>
 
-
-<style scoped>
 /**
  * Styles for the application logo.
  * Sets a maximum width, adds right margin, and applies the fadeIn animation.
@@ -378,4 +386,5 @@ export default {
   margin-right: 10px; /* Spacing between logo and title */
   animation: fadeIn 2s ease-out forwards; /* Applies the fadeIn animation */
 }
+
 </style>

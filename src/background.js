@@ -19,7 +19,6 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow() {
-  console.log(path.join(__dirname, '../public/logo.ico'));
   // Create the browser window.
   const win = new BrowserWindow({
     width: 800,
