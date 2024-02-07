@@ -26,17 +26,50 @@
       <v-spacer></v-spacer>
 
       <!-- Button to trigger database file selection -->
-      <v-btn :class="{'highlighted-button': databasePath}" text @click="selectDatabase">{{ selectDatabaseButtonText }}</v-btn>
+      <v-btn :class="{'highlighted-button': databasePath}" text @click="selectDatabase">
+        {{ selectDatabaseButtonText }}
+        <v-tooltip
+          activator="parent"
+          location="end"
+        >
+          Select database
+        </v-tooltip>
+        </v-btn>
 
       <!-- Switch for toggling between light and dark themes -->
     <v-btn icon @click="toggleTheme">
       <v-icon>
         {{ isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}
       </v-icon>
+      <v-tooltip
+        activator="parent"
+        location="end"
+      >
+        Toggle theme
+      </v-tooltip>
+    </v-btn>
+
+    <!-- Reset Button -->
+    <v-btn icon @click="resetAppState">
+      <v-icon>mdi-refresh</v-icon>
+    <v-tooltip
+      activator="parent"
+      location="end"
+    >
+      Reset app state
+    </v-tooltip>
     </v-btn>
 
     <!-- Help/FAQ Button -->
-    <v-btn text @click="showFaqModal = true">Help/FAQ</v-btn>
+    <v-btn text @click="showFaqModal = true">
+      Help/FAQ
+      <v-tooltip
+        activator="parent"
+        location="end"
+      >
+        Show help
+      </v-tooltip>
+    </v-btn>
     </v-app-bar>
 
     <!-- Main content area -->
@@ -241,18 +274,13 @@
 
     <!-- Footer with contact information and copyright notice -->
     <v-footer app padless class="elevation-3">
-      <v-container>
-        <v-row justify="center">
-          <!-- Example link -->
-          <v-btn text :href="'https://example.com'" target="_blank">
-            Contact Us
+      <v-row justify="center" no-gutters>
+        <v-col cols="auto" v-for="link in footerLinks" :key="link.text">
+          <v-btn icon :href="link.href" target="_blank" text>
+            <v-icon>{{ link.icon }}</v-icon>
           </v-btn>
-          <!-- Additional links or content here -->
-        </v-row>
-        <v-row justify="center">
-          <span>&copy; 2024 sqlite-search. All rights reserved.</span>
-        </v-row>
-      </v-container>
+        </v-col>
+      </v-row>
     </v-footer>
   </v-app>
 </template>
@@ -260,6 +288,7 @@
 <script>
 import packageInfo from '../package.json';
 import faqConfig from './config/faqPageConfig.json';
+import footerConfig from './config/footerConfig.json';
 
 export default {
   data() {
@@ -279,6 +308,7 @@ export default {
       isDarkTheme: false,
       showFaqModal: false, // Controls the visibility of the FAQ modal
       faqConfig, // FAQ data loaded from the JSON file
+      footerLinks: footerConfig.links,
       headers: [
         { title: 'Column 1', value: 'column_1', sortable: true },
         { title: 'Column 2', value: 'column_2', sortable: true },
@@ -442,6 +472,16 @@ export default {
     onColumnSelect() {
       // Save the selected columns to local storage
       localStorage.setItem('selectedColumns', JSON.stringify(this.selectedColumns));
+    },
+    resetAppState() {
+      // Clear local storage
+      localStorage.clear();
+      // Reset application state
+      this.databasePath = '';
+      this.selectedTable = '';
+      this.selectedColumns = [];
+      this.searchResults = []
+      // Reset other necessary states
     },
   },
   created() {
