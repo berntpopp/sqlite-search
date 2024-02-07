@@ -12,6 +12,7 @@ module.exports = defineConfig({
         preload: 'src/preload.js',
       builderOptions: {
         extraResources: ['src', 'src/res/', 'src/db/'],
+        icon: 'public/logo.png',
       },
       externals: ['knex', 'sqlite3'],
     },
