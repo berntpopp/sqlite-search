@@ -13,7 +13,14 @@
       ></v-img>
 
       <!-- Application title -->
-      <v-toolbar-title>sqlite-search</v-toolbar-title>
+      <v-toolbar-title>
+        <span>
+          sqlite-search
+        </span>
+        <span class="version-info">
+          v{{ version }}
+        </span>
+      </v-toolbar-title>
 
       <!-- Spacer to push the database selection button to the right -->
       <v-spacer></v-spacer>
@@ -200,9 +207,12 @@
 </template>
 
 <script>
+import packageInfo from '../package.json';
+
 export default {
   data() {
     return {
+      version: packageInfo.version,
       databasePath: '', // Store the selected database file path here
       searchTerm: '',
       searchResults: [],
@@ -405,4 +415,15 @@ export default {
   animation: fadeIn 2s ease-out forwards; /* Applies the fadeIn animation */
 }
 
+/**
+ * Styles for the version info.
+ * Adds right padding and decreases the top margin to bring it closer to the app name.
+ */
+.version-info {
+  display: block; /* Ensures the version info is on a new line */
+  margin-left: auto;
+  padding-right: 16px;
+  font-size: 0.8rem;
+  margin-top: -10px; /* Decrease the top margin to bring it closer to the app name */
+}
 </style>
