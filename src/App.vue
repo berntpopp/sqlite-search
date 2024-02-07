@@ -11,10 +11,22 @@
         max-height="48"
         max-width="48"
       ></v-img>
+
+      <!-- Application title -->
       <v-toolbar-title>sqlite-search</v-toolbar-title>
+
+      <!-- Spacer to push the database selection button to the right -->
       <v-spacer></v-spacer>
+
       <!-- Button to trigger database file selection -->
       <v-btn text @click="selectDatabase">{{ selectDatabaseButtonText }}</v-btn>
+
+      <!-- Switch for toggling between light and dark themes -->
+    <v-btn icon @click="toggleTheme">
+      <v-icon>
+        {{ isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}
+      </v-icon>
+    </v-btn>
     </v-app-bar>
 
     <!-- Main content area -->
@@ -205,6 +217,7 @@ export default {
       selectedColumns: [],
       snackbar: false,
       snackbarText: '',
+      isDarkTheme: false,
       headers: [
         { title: 'Diagnose', value: 'Diagnose', sortable: true },
         { title: 'Anamnese', value: 'Anamnese', sortable: true },
@@ -338,8 +351,19 @@ export default {
         this.snackbar = true;
       }
     },
+    toggleTheme() {
+      this.isDarkTheme = !this.isDarkTheme;
+      localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
+      this.applyTheme();
+    },
+    applyTheme() {
+      const theme = localStorage.getItem('theme') || 'light';
+      this.isDarkTheme = theme === 'dark';
+      this.$vuetify.theme.global.name = this.isDarkTheme ? 'dark' : 'light';
+    },
   },
   created() {
+    this.applyTheme();
     window.electronAPI.onSearchResults((event, searchResults) => {
       this.searchResults = searchResults;
     });
