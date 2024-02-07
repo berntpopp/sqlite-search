@@ -102,18 +102,15 @@
         :items="searchResults"
         class="elevation-1"
       >
-        <!-- Custom slot for rendering items -->
+        <!-- Custom slot for rendering items dynamically based on selectedColumns -->
         <template v-slot:item="{ item }">
           <tr>
-            <td>{{ truncateText(item.Diagnose) }}</td>
-            <td>{{ truncateText(item.Anamnese) }}</td>
-            <td>{{ truncateText(item.FamAnamnese) }}</td>
-            <td>{{ truncateText(item.Befund) }}</td>
-            <td>{{ truncateText(item.Diagnostik) }}</td>
-            <td>{{ truncateText(item.Beurteilung) }}</td>
-            <td>{{ truncateText(item.Procedere) }}</td>
+            <!-- Loop over each column and create a cell for it -->
+            <template v-for="header in selectedColumns" :key="header">
+              <td>{{ truncateText(item[header]) }}</td>
+            </template>
+            <!-- Action buttons for each row -->
             <td>
-              <!-- Action buttons for each row -->
               <v-btn icon @click="showDetails(item)">
                 <v-icon>mdi-eye</v-icon>
               </v-btn>
@@ -219,14 +216,11 @@ export default {
       snackbarText: '',
       isDarkTheme: false,
       headers: [
-        { title: 'Diagnose', value: 'Diagnose', sortable: true },
-        { title: 'Anamnese', value: 'Anamnese', sortable: true },
-        { title: 'FamAnamnese', value: 'FamAnamnese', sortable: true },
-        { title: 'Befund', value: 'Befund', sortable: true },
-        { title: 'Diagnostik', value: 'Diagnostik', sortable: true },
-        { title: 'Beurteilung', value: 'Beurteilung', sortable: true },
-        { title: 'Procedere', value: 'Procedere', sortable: true },
-        { title: 'Actions', value: 'action', sortable: false },
+        { title: 'Column 1', value: 'column_1', sortable: true },
+        { title: 'Column 2', value: 'column_2', sortable: true },
+        { title: 'Column 3', value: 'column_3', sortable: true },
+        { title: 'Column 4', value: 'column_4', sortable: true },
+        { title: 'Column 5', value: 'column_5', sortable: true },
         // Add other headers here
       ],
     };
