@@ -245,33 +245,22 @@ export default {
   },
   computed: {
     selectDatabaseButtonText() {
-      if (this.databasePath) {
-        const pathParts = this.databasePath.split(/[/\\]/); // Split the path
-        const fileName = pathParts.pop(); // Get the file name
-        return `Selected DB: ${fileName}`; // Prepend with 'Selected DB: '
-      }
-      return 'Select Database'; // Default text when no database is selected
-    }
+      // Update button text based on databasePath
+      return this.databasePath ? `Selected DB: ${this.getFileName(this.databasePath)}` : 'Select Database';
+    },
   },
   methods: {
     selectDatabase() {
       window.electronAPI.openFileDialog().then((filePath) => {
         if (filePath) {
           this.databasePath = filePath;
-
           window.electronAPI.changeDatabase(filePath);
-          
-          // Reset tables and selected columns as the database has changed
-          this.tables = [];
-          this.selectedColumns = [];
-
-          // Fetch the tables from the new database
+          this.resetDatabaseDependentData();
           window.electronAPI.getTableList();
         }
       }).catch(err => {
         console.error('File selection error:', err);
-        this.snackbarText = 'Failed to select database.';
-        this.snackbar = true;
+        this.showError('Failed to select database.');
       });
     },
     performSearch() {
@@ -294,8 +283,7 @@ export default {
 
         // Handle any search error
         window.electronAPI.onSearchError((event, errorMessage) => {
-          this.snackbarText = errorMessage;
-          this.snackbar = true;
+          this.showError(errorMessage);
         });
       } else {
         // Show a notification if the table or search term is missing
@@ -373,22 +361,44 @@ export default {
       this.isDarkTheme = theme === 'dark';
       this.$vuetify.theme.global.name = this.isDarkTheme ? 'dark' : 'light';
     },
+    resetDatabaseDependentData() {
+      this.tables = [];
+      this.selectedColumns = [];
+      this.searchResults = [];
+      // Reset other data that depends on the database
+    },
+    showError(message) {
+      this.snackbarText = message;
+      this.snackbar = true;
+    },
+    getFileName(filePath) {
+      const pathParts = filePath.split(/[/\\]/);
+      return pathParts.pop();
+    }
   },
   created() {
+    // Initialize application
     this.applyTheme();
+
+    // Set up listeners for search results
     window.electronAPI.onSearchResults((event, searchResults) => {
       this.searchResults = searchResults;
     });
+
+    // Set up listeners for table list
     window.electronAPI.onTableList((event, tables) => {
       this.tables = tables.map(t => t.name);
     });
+
+    // Set up listeners for column list
     window.electronAPI.onColumnsList((event, columns) => {
       this.columns = columns;
     });
+
+    // Set up listeners for database errors
     window.electronAPI.onDatabaseError((event, errorMessage) => {
       console.error('Database connection error:', errorMessage);
-      this.snackbarText = errorMessage;
-      this.snackbar = true;
+      this.showError(errorMessage);
     });
   },
   mounted() {

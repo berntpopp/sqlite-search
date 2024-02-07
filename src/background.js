@@ -13,6 +13,9 @@ import fs from 'fs';
 // Set the environment variable to control the environment
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
+// Set the default database path
+const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite');
+
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } }
@@ -89,19 +92,36 @@ if (isDevelopment) {
   }
 }
 
-// TODO: remove hardcoded path
-// Connecting to the database
-let dbPath = path.resolve('C:/development/sqlite-search/db/er.sqlite');
-
-let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
-  if (err) {
-    console.error(err.message);
+// Function to initialize database connection
+function initDbConnection(dbPath) {
+  // Check if the database file exists
+  if (!fs.existsSync(dbPath)) {
+    console.log('Default database file not found. Awaiting user selection.');
+    return null;
   }
-  console.log('Connected to the sqlite database.');
-});
+
+  let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+    if (err) {
+      console.error(err.message);
+    } else {
+      console.log('Connected to the sqlite database at:', dbPath);
+    }
+  });
+
+  return db;
+}
+
+// Initialize database with default path or await user selection
+let db = initDbConnection(defaultDbPath);
 
 // Handling the search request
 ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns) => {
+  // Check if the database connection exists
+  if (!db) {
+    console.error("Database connection not established.");
+    event.reply('search-error', 'Database connection not established.');
+    return;
+  }
 
   // Construct the MATCH part of the query
   const searchColumns = selectedColumns.map(col => `${col}`).join(' ');
@@ -124,8 +144,14 @@ ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns)
 });
 
 // Handling the table list request
-// TODO allow non FTS5 tables
 ipcMain.on('get-table-list', async (event) => {
+  // Check if the database connection exists
+  if (!db) {
+    console.error("Database connection not established.");
+    event.reply('table-list-error', 'Database connection not established.');
+    return;
+  }
+
   const fts5TableListQuery = `
     SELECT name 
     FROM sqlite_master 
@@ -143,7 +169,15 @@ ipcMain.on('get-table-list', async (event) => {
 });
 
 // Handling the column list request
+// Handling the column list request
 ipcMain.on('get-columns', async (event, tableName) => {
+  // Check if the database connection exists
+  if (!db) {
+    console.error("Database connection not established.");
+    event.reply('column-list-error', 'Database connection not established.');
+    return;
+  }
+
   const columnListQuery = `PRAGMA table_info(${tableName});`;
   db.all(columnListQuery, [], (err, columns) => {
     if (err) {
@@ -170,20 +204,9 @@ ipcMain.handle('open-file-dialog', async () => {
 });
 
 ipcMain.on('change-database', (event, newPath) => {
-  // Close the existing database connection
-  db.close();
+  // Close the existing database connection if open
+  if (db) db.close();
 
   // Connect to the new database
-  const newDb = new sqlite3.Database(newPath, sqlite3.OPEN_READONLY, (err) => {
-    if (err) {
-      console.error(err.message);
-    } else {
-      console.log('Connected to the new sqlite database.');
-    }
-  });
-
-  // Replace the old db variable with the new connection
-  db = newDb;
-
-  // Here you would also need to re-initialize any events or data that depend on the database
+  db = initDbConnection(newPath);
 });
