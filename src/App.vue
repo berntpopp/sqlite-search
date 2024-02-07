@@ -61,16 +61,24 @@
 
           <v-col cols="12" sm="6" md="3">
             <!-- Dropdown for selecting columns, shown only when a table is selected -->
-            <v-select
+            <v-autocomplete
+              v-model="selectedColumns"
               :items="columns"
               label="Select Columns"
-              v-model="selectedColumns"
               multiple
-              chips
+              clearable
               variant="outlined"
               dense
             >
-            </v-select>
+              <template v-slot:selection="{ item, index }">
+                <v-chip v-if="index < 2" size="small">
+                  <span>{{ item.title }}</span>
+                </v-chip>
+                <span v-if="index === 2" class="text-grey text-caption align-self-center">
+                  (+{{ selectedColumns.length - 2 }} others)
+                </span>
+              </template>
+            </v-autocomplete>
           </v-col>
 
         </v-row>
