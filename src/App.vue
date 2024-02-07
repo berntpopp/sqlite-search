@@ -26,7 +26,7 @@
       <v-spacer></v-spacer>
 
       <!-- Button to trigger database file selection -->
-      <v-btn text @click="selectDatabase">{{ selectDatabaseButtonText }}</v-btn>
+      <v-btn :class="{'highlighted-button': databasePath}" text @click="selectDatabase">{{ selectDatabaseButtonText }}</v-btn>
 
       <!-- Switch for toggling between light and dark themes -->
     <v-btn icon @click="toggleTheme">
@@ -41,9 +41,15 @@
 
     <!-- Main content area -->
     <v-main>
+      <!-- Show message if no database is loaded -->
+      <div v-if="!databasePath" class="no-database-loaded">
+        <img src="logo.webp" alt="App Logo" class="app-logo">
+        <p>Please first select your database</p>
+      </div>
+
       <!-- Container for search functionality -->
       <v-container>
-        <v-row justify="center" class="mb-2 align-center">
+        <v-row justify="center" class="my-1 align-center">
           <!-- Combined row for table and column selection dropdowns -->
           <v-col cols="12" sm="6" md="3">
             <!-- Dropdown for selecting tables -->
@@ -54,12 +60,13 @@
               @update:modelValue="onTableSelect"
               variant="outlined"
               dense
+              v-if="databasePath"
             ></v-select>
           </v-col>
 
-          <v-col cols="12" sm="6" md="1">
+          <v-col cols="12" sm="6" md="1" class="centered-arrow">
             <!-- Arrow or visual cue between selects, shown only when a table is selected -->
-            <v-icon>mdi-arrow-right</v-icon>
+            <v-icon v-if="selectedTable">mdi-arrow-right</v-icon>
           </v-col>
 
           <v-col cols="12" sm="6" md="3">
@@ -73,6 +80,7 @@
               variant="outlined"
               dense
               @update:modelValue="onColumnSelect"
+              v-if="selectedTable"
             >
               <template v-slot:selection="{ item, index }">
                 <v-chip v-if="index < 2" size="small">
@@ -88,13 +96,16 @@
         </v-row>
 
         <!-- Divider with padding for visual separation -->
-        <div class="my-4">
+        <div
+          class="my-1"
+          v-if="selectedTable"
+        >
           <v-divider></v-divider>
         </div>
 
         <!-- Row for search input field -->
-        <v-row justify="center" class="mb-3">
-          <v-col cols="12" sm="8" md="6">
+        <v-row justify="center" class="my-1">
+          <v-col cols="12" sm="8" md="6" v-if="selectedTable">
             <!-- Text field for entering search terms -->
             <v-text-field
               label="Search..."
@@ -110,16 +121,22 @@
             ></v-text-field>
           </v-col>
         </v-row>
-      </v-container>
 
-      <!-- Divider line -->
-      <v-divider></v-divider>
+        <!-- Divider with padding for visual separation -->
+        <div
+          class="my-1"
+          v-if="searchResults.length > 0"
+        >
+          <v-divider></v-divider>
+        </div>
+      </v-container>
 
       <!-- Table displaying search results -->
       <v-data-table
         :headers="headers"
         :items="searchResults"
         class="elevation-1"
+        v-if="searchResults.length > 0"
       >
         <!-- Custom slot for rendering items dynamically based on selectedColumns -->
         <template v-slot:item="{ item }">
@@ -512,5 +529,24 @@ export default {
 
 .faq-section h3 {
   margin-top: 0;
+}
+
+/* Highlighted button style */
+.highlighted-button {
+  background-color: #ffcc00; /* or any other highlight color */
+  color: white;
+}
+
+/* Styles for the no-database-loaded message */
+.no-database-loaded {
+  text-align: center;
+  padding-top: 50px; /* Adjust as needed */
+}
+
+/* Centering the arrow icon */
+.centered-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 </style>
