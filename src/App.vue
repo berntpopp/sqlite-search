@@ -34,6 +34,9 @@
         {{ isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}
       </v-icon>
     </v-btn>
+
+    <!-- Help/FAQ Button -->
+    <v-btn text @click="showFaqModal = true">Help/FAQ</v-btn>
     </v-app-bar>
 
     <!-- Main content area -->
@@ -194,6 +197,28 @@
         </v-btn>
       </v-snackbar>
 
+      <!-- FAQ Modal -->
+      <v-dialog v-model="showFaqModal" max-width="600px">
+        <v-card>
+          <v-card-title>{{ faqConfig.title }}</v-card-title>
+          <v-card-text>
+            <v-container>
+              <v-row v-for="(section, index) in faqConfig.sections" :key="index">
+                <v-col>
+                  <h3>{{ section.header }}</h3>
+                  <p>{{ section.content }}</p>
+                  <v-btn v-for="link in section.links" :key="link.title" :href="link.url" text target="_blank">{{ link.title }}</v-btn>
+                </v-col>
+              </v-row>
+            </v-container>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" text @click="showFaqModal = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
     </v-main>
 
     <!-- Footer with contact information and copyright notice -->
@@ -216,6 +241,7 @@
 
 <script>
 import packageInfo from '../package.json';
+import faqConfig from './config/faqPageConfig.json';
 
 export default {
   data() {
@@ -233,6 +259,8 @@ export default {
       snackbar: false,
       snackbarText: '',
       isDarkTheme: false,
+      showFaqModal: false, // Controls the visibility of the FAQ modal
+      faqConfig, // FAQ data loaded from the JSON file
       headers: [
         { title: 'Column 1', value: 'column_1', sortable: true },
         { title: 'Column 2', value: 'column_2', sortable: true },
@@ -443,5 +471,14 @@ export default {
   padding-right: 16px;
   font-size: 0.8rem;
   margin-top: -10px; /* Decrease the top margin to bring it closer to the app name */
+}
+
+/* FAQ Modal Styles */
+.faq-section {
+  margin-bottom: 20px;
+}
+
+.faq-section h3 {
+  margin-top: 0;
 }
 </style>
