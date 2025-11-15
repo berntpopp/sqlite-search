@@ -54,11 +54,9 @@ jobs:
       - name: Run type check
         run: pnpm run typecheck
 
-      - name: Build application
-        run: pnpm run build
-
       - name: Build Electron app (test build)
-        run: pnpm run build:dist
+        run: pnpm run dist
         env:
           # Disable code signing for test builds
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

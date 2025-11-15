@@ -47,33 +47,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build and release
-        uses: x6Pnda/action-electron-compiler@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          package_manager: pnpm
-          # Build commands
-          build_script_name: build
-          # Publish to GitHub Releases
-          release: true
-          # macOS code signing (optional - will skip if not configured)
-          mac_certs: ${{ secrets.MAC_CERTS }}
-          mac_certs_password: ${{ secrets.MAC_CERTS_PASSWORD }}
-          # Windows code signing (optional - will skip if not configured)
-          windows_certs: ${{ secrets.WINDOWS_CERTS }}
-          windows_certs_password: ${{ secrets.WINDOWS_CERTS_PASSWORD }}
+      - name: Build and publish
+        run: pnpm run dist
         env:
-          # Disable code signing auto-discovery if secrets not set
+          # GitHub token for publishing releases
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # macOS code signing (optional - will skip if not configured)
+          CSC_LINK: ${{ secrets.MAC_CERTS }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
+          # Windows code signing (optional - will skip if not configured)
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}-build
+          name: ${{ matrix.os }}-artifacts
           path: |
             dist/*.exe
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb
             dist/*.rpm
-          if-no-files-found: ignore
+            dist/*.snap
+            dist/*.zip
+            dist/*.tar.gz
+            dist/*.yml
+            dist/*.blockmap
+          if-no-files-found: warn
