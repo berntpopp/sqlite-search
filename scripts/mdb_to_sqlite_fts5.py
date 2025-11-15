@@ -164,6 +164,7 @@ class MDBToSQLiteConverter:
     def export_table(self, table_name: str, fts_columns: Optional[List[str]] = None):
         """
         Export a table from MDB to SQLite with FTS5 support.
+        Uses robust error handling for corrupted MDB files.
 
         Args:
             table_name: Name of the table to export
@@ -180,56 +181,101 @@ class MDBToSQLiteConverter:
         self._log(f"  Schema: {len(schema)} columns")
 
         # Export to temporary CSV
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmpfile:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, encoding='utf-8') as tmpfile:
             csv_path = tmpfile.name
 
         try:
-            # Export data using mdb-export
-            subprocess.run(
-                ["mdb-export", str(self.input_mdb), table_name],
-                stdout=open(csv_path, 'w'),
-                check=True
-            )
+            # Export data using mdb-export with error suppression
+            # Redirect stderr to suppress corruption warnings
+            with open(os.devnull, 'w') as devnull:
+                result = subprocess.run(
+                    ["mdb-export", "-D", "%Y-%m-%d %H:%M:%S", str(self.input_mdb), table_name],
+                    stdout=open(csv_path, 'w', encoding='utf-8', errors='replace'),
+                    stderr=devnull,  # Suppress mdbtools warnings
+                    check=False  # Don't raise on non-zero exit (corrupted data may cause warnings)
+                )
+
+            # Check if CSV was created and has content
+            if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
+                self._error(f"mdb-export produced no output for table: {table_name}")
+                return
 
             # Import to SQLite
             conn = sqlite3.connect(str(self.output_sqlite))
             cursor = conn.cursor()
 
             try:
-                # Create regular table
+                # Sanitize column names for SQL
+                sanitized_schema = []
+                for col_name, col_type in schema:
+                    # Remove special characters and ensure valid SQL identifier
+                    safe_name = col_name.replace('"', '').replace("'", '').strip()
+                    # Ensure type is valid (default to TEXT for unknown types)
+                    safe_type = col_type if col_type in ['INTEGER', 'TEXT', 'REAL', 'BLOB', 'NUMERIC'] else 'TEXT'
+                    sanitized_schema.append((safe_name, safe_type))
+
+                # Create regular table with proper quoting
                 columns_def = ", ".join([
-                    f'"{col[0]}" {col[1]}' for col in schema
+                    f'"{col[0]}" {col[1]}' for col in sanitized_schema
                 ])
 
                 # Drop if exists and create
                 cursor.execute(f'DROP TABLE IF EXISTS "{table_name}"')
                 cursor.execute(f'CREATE TABLE "{table_name}" ({columns_def})')
 
-                # Import CSV data
+                # Import CSV data with error handling
                 with open(csv_path, 'r', encoding='utf-8', errors='replace') as csvfile:
-                    csv_reader = csv.reader(csvfile)
-                    header = next(csv_reader)  # Skip header
+                    csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
 
-                    # Prepare INSERT statement
-                    placeholders = ", ".join(["?" for _ in header])
-                    insert_sql = f'INSERT INTO "{table_name}" VALUES ({placeholders})'
+                    try:
+                        header = next(csv_reader)  # Skip header
+                    except StopIteration:
+                        self._error(f"CSV file is empty for table: {table_name}")
+                        return
 
-                    # Import rows
+                    # Prepare INSERT statement with proper quoting
+                    column_names = ", ".join([f'"{col[0]}"' for col in sanitized_schema])
+                    placeholders = ", ".join(["?" for _ in sanitized_schema])
+                    insert_sql = f'INSERT INTO "{table_name}" ({column_names}) VALUES ({placeholders})'
+
+                    # Import rows with error recovery
                     row_count = 0
-                    for row in csv_reader:
-                        # Handle NULL values
-                        processed_row = [
-                            None if val == '' or val.upper() == 'NULL' else val
-                            for val in row
-                        ]
-                        cursor.execute(insert_sql, processed_row)
-                        row_count += 1
+                    error_count = 0
+                    for line_num, row in enumerate(csv_reader, start=2):
+                        try:
+                            # Pad or truncate row to match schema
+                            if len(row) < len(sanitized_schema):
+                                row.extend([''] * (len(sanitized_schema) - len(row)))
+                            elif len(row) > len(sanitized_schema):
+                                row = row[:len(sanitized_schema)]
 
-                    self._log(f"  Imported {row_count} rows")
+                            # Clean and process each value
+                            processed_row = []
+                            for val in row:
+                                if val == '' or val.upper() == 'NULL':
+                                    processed_row.append(None)
+                                else:
+                                    # Remove null bytes and other control characters
+                                    cleaned = val.replace('\x00', '').strip()
+                                    processed_row.append(cleaned if cleaned else None)
+
+                            cursor.execute(insert_sql, processed_row)
+                            row_count += 1
+
+                        except sqlite3.Error as e:
+                            error_count += 1
+                            if error_count <= 10:  # Only log first 10 errors
+                                self._log(f"  Warning: Skipped row {line_num}: {str(e)[:100]}")
+                        except Exception as e:
+                            error_count += 1
+                            if error_count <= 10:
+                                self._log(f"  Warning: Skipped malformed row {line_num}: {str(e)[:100]}")
+
+                    self._log(f"  Imported {row_count} rows ({error_count} errors skipped)")
 
                 # Create FTS5 virtual table if requested
-                if fts_columns:
-                    self._create_fts5_table(cursor, table_name, schema, fts_columns)
+                if fts_columns and row_count > 0:
+                    self._create_fts5_table(cursor, table_name, sanitized_schema, fts_columns)
 
                 conn.commit()
                 self._log(f"  ✓ Table '{table_name}' exported successfully")
@@ -237,7 +283,9 @@ class MDBToSQLiteConverter:
             except Exception as e:
                 conn.rollback()
                 self._error(f"Failed to import table {table_name}: {e}")
-                raise
+                import traceback
+                if self.verbose:
+                    traceback.print_exc()
 
             finally:
                 conn.close()
@@ -245,7 +293,10 @@ class MDBToSQLiteConverter:
         finally:
             # Clean up temporary CSV file
             if os.path.exists(csv_path):
-                os.remove(csv_path)
+                try:
+                    os.remove(csv_path)
+                except:
+                    pass  # Ignore cleanup errors
 
     def _create_fts5_table(
         self,
