@@ -12,11 +12,7 @@
           </span>
         </span>
       </div>
-      <v-btn
-        variant="text"
-        size="small"
-        @click="searchStore.clearResults"
-      >
+      <v-btn variant="text" size="small" @click="searchStore.clearResults">
         <v-icon start size="small">mdi-close</v-icon>
         Clear
       </v-btn>
@@ -34,40 +30,30 @@
       class="results-table"
     >
       <!-- Custom cell rendering with truncation -->
-      <template v-for="column in databaseStore.selectedColumns" :key="column" v-slot:[`item.${column}`]="{ value }">
+      <template
+        v-for="column in databaseStore.selectedColumns"
+        :key="column"
+        #[`item.${column}`]="{ value }"
+      >
         <span class="text-truncate-cell">{{ truncateText(value, 60) }}</span>
       </template>
 
       <!-- Actions column -->
-      <template v-slot:item.actions="{ item }">
+      <template #[`item.actions`]="{ item }">
         <div class="d-flex ga-1">
-          <v-btn
-            icon
-            variant="text"
-            size="x-small"
-            @click="viewDetails(item)"
-          >
+          <v-btn icon variant="text" size="x-small" @click="viewDetails(item)">
             <v-icon size="small">mdi-eye</v-icon>
-            <v-tooltip activator="parent" location="top">
-              View full details
-            </v-tooltip>
+            <v-tooltip activator="parent" location="top"> View full details </v-tooltip>
           </v-btn>
-          <v-btn
-            icon
-            variant="text"
-            size="x-small"
-            @click="copyRow(item)"
-          >
+          <v-btn icon variant="text" size="x-small" @click="copyRow(item)">
             <v-icon size="small">mdi-content-copy</v-icon>
-            <v-tooltip activator="parent" location="top">
-              Copy entire row
-            </v-tooltip>
+            <v-tooltip activator="parent" location="top"> Copy entire row </v-tooltip>
           </v-btn>
         </div>
       </template>
 
       <!-- Empty state -->
-      <template v-slot:no-data>
+      <template #no-data>
         <div class="text-center pa-4">
           <v-icon size="large" color="grey">mdi-magnify-close</v-icon>
           <p class="text-medium-emphasis mt-2">No results found</p>
@@ -89,7 +75,7 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 
 // Generate table headers from selected columns
 const tableHeaders = computed(() => {
-  const headers = databaseStore.selectedColumns.map((column) => ({
+  const headers = databaseStore.selectedColumns.map(column => ({
     title: column,
     value: column,
     key: column,

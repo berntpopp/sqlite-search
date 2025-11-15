@@ -84,7 +84,7 @@ function cleanupApp() {
 }
 
 // Cleanup before app quits
-app.on('before-quit', event => {
+app.on('before-quit', _event => {
   cleanupApp()
 })
 

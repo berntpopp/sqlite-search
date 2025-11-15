@@ -2,7 +2,7 @@
   <!-- Modern application container with compact design -->
   <v-app>
     <!-- Modern header component -->
-    <AppHeader />
+    <AppHeader @toggle-history="showHistoryDrawer = !showHistoryDrawer" />
 
     <!-- Main content area -->
     <v-main>
@@ -16,9 +16,7 @@
               max-width="120"
               class="mx-auto mb-4"
             ></v-img>
-            <h2 class="text-h5 text-medium-emphasis mb-2">
-              Welcome to SQLite Search
-            </h2>
+            <h2 class="text-h5 text-medium-emphasis mb-2">Welcome to SQLite Search</h2>
             <p class="text-body-1 text-medium-emphasis">
               Please select a database to begin searching
             </p>
@@ -45,11 +43,7 @@
           </v-col>
 
           <v-col cols="12" sm="auto" class="text-center">
-            <v-icon
-              v-if="databaseStore.hasSelectedTable"
-              color="primary"
-              size="large"
-            >
+            <v-icon v-if="databaseStore.hasSelectedTable" color="primary" size="large">
               mdi-arrow-right
             </v-icon>
           </v-col>
@@ -78,14 +72,16 @@
     <HelpDialog />
     <ResultDetailDialog />
     <AppSnackbar />
+    <HistoryDrawer v-model="showHistoryDrawer" />
   </v-app>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
 import { useUIStore } from '@/stores/ui.store'
+import { useHistoryStore } from '@/stores/history.store'
 import { useDatabase } from '@/composables/useDatabase'
 import { useTheme } from '@/composables/useTheme'
 
@@ -98,13 +94,18 @@ import ColumnSelector from '@/components/database/ColumnSelector.vue'
 import SearchInput from '@/components/search/SearchInput.vue'
 import ResultsTable from '@/components/results/ResultsTable.vue'
 import ResultDetailDialog from '@/components/results/ResultDetailDialog.vue'
+import HistoryDrawer from '@/components/HistoryDrawer.vue'
 
 // Stores and composables
 const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
 const uiStore = useUIStore()
+const historyStore = useHistoryStore()
 const { selectDatabase } = useDatabase()
 const { applyTheme } = useTheme()
+
+// Component state
+const showHistoryDrawer = ref(false)
 
 // Store event listener cleanup functions
 let cleanupFunctions = []
@@ -148,6 +149,17 @@ function setupIPCListeners() {
       uiStore.showInfo('No results found')
     } else {
       uiStore.showSuccess(`Found ${results.length} result(s)`)
+    }
+
+    // Track search in history
+    if (searchStore.searchTerm && databaseStore.path) {
+      historyStore.addSearch({
+        searchTerm: searchStore.searchTerm,
+        databasePath: databaseStore.path,
+        table: databaseStore.selectedTable,
+        columns: databaseStore.selectedColumns,
+        resultCount: results?.length || 0,
+      })
     }
   }
   window.electronAPI.onSearchResults(onSearchResultsHandler)

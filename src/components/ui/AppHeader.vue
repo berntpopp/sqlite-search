@@ -2,13 +2,7 @@
   <!-- Compact modern app header -->
   <v-app-bar app elevation="1" density="compact">
     <!-- App logo -->
-    <v-img
-      src="/logo.webp"
-      class="mx-2"
-      contain
-      max-height="40"
-      max-width="40"
-    ></v-img>
+    <v-img src="/logo.webp" class="mx-2" contain max-height="40" max-width="40"></v-img>
 
     <!-- Application title with version -->
     <v-toolbar-title class="text-h6">
@@ -33,14 +27,31 @@
       </v-tooltip>
     </v-btn>
 
-    <!-- Theme toggle button -->
+    <!-- History button -->
     <v-btn
       icon
       variant="text"
       size="small"
       class="mx-1"
-      @click="toggleTheme"
+      :disabled="!historyStore.hasHistory"
+      @click="emit('toggle-history')"
     >
+      <v-badge
+        v-if="historyStore.historyCount > 0"
+        :content="historyStore.historyCount"
+        color="primary"
+        inline
+      >
+        <v-icon size="small">mdi-history</v-icon>
+      </v-badge>
+      <v-icon v-else size="small">mdi-history</v-icon>
+      <v-tooltip activator="parent" location="bottom">
+        Search history ({{ historyStore.historyCount }})
+      </v-tooltip>
+    </v-btn>
+
+    <!-- Theme toggle button -->
+    <v-btn icon variant="text" size="small" class="mx-1" @click="toggleTheme">
       <v-icon size="small">{{ themeIcon }}</v-icon>
       <v-tooltip activator="parent" location="bottom">
         {{ themeTooltip }}
@@ -48,31 +59,16 @@
     </v-btn>
 
     <!-- Reset state button -->
-    <v-btn
-      icon
-      variant="text"
-      size="small"
-      class="mx-1"
-      @click="handleReset"
-    >
+    <v-btn icon variant="text" size="small" class="mx-1" @click="handleReset">
       <v-icon size="small">mdi-refresh</v-icon>
-      <v-tooltip activator="parent" location="bottom">
-        Reset application state
-      </v-tooltip>
+      <v-tooltip activator="parent" location="bottom"> Reset application state </v-tooltip>
     </v-btn>
 
     <!-- Help/FAQ button -->
-    <v-btn
-      variant="text"
-      size="small"
-      class="mx-1"
-      @click="uiStore.openHelpDialog"
-    >
+    <v-btn variant="text" size="small" class="mx-1" @click="uiStore.openHelpDialog">
       <v-icon start size="small">mdi-help-circle-outline</v-icon>
       Help
-      <v-tooltip activator="parent" location="bottom">
-        Open help & documentation
-      </v-tooltip>
+      <v-tooltip activator="parent" location="bottom"> Open help & documentation </v-tooltip>
     </v-btn>
   </v-app-bar>
 </template>
@@ -84,7 +80,11 @@ import { useTheme } from '@/composables/useTheme'
 import { useUIStore } from '@/stores/ui.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
+import { useHistoryStore } from '@/stores/history.store'
 import packageJson from '../../../package.json'
+
+// Emits
+const emit = defineEmits(['toggle-history'])
 
 // Composables
 const { selectDatabase, resetDatabase } = useDatabase()
@@ -94,6 +94,7 @@ const { toggleTheme, getThemeIcon, getThemeTooltip } = useTheme()
 const uiStore = useUIStore()
 const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
+const historyStore = useHistoryStore()
 
 // App version from package.json
 const version = packageJson.version
@@ -104,11 +105,13 @@ const themeTooltip = computed(() => getThemeTooltip())
 
 /**
  * Handle reset action
- * Resets both database and search state
+ * Resets database, search state, and clears history
  */
 function handleReset() {
   resetDatabase()
   searchStore.reset()
+  historyStore.clearHistory()
+  uiStore.showSuccess('Application state reset')
 }
 </script>
 
