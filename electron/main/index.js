@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
 import sqlite3 from 'sqlite3'
+import { escapeFts5SearchTerm, buildFts5MatchQuery, isValidSearchTerm } from './utils/search.js'
 
 // Enhanced logging for production debugging with file output
 const logFile = path.join(app.getPath('temp'), 'sqlite-search-debug.log')
@@ -355,14 +356,21 @@ let db = initDbConnection(defaultDbPath)
 ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedColumns) => {
   // Check if the database connection exists
   if (!db) {
-    console.error('Database connection not established.')
+    log.error('Database connection not established.')
     event.reply('search-error', 'Database connection not established.')
+    return
+  }
+
+  // Validate search term
+  if (!isValidSearchTerm(searchTerm)) {
+    log.warn('Empty search term provided')
+    event.reply('search-error', 'Search term cannot be empty')
     return
   }
 
   // SECURITY: Validate table name against whitelist to prevent SQL injection
   if (!isValidTable(selectedTable)) {
-    console.error('Security: Invalid table name attempted:', selectedTable)
+    log.error('Security: Invalid table name attempted:', selectedTable)
     event.reply('search-error', `Invalid table: ${selectedTable}`)
     return
   }
@@ -370,27 +378,44 @@ ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedCo
   // SECURITY: Validate column names against whitelist to prevent SQL injection
   const columnsValid = await areValidColumns(db, selectedTable, selectedColumns)
   if (!columnsValid) {
-    console.error('Security: Invalid column names attempted:', selectedColumns)
+    log.error('Security: Invalid column names attempted:', selectedColumns)
     event.reply('search-error', 'Invalid column names')
     return
   }
 
-  // Now safe to construct query (all identifiers validated against whitelist)
-  const searchColumns = selectedColumns.map(col => `${col}`).join(' ')
-  const matchQuery = `{${searchColumns}}: ${searchTerm}`
-  const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
+  try {
+    // Escape search term for FTS5 safety (prevents special character syntax errors)
+    const escapedSearchTerm = escapeFts5SearchTerm(searchTerm)
 
-  // Execute the query
-  db.all(query, [matchQuery], (err, rows) => {
-    if (err) {
-      console.error('Database error:', err)
-      event.reply('search-error', err.message)
-      return
-    }
+    // Build FTS5 MATCH query with column filtering
+    // All identifiers (table/columns) validated against whitelist above
+    const matchQuery = buildFts5MatchQuery(selectedColumns, escapedSearchTerm)
+    const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
 
-    // Send the results back to the renderer process
-    event.reply('search-results', rows)
-  })
+    log.info('Executing FTS5 search:', {
+      table: selectedTable,
+      columns: selectedColumns,
+      originalTerm: searchTerm,
+      escapedTerm: escapedSearchTerm,
+      matchQuery
+    })
+
+    // Execute the query
+    db.all(query, [matchQuery], (err, rows) => {
+      if (err) {
+        log.error('FTS5 search error:', err.message)
+        event.reply('search-error', err.message)
+        return
+      }
+
+      log.info(`Search completed: ${rows.length} results found`)
+      // Send the results back to the renderer process
+      event.reply('search-results', rows)
+    })
+  } catch (error) {
+    log.error('Search preparation error:', error.message)
+    event.reply('search-error', error.message)
+  }
 })
 
 // Handling the table list request
