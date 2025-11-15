@@ -48,7 +48,6 @@ export function useSearch() {
         columnsArray
       )
     } catch (error) {
-      console.error('Search error:', error)
       searchStore.setError(error.message)
       searchStore.setLoading(false)
       uiStore.showError(`Search failed: ${error.message}`)
@@ -92,7 +91,6 @@ export function useSearch() {
         uiStore.showSuccess('Copied to clipboard')
       }
     } catch (error) {
-      console.error('Copy error:', error)
       uiStore.showError('Failed to copy to clipboard')
     }
   }

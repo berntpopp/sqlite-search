@@ -35,7 +35,6 @@ export function useDatabase() {
         uiStore.showSuccess(`Database loaded: ${databaseStore.fileName}`)
       }
     } catch (error) {
-      console.error('Error selecting database:', error)
       uiStore.showError('Failed to select database')
     }
   }
@@ -48,7 +47,6 @@ export function useDatabase() {
     try {
       window.electronAPI.getTableList()
     } catch (error) {
-      console.error('Error loading tables:', error)
       uiStore.showError('Failed to load tables')
     }
   }
@@ -62,7 +60,6 @@ export function useDatabase() {
       databaseStore.selectTable(tableName)
       window.electronAPI.getColumns(tableName)
     } catch (error) {
-      console.error('Error selecting table:', error)
       uiStore.showError('Failed to select table')
     }
   }

@@ -117,7 +117,6 @@ let cleanupFunctions = []
 function setupIPCListeners() {
   // Listener for table list updates
   const onTableListHandler = (event, tables) => {
-    console.log('Received table list:', tables)
     databaseStore.setTables(tables.map(t => (typeof t === 'string' ? t : t.name)))
   }
   window.electronAPI.onTableList(onTableListHandler)
@@ -128,7 +127,6 @@ function setupIPCListeners() {
 
   // Listener for column list updates
   const onColumnsListHandler = (event, columns) => {
-    console.log('Received columns list:', columns)
     if (columns && columns.length > 0) {
       databaseStore.setColumns(columns)
       // Auto-select all columns by default
@@ -141,7 +139,6 @@ function setupIPCListeners() {
 
   // Listener for search results
   const onSearchResultsHandler = (event, results) => {
-    console.log('Received search results:', results?.length || 0, 'items')
     searchStore.setResults(results || [])
     searchStore.setLoading(false)
 
@@ -166,7 +163,6 @@ function setupIPCListeners() {
 
   // Listener for search errors
   const onSearchErrorHandler = (event, errorMessage) => {
-    console.error('Search error:', errorMessage)
     searchStore.setError(errorMessage)
     searchStore.setLoading(false)
     uiStore.showError(`Search failed: ${errorMessage}`)
@@ -175,7 +171,6 @@ function setupIPCListeners() {
 
   // Listener for database errors
   const onDatabaseErrorHandler = (event, errorMessage) => {
-    console.error('Database error:', errorMessage)
     uiStore.showError(`Database error: ${errorMessage}`)
   }
   window.electronAPI.onDatabaseError(onDatabaseErrorHandler)
@@ -185,8 +180,6 @@ function setupIPCListeners() {
  * Initialize application on mount
  */
 onMounted(() => {
-  console.log('App mounted, initializing...')
-
   // Apply saved theme
   applyTheme()
 
@@ -195,7 +188,6 @@ onMounted(() => {
 
   // Load tables if database path exists in localStorage
   if (databaseStore.isConnected) {
-    console.log('Database already connected, loading tables...')
     window.electronAPI.getTableList()
   }
 })
