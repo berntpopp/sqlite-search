@@ -84,6 +84,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useHistoryStore } from '@/stores/history.store'
 import { useDatabase } from '@/composables/useDatabase'
 import { useTheme } from '@/composables/useTheme'
+import { SEARCH_CONFIG } from '@/config/search.config'
 
 // Components
 import AppHeader from '@/components/ui/AppHeader.vue'
@@ -129,8 +130,21 @@ function setupIPCListeners() {
   const onColumnsListHandler = (event, columns) => {
     if (columns && columns.length > 0) {
       databaseStore.setColumns(columns)
-      // Auto-select all columns by default
-      databaseStore.selectColumns(columns)
+
+      // Smart column auto-selection: First N columns (or all if fewer)
+      const limit = SEARCH_CONFIG.DEFAULT_COLUMN_COUNT
+      const columnsToSelect = columns.slice(0, Math.min(columns.length, limit))
+      databaseStore.selectColumns(columnsToSelect)
+
+      // Informative feedback to user
+      if (columns.length > limit) {
+        uiStore.showInfo(
+          `Auto-selected first ${limit} of ${columns.length} columns. ` +
+          `Use the column selector to add or remove columns.`
+        )
+      } else {
+        uiStore.showSuccess(`All ${columns.length} column(s) selected`)
+      }
     } else {
       uiStore.showError('The selected table has no columns or is not searchable')
     }

@@ -11,16 +11,36 @@
     clearable
     chips
     closable-chips
-    :hint="
-      selectedColumns.length === 0
-        ? 'Select at least one column'
-        : `${selectedColumns.length} column(s) selected`
-    "
+    :hint="columnHint"
     persistent-hint
     @update:model-value="handleColumnSelect"
   >
     <template #prepend-inner>
       <v-icon size="small">mdi-table-column</v-icon>
+    </template>
+
+    <!-- Quick action buttons for column selection -->
+    <template #prepend-item>
+      <v-list-item class="px-2">
+        <v-btn
+          size="small"
+          variant="text"
+          color="primary"
+          @click="selectFirstFive"
+        >
+          First 5
+        </v-btn>
+        <v-btn
+          size="small"
+          variant="text"
+          color="primary"
+          class="ml-2"
+          @click="selectAll"
+        >
+          Select All
+        </v-btn>
+      </v-list-item>
+      <v-divider class="mb-2" />
     </template>
 
     <!-- Compact chip display for selected columns -->
@@ -39,6 +59,7 @@
 import { computed } from 'vue'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
+import { SEARCH_CONFIG } from '@/config/search.config'
 
 const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
@@ -52,6 +73,23 @@ const selectedColumns = computed({
 })
 
 /**
+ * Computed hint showing selection status
+ * Provides informative feedback about current column selection
+ */
+const columnHint = computed(() => {
+  const selected = selectedColumns.value.length
+  const total = databaseStore.columns.length
+
+  if (selected === 0) {
+    return 'Select at least one column'
+  }
+  if (selected === total) {
+    return `All ${total} columns selected`
+  }
+  return `${selected} of ${total} column(s) selected`
+})
+
+/**
  * Handle column selection change
  * Clears search results when changing columns
  */
@@ -59,6 +97,23 @@ function handleColumnSelect(columns) {
   if (columns && columns.length > 0) {
     searchStore.clearResults()
   }
+}
+
+/**
+ * Quick action: Select first N columns (from config)
+ * Follows DRY principle by using centralized configuration
+ */
+function selectFirstFive() {
+  const limit = SEARCH_CONFIG.DEFAULT_COLUMN_COUNT
+  const firstFive = databaseStore.columns.slice(0, Math.min(databaseStore.columns.length, limit))
+  databaseStore.selectColumns(firstFive)
+}
+
+/**
+ * Quick action: Select all available columns
+ */
+function selectAll() {
+  databaseStore.selectColumns(databaseStore.columns)
 }
 </script>
 
