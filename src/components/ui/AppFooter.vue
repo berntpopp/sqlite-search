@@ -4,11 +4,12 @@
     <v-row justify="center" no-gutters dense>
       <v-col v-for="link in links" :key="link.text" cols="auto">
         <v-btn
+          :href="link.href"
           :icon="link.icon"
+          target="_blank"
           variant="text"
           size="small"
           density="compact"
-          @click="handleAction(link.action)"
         >
           <v-icon size="small">{{ link.icon }}</v-icon>
           <v-tooltip activator="parent" location="top">{{
@@ -21,27 +22,10 @@
 </template>
 
 <script setup>
-import { useUIStore } from '@/stores/ui.store'
 import footerConfig from '@/config/footerConfig.json'
 
-const uiStore = useUIStore()
+// Footer links from config
 const links = footerConfig.links
-
-/**
- * Handle footer action clicks
- * @param {string} action - Action identifier from config
- */
-function handleAction(action) {
-  switch (action) {
-    case 'help':
-    case 'about':
-      // Both actions open the help dialog which now contains comprehensive info
-      uiStore.openHelpDialog()
-      break
-    default:
-      console.warn(`Unknown footer action: ${action}`)
-  }
-}
 </script>
 
 <style scoped>

@@ -39,10 +39,13 @@ export function useSearch() {
       searchStore.setLoading(true)
       searchStore.clearError()
 
+      // Convert reactive array to plain array for IPC (avoids cloning error)
+      const columnsArray = Array.from(databaseStore.selectedColumns)
+
       window.electronAPI.performSearch(
         searchStore.searchTerm,
         databaseStore.selectedTable,
-        databaseStore.selectedColumns
+        columnsArray
       )
     } catch (error) {
       console.error('Search error:', error)
