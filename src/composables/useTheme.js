@@ -6,11 +6,12 @@ import { useTheme as useVuetifyTheme } from 'vuetify'
 /**
  * Composable for theme management
  * Integrates Pinia UI store with Vuetify theme system
- * Uses modern Vuetify 3.9+ theme API
+ * Uses Vuetify 3.9+ theme API: theme.change(), theme.toggle()
+ * @see https://vuetifyjs.com/en/features/theme/
  */
 export function useTheme() {
   const uiStore = useUIStore()
-  const vuetifyTheme = useVuetifyTheme()
+  const theme = useVuetifyTheme()
   const { isDarkTheme, currentTheme } = storeToRefs(uiStore)
 
   /**
@@ -18,50 +19,33 @@ export function useTheme() {
    * Call this on app initialization to sync stored theme with Vuetify
    */
   function applyTheme() {
-    const themeName = currentTheme.value
-    // Use modern Vuetify API (available in 3.7+)
-    if (typeof vuetifyTheme.global.change === 'function') {
-      vuetifyTheme.global.change(themeName)
-    } else {
-      // Fallback for older versions
-      vuetifyTheme.global.name.value = themeName
-    }
+    // Vuetify 3.9+ API: theme.change(name)
+    theme.change(currentTheme.value)
   }
 
   /**
    * Toggle between dark and light theme
-   * Uses Vuetify's native API for better performance
+   * Uses Vuetify's native toggle() for optimal performance
    */
   function toggleTheme() {
-    const newTheme = vuetifyTheme.global.current.value.dark ? 'light' : 'dark'
-
-    // Use modern Vuetify API
-    if (typeof vuetifyTheme.global.change === 'function') {
-      vuetifyTheme.global.change(newTheme)
-    } else {
-      // Fallback for older versions
-      vuetifyTheme.global.name.value = newTheme
-    }
+    // Vuetify 3.9+ API: theme.toggle() or theme.toggle([theme1, theme2])
+    theme.toggle(['light', 'dark'])
 
     // Update Pinia store to stay in sync
+    const newTheme = theme.global.current.value.dark ? 'dark' : 'light'
     uiStore.setTheme(newTheme)
   }
 
   /**
    * Set specific theme
-   * @param {'dark'|'light'} theme - Theme name
+   * @param {'dark'|'light'} themeName - Theme name
    */
-  function setTheme(theme) {
-    // Use modern Vuetify API
-    if (typeof vuetifyTheme.global.change === 'function') {
-      vuetifyTheme.global.change(theme)
-    } else {
-      // Fallback for older versions
-      vuetifyTheme.global.name.value = theme
-    }
+  function setTheme(themeName) {
+    // Vuetify 3.9+ API: theme.change(name)
+    theme.change(themeName)
 
     // Update Pinia store
-    uiStore.setTheme(theme)
+    uiStore.setTheme(themeName)
   }
 
   /**
