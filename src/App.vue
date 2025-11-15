@@ -75,7 +75,6 @@
     </v-main>
 
     <!-- Global components -->
-    <AppFooter />
     <HelpDialog />
     <ResultDetailDialog />
     <AppSnackbar />
@@ -92,7 +91,6 @@ import { useTheme } from '@/composables/useTheme'
 
 // Components
 import AppHeader from '@/components/ui/AppHeader.vue'
-import AppFooter from '@/components/ui/AppFooter.vue'
 import HelpDialog from '@/components/ui/HelpDialog.vue'
 import AppSnackbar from '@/components/ui/AppSnackbar.vue'
 import TableSelector from '@/components/database/TableSelector.vue'
