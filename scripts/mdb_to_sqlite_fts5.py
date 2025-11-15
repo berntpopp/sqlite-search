@@ -32,6 +32,7 @@ License: Same as sqlite-search project
 import argparse
 import csv
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -211,8 +212,27 @@ class MDBToSQLiteConverter:
                 # Sanitize column names for SQL
                 sanitized_schema = []
                 for col_name, col_type in schema:
-                    # Remove special characters and ensure valid SQL identifier
-                    safe_name = col_name.replace('"', '').replace("'", '').strip()
+                    # Remove special characters (backticks, quotes, brackets)
+                    safe_name = col_name.replace('`', '').replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+
+                    # Skip invalid/empty column names
+                    if not safe_name or len(safe_name) < 1:
+                        continue
+
+                    # Replace spaces and invalid chars with underscores, keep only alphanumeric + underscore
+                    safe_name = re.sub(r'[^\w]', '_', safe_name)
+
+                    # Remove leading/trailing underscores and collapse multiple underscores
+                    safe_name = re.sub(r'_+', '_', safe_name).strip('_')
+
+                    # Skip if name became empty after sanitization
+                    if not safe_name:
+                        continue
+
+                    # Ensure doesn't start with number
+                    if safe_name[0].isdigit():
+                        safe_name = 'col_' + safe_name
+
                     # Ensure type is valid (default to TEXT for unknown types)
                     safe_type = col_type if col_type in ['INTEGER', 'TEXT', 'REAL', 'BLOB', 'NUMERIC'] else 'TEXT'
                     sanitized_schema.append((safe_name, safe_type))
