@@ -191,10 +191,11 @@ class MDBToSQLiteConverter:
         try:
             # Export data using mdb-export with error suppression
             # Redirect stderr to suppress corruption warnings
-            with open(os.devnull, 'w') as devnull:
-                result = subprocess.run(
+            with open(os.devnull, 'w') as devnull, \
+                 open(csv_path, 'w', encoding='utf-8', errors='replace') as csvfile:
+                subprocess.run(
                     ["mdb-export", "-D", "%Y-%m-%d %H:%M:%S", str(self.input_mdb), table_name],
-                    stdout=open(csv_path, 'w', encoding='utf-8', errors='replace'),
+                    stdout=csvfile,
                     stderr=devnull,  # Suppress mdbtools warnings
                     check=False  # Don't raise on non-zero exit (corrupted data may cause warnings)
                 )
@@ -251,7 +252,7 @@ class MDBToSQLiteConverter:
                     csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
 
                     try:
-                        header = next(csv_reader)  # Skip header
+                        _ = next(csv_reader)  # Skip header
                     except StopIteration:
                         self._error(f"CSV file is empty for table: {table_name}")
                         return
@@ -324,7 +325,7 @@ class MDBToSQLiteConverter:
             if os.path.exists(csv_path):
                 try:
                     os.remove(csv_path)
-                except:
+                except Exception:
                     pass  # Ignore cleanup errors
 
     def _create_fts5_table(
