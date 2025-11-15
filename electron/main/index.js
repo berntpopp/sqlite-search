@@ -7,18 +7,30 @@ import path from 'node:path'
 import fs from 'node:fs'
 import sqlite3 from 'sqlite3'
 
-// Enhanced logging for production debugging
+// Enhanced logging for production debugging with file output
+const logFile = path.join(app.getPath('temp'), 'sqlite-search-debug.log')
+const logStream = fs.createWriteStream(logFile, { flags: 'a' })
+
 const log = {
   info: (...args) => {
+    const msg = `[INFO] ${new Date().toISOString()} ${args.join(' ')}\n`
     console.log('[INFO]', new Date().toISOString(), ...args)
+    logStream.write(msg)
   },
   error: (...args) => {
+    const msg = `[ERROR] ${new Date().toISOString()} ${args.join(' ')}\n`
     console.error('[ERROR]', new Date().toISOString(), ...args)
+    logStream.write(msg)
   },
   warn: (...args) => {
+    const msg = `[WARN] ${new Date().toISOString()} ${args.join(' ')}\n`
     console.warn('[WARN]', new Date().toISOString(), ...args)
+    logStream.write(msg)
   }
 }
+
+log.info('='.repeat(80))
+log.info('Log file location:', logFile)
 
 log.info('Application starting...')
 log.info('Node version:', process.version)
