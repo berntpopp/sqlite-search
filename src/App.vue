@@ -11,7 +11,7 @@
         <v-row align="center" justify="center">
           <v-col cols="12" class="text-center">
             <v-img
-              src="/logo.webp"
+              src="./logo.webp"
               alt="SQLite Search Logo"
               max-width="120"
               class="mx-auto mb-4"

@@ -2,7 +2,7 @@
   <!-- Compact modern app header -->
   <v-app-bar app elevation="1" density="compact">
     <!-- App logo -->
-    <v-img src="/logo.webp" class="mx-2" contain max-height="40" max-width="40"></v-img>
+    <v-img src="./logo.webp" class="mx-2" contain max-height="40" max-width="40"></v-img>
 
     <!-- Application title with version -->
     <v-toolbar-title class="text-h6">
