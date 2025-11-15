@@ -67,6 +67,10 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "asarUnpack": [
+      "node_modules/sqlite3/**/*",
+      "dist-electron/main/chunks/*.node"
+    ],
     "publish": {
       "provider": "github",
       "owner": "berntpopp",
