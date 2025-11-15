@@ -90,7 +90,7 @@ export function useSearch() {
         document.body.removeChild(textarea)
         uiStore.showSuccess('Copied to clipboard')
       }
-    } catch (error) {
+    } catch {
       uiStore.showError('Failed to copy to clipboard')
     }
   }
