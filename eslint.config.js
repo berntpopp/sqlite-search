@@ -32,7 +32,7 @@ export default [
     rules: {
       'vue/multi-word-component-names': 'warn',
       'vue/no-unused-vars': 'error',
-      'vue/script-setup-uses-vars': 'error',
+      // 'vue/script-setup-uses-vars' is no longer needed in eslint-plugin-vue >= 9.0
       'no-console': 'warn',
       'no-debugger': 'warn',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],

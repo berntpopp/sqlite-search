@@ -79,6 +79,97 @@ if (isDevelopment) {
   }
 }
 
+// Cache for valid FTS5 table names (security: whitelist validation)
+let validTables = []
+
+// Cache for valid column names per table (security: whitelist validation)
+const validColumnsCache = new Map()
+
+/**
+ * Fetches and caches valid FTS5 table names for whitelist validation
+ * This prevents SQL injection by ensuring only known tables can be queried
+ */
+function refreshValidTables(database) {
+  return new Promise((resolve, reject) => {
+    const fts5TableListQuery = `
+      SELECT name
+      FROM sqlite_master
+      WHERE type='table'
+        AND sql LIKE '%USING FTS5%'`
+
+    database.all(fts5TableListQuery, [], (err, tables) => {
+      if (err) {
+        console.error('Failed to fetch valid tables:', err)
+        reject(err)
+      } else {
+        validTables = tables.map(t => t.name)
+        console.log('Valid FTS5 tables cached:', validTables)
+        // Clear column cache when tables are refreshed
+        validColumnsCache.clear()
+        resolve(validTables)
+      }
+    })
+  })
+}
+
+/**
+ * Fetches and caches valid column names for a table
+ * This prevents SQL injection by ensuring only known columns can be queried
+ */
+function getValidColumns(database, tableName) {
+  return new Promise((resolve, reject) => {
+    // Check cache first
+    if (validColumnsCache.has(tableName)) {
+      resolve(validColumnsCache.get(tableName))
+      return
+    }
+
+    // Security: Validate table name against whitelist before using in PRAGMA
+    if (!validTables.includes(tableName)) {
+      reject(new Error(`Invalid table name: ${tableName}`))
+      return
+    }
+
+    // Now safe to use table name (validated against whitelist)
+    const columnListQuery = `PRAGMA table_info(${tableName});`
+    database.all(columnListQuery, [], (err, columns) => {
+      if (err) {
+        console.error('Failed to fetch columns:', err)
+        reject(err)
+      } else {
+        const columnNames = columns.map(col => col.name)
+        validColumnsCache.set(tableName, columnNames)
+        resolve(columnNames)
+      }
+    })
+  })
+}
+
+/**
+ * Validates that table name exists in whitelist
+ * @param {string} tableName - Table name to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+function isValidTable(tableName) {
+  return validTables.includes(tableName)
+}
+
+/**
+ * Validates that all column names exist in table's column whitelist
+ * @param {string} tableName - Table name
+ * @param {string[]} columnNames - Column names to validate
+ * @returns {Promise<boolean>} True if all columns valid
+ */
+async function areValidColumns(database, tableName, columnNames) {
+  try {
+    const validCols = await getValidColumns(database, tableName)
+    return columnNames.every(col => validCols.includes(col))
+  } catch (error) {
+    console.error('Column validation error:', error)
+    return false
+  }
+}
+
 // Function to initialize database connection
 function initDbConnection(dbPath) {
   // Check if the database file exists
@@ -92,6 +183,10 @@ function initDbConnection(dbPath) {
       console.error(err.message)
     } else {
       console.log('Connected to the sqlite database at:', dbPath)
+      // Initialize table whitelist on connection
+      refreshValidTables(db).catch(err => {
+        console.error('Failed to initialize table whitelist:', err)
+      })
     }
   })
 
@@ -102,7 +197,7 @@ function initDbConnection(dbPath) {
 let db = initDbConnection(defaultDbPath)
 
 // Handling the search request
-ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns) => {
+ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedColumns) => {
   // Check if the database connection exists
   if (!db) {
     console.error('Database connection not established.')
@@ -110,18 +205,31 @@ ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns)
     return
   }
 
-  // Construct the MATCH part of the query
+  // SECURITY: Validate table name against whitelist to prevent SQL injection
+  if (!isValidTable(selectedTable)) {
+    console.error('Security: Invalid table name attempted:', selectedTable)
+    event.reply('search-error', `Invalid table: ${selectedTable}`)
+    return
+  }
+
+  // SECURITY: Validate column names against whitelist to prevent SQL injection
+  const columnsValid = await areValidColumns(db, selectedTable, selectedColumns)
+  if (!columnsValid) {
+    console.error('Security: Invalid column names attempted:', selectedColumns)
+    event.reply('search-error', 'Invalid column names')
+    return
+  }
+
+  // Now safe to construct query (all identifiers validated against whitelist)
   const searchColumns = selectedColumns.map(col => `${col}`).join(' ')
   const matchQuery = `{${searchColumns}}: ${searchTerm}`
-
-  // Construct the full SQL query
   const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
 
   // Execute the query
   db.all(query, [matchQuery], (err, rows) => {
     if (err) {
       console.error('Database error:', err)
-      event.reply('search-error', err.message) // Send error to renderer
+      event.reply('search-error', err.message)
       return
     }
 
@@ -139,23 +247,14 @@ ipcMain.on('get-table-list', async event => {
     return
   }
 
-  const fts5TableListQuery = `
-    SELECT name
-    FROM sqlite_master
-    WHERE type='table'
-      AND sql LIKE '%USING FTS5%'`
-
-  db.all(fts5TableListQuery, [], (err, tables) => {
-    if (err) {
-      console.error('Database error:', err)
-      event.reply('table-list-error', err.message)
-    } else {
-      event.reply(
-        'table-list',
-        tables.map(t => t.name)
-      )
-    }
-  })
+  try {
+    // Refresh whitelist and return to renderer
+    const tables = await refreshValidTables(db)
+    event.reply('table-list', tables)
+  } catch (err) {
+    console.error('Database error:', err)
+    event.reply('table-list-error', err.message)
+  }
 })
 
 // Handling the column list request
@@ -167,17 +266,14 @@ ipcMain.on('get-columns', async (event, tableName) => {
     return
   }
 
-  const columnListQuery = `PRAGMA table_info(${tableName});`
-  db.all(columnListQuery, [], (err, columns) => {
-    if (err) {
-      console.error('Database error:', err)
-      event.reply('column-list-error', err.message)
-    } else {
-      // Extract column names from the PRAGMA result
-      const columnNames = columns.map(col => col.name)
-      event.reply('column-list', columnNames)
-    }
-  })
+  try {
+    // Use whitelist-validated column fetching (prevents SQL injection)
+    const columnNames = await getValidColumns(db, tableName)
+    event.reply('column-list', columnNames)
+  } catch (err) {
+    console.error('Database error:', err)
+    event.reply('column-list-error', err.message)
+  }
 })
 
 // Handling the open file dialog request
@@ -194,8 +290,13 @@ ipcMain.handle('open-file-dialog', async () => {
 
 ipcMain.on('change-database', (event, newPath) => {
   // Close the existing database connection if open
-  if (db) db.close()
+  if (db) {
+    db.close()
+    // Clear security whitelists when changing database
+    validTables = []
+    validColumnsCache.clear()
+  }
 
-  // Connect to the new database
+  // Connect to the new database (will auto-refresh whitelist)
   db = initDbConnection(newPath)
 })
