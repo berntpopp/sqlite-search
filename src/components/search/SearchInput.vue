@@ -7,7 +7,7 @@
     variant="outlined"
     density="compact"
     :loading="searchStore.loading"
-    :disabled="!canSearch"
+    :disabled="!databaseStore.selectedColumns.length || searchStore.loading"
     :hint="getHint"
     persistent-hint
     clearable
