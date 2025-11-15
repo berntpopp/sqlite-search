@@ -129,8 +129,9 @@ function setupIPCListeners() {
   const onColumnsListHandler = (event, columns) => {
     if (columns && columns.length > 0) {
       databaseStore.setColumns(columns)
-      // Auto-select all columns by default
+      // Auto-select ALL columns by default
       databaseStore.selectColumns(columns)
+      uiStore.showSuccess(`All ${columns.length} column(s) selected`)
     } else {
       uiStore.showError('The selected table has no columns or is not searchable')
     }
