@@ -43,6 +43,39 @@ async function createWindow() {
   }
 }
 
+// Cleanup function for IPC listeners and database connections
+function cleanupApp() {
+  console.log('Cleaning up application resources...')
+
+  // Remove all IPC listeners to prevent memory leaks
+  ipcMain.removeHandler('open-file-dialog')
+  ipcMain.removeAllListeners('perform-search')
+  ipcMain.removeAllListeners('get-table-list')
+  ipcMain.removeAllListeners('get-columns')
+  ipcMain.removeAllListeners('change-database')
+
+  // Close database connection
+  if (db) {
+    db.close(err => {
+      if (err) {
+        console.error('Error closing database:', err)
+      } else {
+        console.log('Database connection closed.')
+      }
+    })
+    db = null
+  }
+
+  // Clear security caches
+  validTables = []
+  validColumnsCache.clear()
+}
+
+// Cleanup before app quits
+app.on('before-quit', event => {
+  cleanupApp()
+})
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -291,12 +324,22 @@ ipcMain.handle('open-file-dialog', async () => {
 ipcMain.on('change-database', (event, newPath) => {
   // Close the existing database connection if open
   if (db) {
-    db.close()
-    // Clear security whitelists when changing database
-    validTables = []
-    validColumnsCache.clear()
-  }
+    db.close(err => {
+      if (err) {
+        console.error('Error closing previous database:', err)
+      } else {
+        console.log('Previous database closed successfully')
+      }
 
-  // Connect to the new database (will auto-refresh whitelist)
-  db = initDbConnection(newPath)
+      // Clear security whitelists when changing database
+      validTables = []
+      validColumnsCache.clear()
+
+      // Connect to the new database (will auto-refresh whitelist)
+      db = initDbConnection(newPath)
+    })
+  } else {
+    // No existing database, just connect to new one
+    db = initDbConnection(newPath)
+  }
 })
