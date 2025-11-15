@@ -57,6 +57,7 @@ class MDBToSQLiteConverter:
         output_sqlite: str,
         tokenizer: str = "porter unicode61",
         prefix_index: Optional[List[int]] = None,
+        row_limit: Optional[int] = None,
         verbose: bool = True
     ):
         """
@@ -67,12 +68,14 @@ class MDBToSQLiteConverter:
             output_sqlite: Path to output .sqlite file
             tokenizer: FTS5 tokenizer (default: 'porter unicode61' for stemming + multilingual)
             prefix_index: List of prefix lengths for prefix indexing (e.g., [2, 3])
+            row_limit: Maximum number of rows to import per table (None = unlimited)
             verbose: Enable verbose output
         """
         self.input_mdb = Path(input_mdb)
         self.output_sqlite = Path(output_sqlite)
         self.tokenizer = tokenizer
         self.prefix_index = prefix_index
+        self.row_limit = row_limit
         self.verbose = verbose
 
         if not self.input_mdb.exists():
@@ -242,6 +245,11 @@ class MDBToSQLiteConverter:
                     row_count = 0
                     error_count = 0
                     for line_num, row in enumerate(csv_reader, start=2):
+                        # Check row limit
+                        if self.row_limit and row_count >= self.row_limit:
+                            self._log(f"  Reached row limit ({self.row_limit}), stopping import")
+                            break
+
                         try:
                             # Pad or truncate row to match schema
                             if len(row) < len(sanitized_schema):
@@ -271,7 +279,8 @@ class MDBToSQLiteConverter:
                             if error_count <= 10:
                                 self._log(f"  Warning: Skipped malformed row {line_num}: {str(e)[:100]}")
 
-                    self._log(f"  Imported {row_count} rows ({error_count} errors skipped)")
+                    limit_msg = f" (limited to {self.row_limit})" if self.row_limit else ""
+                    self._log(f"  Imported {row_count} rows{limit_msg} ({error_count} errors skipped)")
 
                 # Create FTS5 virtual table if requested
                 if fts_columns and row_count > 0:
@@ -409,6 +418,13 @@ Examples:
       --output db/output.sqlite \\
       --tables table1 table2
 
+  # Quick test with first 1000 rows (fast for debugging)
+  python scripts/mdb_to_sqlite_fts5.py \\
+      --input db/input.mdb \\
+      --output db/test.sqlite \\
+      --tables table1 \\
+      --limit 1000
+
   # Convert all tables without FTS5
   python scripts/mdb_to_sqlite_fts5.py \\
       --input db/input.mdb \\
@@ -472,6 +488,12 @@ Examples:
         help="Suppress verbose output"
     )
 
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Maximum number of rows to import per table (useful for testing)"
+    )
+
     args = parser.parse_args()
 
     # Parse prefix index
@@ -486,6 +508,7 @@ Examples:
             output_sqlite=args.output,
             tokenizer=args.tokenizer,
             prefix_index=prefix_index,
+            row_limit=args.limit,
             verbose=not args.quiet
         )
 
