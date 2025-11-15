@@ -1,592 +1,218 @@
-<!-- src/App.vue -->
 <template>
-  <!-- Main application container -->
+  <!-- Modern application container with compact design -->
   <v-app>
-    <!-- Application bar with title and database selection -->
-    <v-app-bar app>
-      <v-img 
-        src="logo.webp"
-        class="mr-3 app-logo"
-        contain
-        max-height="48"
-        max-width="48"
-      ></v-img>
-
-      <!-- Application title -->
-      <v-toolbar-title>
-        <span>
-          sqlite-search
-        </span>
-        <span class="version-info">
-          v{{ version }}
-        </span>
-      </v-toolbar-title>
-
-      <!-- Spacer to push the database selection button to the right -->
-      <v-spacer></v-spacer>
-
-      <!-- Button to trigger database file selection -->
-      <v-btn :class="{'highlighted-button': databasePath}" text @click="selectDatabase">
-        {{ selectDatabaseButtonText }}
-        <v-tooltip
-          activator="parent"
-          location="end"
-        >
-          Select database
-        </v-tooltip>
-        </v-btn>
-
-      <!-- Switch for toggling between light and dark themes -->
-    <v-btn icon @click="toggleTheme">
-      <v-icon>
-        {{ isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny' }}
-      </v-icon>
-      <v-tooltip
-        activator="parent"
-        location="end"
-      >
-        Toggle theme
-      </v-tooltip>
-    </v-btn>
-
-    <!-- Reset Button -->
-    <v-btn icon @click="resetAppState">
-      <v-icon>mdi-refresh</v-icon>
-    <v-tooltip
-      activator="parent"
-      location="end"
-    >
-      Reset app state
-    </v-tooltip>
-    </v-btn>
-
-    <!-- Help/FAQ Button -->
-    <v-btn text @click="showFaqModal = true">
-      Help/FAQ
-      <v-tooltip
-        activator="parent"
-        location="end"
-      >
-        Show help
-      </v-tooltip>
-    </v-btn>
-    </v-app-bar>
+    <!-- Modern header component -->
+    <AppHeader @toggle-history="showHistoryDrawer = !showHistoryDrawer" />
 
     <!-- Main content area -->
     <v-main>
-      <!-- Show message if no database is loaded -->
-      <div v-if="!databasePath" class="no-database-loaded">
-        <img src="logo.webp" alt="App Logo" class="app-logo">
-        <p>Please first select your database</p>
-      </div>
-
-      <!-- Container for search functionality -->
-      <v-container>
-        <v-row justify="center" class="my-1 align-center">
-          <!-- Combined row for table and column selection dropdowns -->
-          <v-col cols="12" sm="6" md="3">
-            <!-- Dropdown for selecting tables -->
-            <v-select
-              :items="tables"
-              label="Select Table"
-              v-model="selectedTable"
-              @update:modelValue="onTableSelect"
-              variant="outlined"
-              dense
-              v-if="databasePath"
-            ></v-select>
-          </v-col>
-
-          <v-col cols="12" sm="6" md="1" class="centered-arrow">
-            <!-- Arrow or visual cue between selects, shown only when a table is selected -->
-            <v-icon v-if="selectedTable">mdi-arrow-right</v-icon>
-          </v-col>
-
-          <v-col cols="12" sm="6" md="3">
-            <!-- Dropdown for selecting columns, shown only when a table is selected -->
-            <v-autocomplete
-              v-model="selectedColumns"
-              :items="columns"
-              label="Select Columns"
-              multiple
-              clearable
-              variant="outlined"
-              dense
-              @update:modelValue="onColumnSelect"
-              v-if="selectedTable"
+      <!-- Welcome screen when no database is selected -->
+      <v-container v-if="!databaseStore.isConnected" class="fill-height">
+        <v-row align="center" justify="center">
+          <v-col cols="12" class="text-center">
+            <v-img
+              src="./logo.webp"
+              alt="SQLite Search Logo"
+              max-width="120"
+              class="mx-auto mb-4"
+            ></v-img>
+            <h2 class="text-h5 text-medium-emphasis mb-2">Welcome to SQLite Search</h2>
+            <p class="text-body-1 text-medium-emphasis">
+              Please select a database to begin searching
+            </p>
+            <v-btn
+              color="primary"
+              size="large"
+              variant="elevated"
+              class="mt-4"
+              prepend-icon="mdi-database"
+              @click="selectDatabase"
             >
-              <template v-slot:selection="{ item, index }">
-                <v-chip v-if="index < 2" size="small">
-                  <span>{{ item.title }}</span>
-                </v-chip>
-                <span v-if="index === 2" class="text-grey text-caption align-self-center">
-                  (+{{ selectedColumns.length - 2 }} others)
-                </span>
-              </template>
-            </v-autocomplete>
-          </v-col>
-
-        </v-row>
-
-        <!-- Divider with padding for visual separation -->
-        <div
-          class="my-1"
-          v-if="selectedTable"
-        >
-          <v-divider></v-divider>
-        </div>
-
-        <!-- Row for search input field -->
-        <v-row justify="center" class="my-1">
-          <v-col cols="12" sm="8" md="6" v-if="selectedTable">
-            <!-- Text field for entering search terms -->
-            <v-text-field
-              label="Search..."
-              outlined
-              hide-details
-              v-model="searchTerm"
-              append-inner-icon="mdi-magnify"
-              @keyup.enter="performSearch"
-              @click:append-inner="performSearch"
-              solo
-              variant="outlined"
-              dense
-            ></v-text-field>
+              Select Database
+            </v-btn>
           </v-col>
         </v-row>
-
-        <!-- Divider with padding for visual separation -->
-        <div
-          class="my-1"
-          v-if="searchResults.length > 0"
-        >
-          <v-divider></v-divider>
-        </div>
       </v-container>
 
-      <!-- Table displaying search results -->
-      <v-data-table
-        :headers="headers"
-        :items="searchResults"
-        class="elevation-1"
-        v-if="searchResults.length > 0"
-      >
-        <!-- Custom slot for rendering items dynamically based on selectedColumns -->
-        <template v-slot:item="{ item }">
-          <tr>
-            <!-- Loop over each column and create a cell for it -->
-            <template v-for="header in selectedColumns" :key="header">
-              <td>{{ truncateText(item[header]) }}</td>
-            </template>
-            <!-- Action buttons for each row -->
-            <td>
-              <v-btn icon @click="showDetails(item)">
-                <v-icon>mdi-eye</v-icon>
-              </v-btn>
-            </td>
-          </tr>
-        </template>
-      </v-data-table>
+      <!-- Main search interface -->
+      <v-container v-else fluid class="pa-4">
+        <!-- Database selector row -->
+        <v-row justify="center" align="center" class="mb-4">
+          <v-col cols="12" sm="6" md="4">
+            <TableSelector />
+          </v-col>
 
-      <!-- Modal dialog for showing item details -->
-      <v-dialog v-model="detailsDialog" persistent max-width="1800px">
-        <v-card>
-          <!-- Card title with close button -->
-          <v-card-title class="d-flex justify-space-between align-center">
-            Details
-            <v-btn icon @click="detailsDialog = false">
-              <v-icon>mdi-close</v-icon>
-            </v-btn>
-          </v-card-title>
-            <!-- Card text container for detailed view -->
-            <v-card-text>
-              <!-- Container for each detail row -->
-              <v-container>
-                <!-- Row for each field-value pair -->
-                <v-row v-for="(value, key) in selectedItem" :key="key">
-                  <v-col cols="12" md="3" class="py-0">
-                    <strong>{{ headers.find(h => h.value === key)?.title }}</strong>
-                  </v-col>
-                  <v-col cols="12" md="8" class="py-0">
-                    <v-textarea
-                      v-model="selectedItem[key]"
-                      auto-grow
-                      readonly
-                      single-line
-                      :style="{ width: '100%' }"
-                    ></v-textarea>
-                  </v-col>
-                  <v-col cols="12" md="1" class="py-0">
-                    <v-btn icon @click="copyToClipboard(value)">
-                      <v-icon>mdi-content-copy</v-icon>
-                    </v-btn>
-                  </v-col>
-                </v-row>
-              </v-container>
-            </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="detailsDialog = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+          <v-col cols="12" sm="auto" class="text-center">
+            <v-icon v-if="databaseStore.hasSelectedTable" color="primary" size="large">
+              mdi-arrow-right
+            </v-icon>
+          </v-col>
 
-      <!-- Snackbar for user notifications -->
-      <v-snackbar
-        v-model="snackbar"
-        bottom
-        right
-        :timeout="3000"
-      >
-        {{ snackbarText }}
-        <v-btn
-          color="red"
-          text
-          @click="snackbar = false"
-        >
-          Close
-        </v-btn>
-      </v-snackbar>
+          <v-col cols="12" sm="6" md="4">
+            <ColumnSelector />
+          </v-col>
+        </v-row>
 
-      <!-- FAQ Modal -->
-      <v-dialog v-model="showFaqModal" max-width="600px">
-        <v-card>
-          <v-card-title>{{ faqConfig.title }}</v-card-title>
-          <v-card-text>
-            <v-container>
-              <v-row v-for="(section, index) in faqConfig.sections" :key="index">
-                <v-col>
-                  <h3>{{ section.header }}</h3>
-                  <p>{{ section.content }}</p>
-                  <v-btn v-for="link in section.links" :key="link.title" :href="link.url" text target="_blank">{{ link.title }}</v-btn>
-                </v-col>
-              </v-row>
-            </v-container>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="primary" text @click="showFaqModal = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        <!-- Divider -->
+        <v-divider v-if="databaseStore.hasSelectedTable" class="mb-4"></v-divider>
 
+        <!-- Search input row -->
+        <v-row v-if="databaseStore.hasSelectedTable" justify="center" class="mb-4">
+          <v-col cols="12" md="8" lg="6">
+            <SearchInput />
+          </v-col>
+        </v-row>
+
+        <!-- Results table -->
+        <ResultsTable />
+      </v-container>
     </v-main>
 
-    <!-- Footer with contact information and copyright notice -->
-    <v-footer app padless class="elevation-3">
-      <v-row justify="center" no-gutters>
-        <v-col cols="auto" v-for="link in footerLinks" :key="link.text">
-          <v-btn icon :href="link.href" target="_blank" text>
-            <v-icon>{{ link.icon }}</v-icon>
-          </v-btn>
-        </v-col>
-      </v-row>
-    </v-footer>
+    <!-- Global components -->
+    <HelpDialog />
+    <ResultDetailDialog />
+    <AppSnackbar />
+    <HistoryDrawer v-model="showHistoryDrawer" />
   </v-app>
 </template>
 
-<script>
-import packageInfo from '../package.json';
-import faqConfig from './config/faqPageConfig.json';
-import footerConfig from './config/footerConfig.json';
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useDatabaseStore } from '@/stores/database.store'
+import { useSearchStore } from '@/stores/search.store'
+import { useUIStore } from '@/stores/ui.store'
+import { useHistoryStore } from '@/stores/history.store'
+import { useDatabase } from '@/composables/useDatabase'
+import { useTheme } from '@/composables/useTheme'
 
-export default {
-  data() {
-    return {
-      version: packageInfo.version,
-      databasePath: localStorage.getItem('databasePath') || '', // Load from local storage
-      searchTerm: '',
-      searchResults: [],
-      selectedItem: {},
-      detailsDialog: false,
-      tables: [],
-      selectedTable: localStorage.getItem('selectedTable') || '', // Load from local storage
-      columns: [],
-      selectedColumns: JSON.parse(localStorage.getItem('selectedColumns')) || [],
-      snackbar: false,
-      snackbarText: '',
-      isDarkTheme: false,
-      showFaqModal: false, // Controls the visibility of the FAQ modal
-      faqConfig, // FAQ data loaded from the JSON file
-      footerLinks: footerConfig.links,
-      headers: [
-        { title: 'Column 1', value: 'column_1', sortable: true },
-        { title: 'Column 2', value: 'column_2', sortable: true },
-        { title: 'Column 3', value: 'column_3', sortable: true },
-        { title: 'Column 4', value: 'column_4', sortable: true },
-        { title: 'Column 5', value: 'column_5', sortable: true },
-        // Add other headers here
-      ],
-    };
-  },
-  computed: {
-    selectDatabaseButtonText() {
-      // Update button text based on databasePath
-      return this.databasePath ? `Selected DB: ${this.getFileName(this.databasePath)}` : 'Select Database';
-    },
-  },
-  methods: {
-    selectDatabase() {
-      window.electronAPI.openFileDialog().then((filePath) => {
-        if (filePath) {
-          this.databasePath = filePath;
-          localStorage.setItem('databasePath', this.databasePath);
+// Components
+import AppHeader from '@/components/ui/AppHeader.vue'
+import HelpDialog from '@/components/ui/HelpDialog.vue'
+import AppSnackbar from '@/components/ui/AppSnackbar.vue'
+import TableSelector from '@/components/database/TableSelector.vue'
+import ColumnSelector from '@/components/database/ColumnSelector.vue'
+import SearchInput from '@/components/search/SearchInput.vue'
+import ResultsTable from '@/components/results/ResultsTable.vue'
+import ResultDetailDialog from '@/components/results/ResultDetailDialog.vue'
+import HistoryDrawer from '@/components/HistoryDrawer.vue'
 
-          // Reset tables, selectedTable, and selectedColumns
-          this.tables = [];
-          this.selectedTable = '';
-          this.selectedColumns = [];
+// Stores and composables
+const databaseStore = useDatabaseStore()
+const searchStore = useSearchStore()
+const uiStore = useUIStore()
+const historyStore = useHistoryStore()
+const { selectDatabase } = useDatabase()
+const { applyTheme } = useTheme()
 
-          // Update local storage
-          localStorage.removeItem('selectedTable');
-          localStorage.removeItem('selectedColumns');
+// Component state
+const showHistoryDrawer = ref(false)
 
-          window.electronAPI.changeDatabase(filePath);
-          this.resetDatabaseDependentData();
-          window.electronAPI.getTableList();
-        }
-      }).catch(err => {
-        console.error('File selection error:', err);
-        this.showError('Failed to select database.');
-      });
-    },
-    performSearch() {
-      // Check if both a table and search term are selected
-      if (this.selectedTable && this.searchTerm) {
-        // Construct an object to send to the backend
-        const searchParams = {
-          searchTerm: this.searchTerm,
-          selectedTable: this.selectedTable,
-          selectedColumns: Array.from(this.selectedColumns)
-        };
+// Store event listener cleanup functions
+let cleanupFunctions = []
 
-        // Send the search request to the backend
-        window.electronAPI.performSearch(searchParams.searchTerm, searchParams.selectedTable, searchParams.selectedColumns);
+/**
+ * Set up Electron IPC event listeners
+ * These listeners bridge the Electron IPC system with Pinia stores
+ */
+function setupIPCListeners() {
+  // Listener for table list updates
+  const onTableListHandler = (event, tables) => {
+    databaseStore.setTables(tables.map(t => (typeof t === 'string' ? t : t.name)))
+  }
+  window.electronAPI.onTableList(onTableListHandler)
+  cleanupFunctions.push(() => {
+    // Note: Electron IPC doesn't provide direct removeListener on contextBridge
+    // This is a limitation of the current setup
+  })
 
-        // Handle the search results
-        window.electronAPI.onSearchResults((event, searchResults) => {
-          this.searchResults = searchResults;
-        });
+  // Listener for column list updates
+  const onColumnsListHandler = (event, columns) => {
+    if (columns && columns.length > 0) {
+      databaseStore.setColumns(columns)
+      // Auto-select all columns by default
+      databaseStore.selectColumns(columns)
+    } else {
+      uiStore.showError('The selected table has no columns or is not searchable')
+    }
+  }
+  window.electronAPI.onColumnsList(onColumnsListHandler)
 
-        // Handle any search error
-        window.electronAPI.onSearchError((event, errorMessage) => {
-          this.showError(errorMessage);
-        });
-      } else {
-        // Show a notification if the table or search term is missing
-        this.snackbarText = 'Please select a table and enter a search term.';
-        this.snackbar = true;
-      }
-    },
-    showDetails(item) {
-      this.selectedItem = item;
-      this.detailsDialog = true;
-    },
-    truncateText(text) {
-      return text.length > 50 ? text.substring(0, 50) + '...' : text;
-    },
-    copyToClipboard(text) {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => {
-          // Possibly show a notification that the text was copied
-        }, (err) => {
-          console.error('Could not copy text: ', err);
-        });
-      } else {
-        // Clipboard API not available, use a fallback
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.setAttribute('readonly', '');
-        textarea.style.position = 'absolute';
-        textarea.style.left = '-9999px';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-    },
-    onTableSelect() {
-      // Clear previous search results and possibly the search term
-      this.searchResults = [];
+  // Listener for search results
+  const onSearchResultsHandler = (event, results) => {
+    searchStore.setResults(results || [])
+    searchStore.setLoading(false)
 
-      // Save the selected table to local storage
-      localStorage.setItem('selectedTable', this.selectedTable);
+    if (!results || results.length === 0) {
+      uiStore.showInfo('No results found')
+    } else {
+      uiStore.showSuccess(`Found ${results.length} result(s)`)
+    }
 
-      if (this.selectedTable) {
-        // Fetch columns (headers) for the new table
-        window.electronAPI.getColumns(this.selectedTable);
+    // Track search in history
+    if (searchStore.searchTerm && databaseStore.path) {
+      historyStore.addSearch({
+        searchTerm: searchStore.searchTerm,
+        databasePath: databaseStore.path,
+        table: databaseStore.selectedTable,
+        columns: databaseStore.selectedColumns,
+        resultCount: results?.length || 0,
+      })
+    }
+  }
+  window.electronAPI.onSearchResults(onSearchResultsHandler)
 
-        // Reset selectedColumns
-        this.selectedColumns = [];
-        localStorage.removeItem('selectedColumns');
+  // Listener for search errors
+  const onSearchErrorHandler = (event, errorMessage) => {
+    searchStore.setError(errorMessage)
+    searchStore.setLoading(false)
+    uiStore.showError(`Search failed: ${errorMessage}`)
+  }
+  window.electronAPI.onSearchError(onSearchErrorHandler)
 
-        // Set up a listener for the columns list
-        window.electronAPI.onColumnsList((event, columns) => {
-          if (columns && columns.length > 0) {
-            this.columns = columns; // Update columns data property
-            this.headers = columns.map(column => ({
-              title: column,
-              text: column,
-              value: column,
-              sortable: true
-            }));
+  // Listener for database errors
+  const onDatabaseErrorHandler = (event, errorMessage) => {
+    uiStore.showError(`Database error: ${errorMessage}`)
+  }
+  window.electronAPI.onDatabaseError(onDatabaseErrorHandler)
+}
 
-            // Optionally set selectedColumns to all columns by default
-            this.selectedColumns = columns; // Or use columns.slice(0, 5) for the first 5
-          } else {
-            // If no columns found, show feedback
-            this.snackbarText = 'The selected table has no columns or is not searchable.';
-            this.snackbar = true;
-          }
-        });
-      } else {
-        // Provide feedback if no table is selected
-        this.snackbarText = 'No table selected.';
-        this.snackbar = true;
-      }
-    },
-    toggleTheme() {
-      this.isDarkTheme = !this.isDarkTheme;
-      localStorage.setItem('theme', this.isDarkTheme ? 'dark' : 'light');
-      this.applyTheme();
-    },
-    applyTheme() {
-      const theme = localStorage.getItem('theme') || 'light';
-      this.isDarkTheme = theme === 'dark';
-      this.$vuetify.theme.global.name = this.isDarkTheme ? 'dark' : 'light';
-    },
-    resetDatabaseDependentData() {
-      this.tables = [];
-      this.selectedColumns = [];
-      this.searchResults = [];
-      // Reset other data that depends on the database
-    },
-    showError(message) {
-      this.snackbarText = message;
-      this.snackbar = true;
-    },
-    getFileName(filePath) {
-      const pathParts = filePath.split(/[/\\]/);
-      return pathParts.pop();
-    },
-    onColumnSelect() {
-      // Save the selected columns to local storage
-      localStorage.setItem('selectedColumns', JSON.stringify(this.selectedColumns));
-    },
-    resetAppState() {
-      // Clear local storage
-      localStorage.clear();
-      // Reset application state
-      this.databasePath = '';
-      this.selectedTable = '';
-      this.selectedColumns = [];
-      this.searchResults = []
-      // Reset other necessary states
-    },
-  },
-  created() {
-    // Initialize application
-    this.applyTheme();
+/**
+ * Initialize application on mount
+ */
+onMounted(() => {
+  // Apply saved theme
+  applyTheme()
 
-    // Set up listeners for search results
-    window.electronAPI.onSearchResults((event, searchResults) => {
-      this.searchResults = searchResults;
-    });
+  // Set up IPC event listeners
+  setupIPCListeners()
 
-    // Set up listeners for table list
-    window.electronAPI.onTableList((event, tables) => {
-      this.tables = tables.map(t => t.name);
-    });
+  // Load tables if database path exists in localStorage
+  if (databaseStore.isConnected) {
+    window.electronAPI.getTableList()
+  }
+})
 
-    // Set up listeners for column list
-    window.electronAPI.onColumnsList((event, columns) => {
-      this.columns = columns;
-    });
-
-    // Set up listeners for database errors
-    window.electronAPI.onDatabaseError((event, errorMessage) => {
-      console.error('Database connection error:', errorMessage);
-      this.showError(errorMessage);
-    });
-  },
-  watch: {
-    // Watchers to update local storage when selected columns change
-    selectedColumns(newVal, oldVal) {
-      // Trigger only if there is a real change in selected columns
-      if (newVal.length !== oldVal.length || newVal.some((val, index) => val !== oldVal[index])) {
-        this.onColumnSelect();
-      }
-    },
-  },
-  mounted() {
-    // Call this when the database is selected and you want to fetch the table list
-    window.electronAPI.getTableList();
-    window.electronAPI.onTableList((event, tables) => {
-      this.tables = tables;
-    });
-  },
-};
+/**
+ * Cleanup on unmount
+ */
+onUnmounted(() => {
+  // Run cleanup functions
+  cleanupFunctions.forEach(fn => fn())
+  cleanupFunctions = []
+})
 </script>
 
 <style scoped>
-/* Add custom styles for the arrow icon */
-.my-4 {
-  padding: 20px 0;
+/* Modern compact layout styles */
+.fill-height {
+  height: 100%;
+  min-height: 400px;
 }
 
-/* Style the arrow icon */
-.v-icon.mdi-arrow-right {
-  vertical-align: middle;
-  margin: 0 20px;
-}
-
-/**
- * Styles for the application logo.
- * Sets a maximum width, adds right margin, and applies the fadeIn animation.
- */
-.app-logo {
-  max-width: 92px; /* Fixed maximum width for consistency */
-  margin-right: 10px; /* Spacing between logo and title */
-  animation: fadeIn 2s ease-out forwards; /* Applies the fadeIn animation */
-}
-
-/**
- * Styles for the version info.
- * Adds right padding and decreases the top margin to bring it closer to the app name.
- */
-.version-info {
-  display: block; /* Ensures the version info is on a new line */
-  margin-left: auto;
-  padding-right: 16px;
-  font-size: 0.8rem;
-  margin-top: -10px; /* Decrease the top margin to bring it closer to the app name */
-}
-
-/* FAQ Modal Styles */
-.faq-section {
-  margin-bottom: 20px;
-}
-
-.faq-section h3 {
-  margin-top: 0;
-}
-
-/* Highlighted button style */
-.highlighted-button {
-  background-color: #ffcc00; /* or any other highlight color */
-  color: white;
-}
-
-/* Styles for the no-database-loaded message */
-.no-database-loaded {
-  text-align: center;
-  padding-top: 50px; /* Adjust as needed */
-}
-
-/* Centering the arrow icon */
-.centered-arrow {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Responsive spacing */
+@media (max-width: 600px) {
+  .v-container {
+    padding: 8px !important;
+  }
 }
 </style>

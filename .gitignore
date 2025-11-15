@@ -1,6 +1,9 @@
 .DS_Store
 node_modules
 /dist
+/dist-electron
+/dist_electron
+/out
 
 # database folder
 /db
@@ -18,12 +21,30 @@ pnpm-debug.log*
 
 # Editor directories and files
 .idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-#Electron-builder output
-/dist_electron
+# Auto-generated files
+*.d.ts
+!src/types/**/*.d.ts
+!tsconfig*.json
+.eslintrc-auto-import.json
+
+# Test coverage
+coverage
+
+# ESLint cache
+.eslintcache
+
+# Electron builder output
+out/
+
+# Lock files (pnpm-lock.yaml is tracked)
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
