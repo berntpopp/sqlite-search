@@ -17,13 +17,12 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
 
 /**
- * Disable default application menu for cleaner UI
- * Best Practice: Call before app.ready for optimal performance
- * - Windows/Linux: Completely removes the menu bar
- * - macOS: Removes application menu (system menu bar remains)
- * Reference: https://www.electronjs.org/docs/latest/tutorial/performance
+ * Application menu configuration
+ * Note: Menu is enabled for easier access to DevTools and other features
+ * To disable menu for cleaner UI, uncomment the line below:
+ * Menu.setApplicationMenu(null)
  */
-Menu.setApplicationMenu(null)
+// Menu.setApplicationMenu(null)
 
 async function createWindow() {
   // Create the browser window.
@@ -52,6 +51,8 @@ async function createWindow() {
   } else {
     // In production, load the built index.html
     await win.loadFile(path.join(__dirname, '../renderer/index.html'))
+    // Enable DevTools in production for debugging
+    win.webContents.openDevTools()
   }
 }
 
