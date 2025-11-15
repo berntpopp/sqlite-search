@@ -56,10 +56,7 @@ export default defineConfig({
     plugins: [
       vue(),
       vuetify({
-        autoImport: true,
-        styles: {
-          configFile: 'src/styles/settings.scss'
-        }
+        autoImport: true
       }),
       Components({
         dts: true,
