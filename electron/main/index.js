@@ -7,14 +7,37 @@ import path from 'node:path'
 import fs from 'node:fs'
 import sqlite3 from 'sqlite3'
 
+// Enhanced logging for production debugging
+const log = {
+  info: (...args) => {
+    console.log('[INFO]', new Date().toISOString(), ...args)
+  },
+  error: (...args) => {
+    console.error('[ERROR]', new Date().toISOString(), ...args)
+  },
+  warn: (...args) => {
+    console.warn('[WARN]', new Date().toISOString(), ...args)
+  }
+}
+
+log.info('Application starting...')
+log.info('Node version:', process.version)
+log.info('Electron version:', process.versions.electron)
+log.info('Platform:', process.platform)
+log.info('CWD:', process.cwd())
+log.info('__dirname equivalent:', fileURLToPath(new URL('.', import.meta.url)))
+
 // Get __dirname equivalent in ESM
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 // Set the environment variable to control the environment
 const isDevelopment = process.env.NODE_ENV !== 'production'
+log.info('Environment:', isDevelopment ? 'development' : 'production')
+log.info('NODE_ENV:', process.env.NODE_ENV)
 
 // Set the default database path
 const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
+log.info('Default database path:', defaultDbPath)
 
 /**
  * Application menu configuration
@@ -25,34 +48,85 @@ const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
 // Menu.setApplicationMenu(null)
 
 async function createWindow() {
-  // Create the browser window.
-  const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    icon: path.join(__dirname, '../../public/favicon.ico'),
-    // Defense in depth: Auto-hide menu bar as fallback
-    // User can still reveal with Alt key if needed
-    autoHideMenuBar: true,
-    webPreferences: {
-      preload: path.join(__dirname, '../preload/index.mjs'),
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false, // Required for sqlite3
-    },
-  })
+  log.info('createWindow() called')
 
-  // Load the appropriate URL based on environment
-  if (isDevelopment) {
-    // In development, Vite dev server runs on port 5173 by default
-    // electron-vite will set ELECTRON_RENDERER_URL
-    const rendererUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
-    await win.loadURL(rendererUrl)
-    win.webContents.openDevTools()
-  } else {
-    // In production, load the built index.html
-    await win.loadFile(path.join(__dirname, '../renderer/index.html'))
-    // Enable DevTools in production for debugging
-    win.webContents.openDevTools()
+  try {
+    // Create the browser window.
+    log.info('Creating BrowserWindow...')
+    const iconPath = path.join(__dirname, '../../public/favicon.ico')
+    const preloadPath = path.join(__dirname, '../preload/index.mjs')
+
+    log.info('Icon path:', iconPath)
+    log.info('Icon exists:', fs.existsSync(iconPath))
+    log.info('Preload path:', preloadPath)
+    log.info('Preload exists:', fs.existsSync(preloadPath))
+
+    const win = new BrowserWindow({
+      width: 1200,
+      height: 800,
+      icon: iconPath,
+      // Defense in depth: Auto-hide menu bar as fallback
+      // User can still reveal with Alt key if needed
+      autoHideMenuBar: true,
+      webPreferences: {
+        preload: preloadPath,
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: false, // Required for sqlite3
+      },
+    })
+
+    log.info('BrowserWindow created successfully')
+
+    // Load the appropriate URL based on environment
+    if (isDevelopment) {
+      // In development, Vite dev server runs on port 5173 by default
+      // electron-vite will set ELECTRON_RENDERER_URL
+      const rendererUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
+      log.info('Loading development URL:', rendererUrl)
+      await win.loadURL(rendererUrl)
+      log.info('Development URL loaded')
+      win.webContents.openDevTools()
+    } else {
+      // In production, load the built index.html
+      const htmlPath = path.join(__dirname, '../renderer/index.html')
+      log.info('Loading production HTML:', htmlPath)
+      log.info('HTML file exists:', fs.existsSync(htmlPath))
+
+      if (!fs.existsSync(htmlPath)) {
+        log.error('CRITICAL: index.html not found at', htmlPath)
+        log.info('Directory contents:', __dirname)
+        log.info(fs.readdirSync(__dirname))
+        log.info('Parent directory:', path.join(__dirname, '..'))
+        log.info(fs.readdirSync(path.join(__dirname, '..')))
+      }
+
+      await win.loadFile(htmlPath)
+      log.info('Production HTML loaded')
+      // Enable DevTools in production for debugging
+      win.webContents.openDevTools()
+      log.info('DevTools opened')
+    }
+
+    // Log when the window is ready to show
+    win.once('ready-to-show', () => {
+      log.info('Window ready-to-show event fired')
+    })
+
+    // Log renderer process console messages
+    win.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      log.info(`Renderer console [${level}]:`, message, `(${sourceId}:${line})`)
+    })
+
+    // Log any crashes
+    win.webContents.on('crashed', (event, killed) => {
+      log.error('Renderer process crashed!', { killed })
+    })
+
+    log.info('Window setup complete')
+  } catch (error) {
+    log.error('Error in createWindow():', error)
+    throw error
   }
 }
 
@@ -104,10 +178,28 @@ app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
 })
 
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  log.error('Uncaught Exception:', error)
+})
+
+process.on('unhandledRejection', (reason, promise) => {
+  log.error('Unhandled Rejection at:', promise, 'reason:', reason)
+})
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
+log.info('Setting up app.whenReady() handler')
 app.whenReady().then(() => {
-  createWindow()
+  log.info('app.whenReady() fired - Electron initialized')
+  log.info('App path:', app.getAppPath())
+  log.info('Exe path:', app.getPath('exe'))
+  log.info('User data:', app.getPath('userData'))
+  createWindow().catch(err => {
+    log.error('Failed to create window:', err)
+  })
+}).catch(err => {
+  log.error('app.whenReady() failed:', err)
 })
 
 // Exit cleanly on request from parent process in development mode.
