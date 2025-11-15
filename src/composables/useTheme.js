@@ -1,4 +1,5 @@
 // src/composables/useTheme.js
+import { storeToRefs } from 'pinia'
 import { useUIStore } from '@/stores/ui.store'
 import { useTheme as useVuetifyTheme } from 'vuetify'
 
@@ -9,14 +10,15 @@ import { useTheme as useVuetifyTheme } from 'vuetify'
 export function useTheme() {
   const uiStore = useUIStore()
   const vuetifyTheme = useVuetifyTheme()
+  const { isDarkTheme, currentTheme } = storeToRefs(uiStore)
 
   /**
    * Apply theme to Vuetify
    * Call this on app initialization
    */
   function applyTheme() {
-    const themeName = uiStore.currentTheme
-    vuetifyTheme.global.name = themeName
+    const themeName = currentTheme.value
+    vuetifyTheme.global.name.value = themeName
   }
 
   /**
@@ -40,20 +42,20 @@ export function useTheme() {
    * Get icon for current theme
    */
   function getThemeIcon() {
-    return uiStore.isDarkTheme ? 'mdi-weather-night' : 'mdi-white-balance-sunny'
+    return isDarkTheme.value ? 'mdi-weather-night' : 'mdi-white-balance-sunny'
   }
 
   /**
    * Get tooltip text for theme toggle
    */
   function getThemeTooltip() {
-    return `Switch to ${uiStore.isDarkTheme ? 'light' : 'dark'} theme`
+    return `Switch to ${isDarkTheme.value ? 'light' : 'dark'} theme`
   }
 
   return {
-    // State
-    isDarkTheme: uiStore.isDarkTheme,
-    currentTheme: uiStore.currentTheme,
+    // State (reactive refs from store)
+    isDarkTheme,
+    currentTheme,
 
     // Actions
     applyTheme,
