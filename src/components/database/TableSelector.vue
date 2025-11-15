@@ -12,7 +12,7 @@
     persistent-hint
     @update:model-value="handleTableSelect"
   >
-    <template v-slot:prepend-inner>
+    <template #prepend-inner>
       <v-icon size="small">mdi-table</v-icon>
     </template>
   </v-select>
@@ -31,7 +31,7 @@ const searchStore = useSearchStore()
 // Two-way binding with store
 const selectedTable = computed({
   get: () => databaseStore.selectedTable,
-  set: (value) => {
+  set: value => {
     if (value) {
       selectTable(value)
     }

@@ -4,10 +4,7 @@ import vuetify from 'vite-plugin-vuetify'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vuetify({ autoImport: true }),
-  ],
+  plugins: [vue(), vuetify({ autoImport: true })],
   test: {
     globals: true,
     environment: 'jsdom',

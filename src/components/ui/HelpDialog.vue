@@ -16,10 +16,7 @@
 
       <v-card-text class="pa-4">
         <v-expansion-panels variant="accordion">
-          <v-expansion-panel
-            v-for="(section, index) in faqConfig.sections"
-            :key="index"
-          >
+          <v-expansion-panel v-for="(section, index) in faqConfig.sections" :key="index">
             <v-expansion-panel-title>
               <v-icon start size="small">mdi-help-circle-outline</v-icon>
               {{ section.header }}
@@ -49,13 +46,7 @@
 
       <v-card-actions class="px-4 py-3">
         <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          variant="text"
-          @click="uiStore.closeHelpDialog"
-        >
-          Close
-        </v-btn>
+        <v-btn color="primary" variant="text" @click="uiStore.closeHelpDialog"> Close </v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>

@@ -202,6 +202,7 @@ pnpm run test:coverage
 ```
 
 Test coverage includes:
+
 - Vue components (SearchBar, ResultsTable, ThemeToggle)
 - Composables (useTheme, useDatabase)
 - Pinia stores (ui.store)

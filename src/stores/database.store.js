@@ -12,9 +12,7 @@ export const useDatabaseStore = defineStore('database', () => {
   const tables = ref([])
   const selectedTable = ref(localStorage.getItem('selectedTable') || '')
   const columns = ref([])
-  const selectedColumns = ref(
-    JSON.parse(localStorage.getItem('selectedColumns') || '[]')
-  )
+  const selectedColumns = ref(JSON.parse(localStorage.getItem('selectedColumns') || '[]'))
 
   // Getters - using computed
   const isConnected = computed(() => !!path.value)

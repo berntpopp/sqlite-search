@@ -12,14 +12,8 @@
       <span>{{ uiStore.snackbarText }}</span>
     </div>
 
-    <template v-slot:actions>
-      <v-btn
-        variant="text"
-        size="small"
-        @click="uiStore.closeSnackbar"
-      >
-        Close
-      </v-btn>
+    <template #actions>
+      <v-btn variant="text" size="small" @click="uiStore.closeSnackbar"> Close </v-btn>
     </template>
   </v-snackbar>
 </template>

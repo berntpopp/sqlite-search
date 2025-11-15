@@ -14,11 +14,11 @@
     @keyup.enter="handleSearch"
     @click:clear="handleClear"
   >
-    <template v-slot:prepend-inner>
+    <template #prepend-inner>
       <v-icon size="small">mdi-magnify</v-icon>
     </template>
 
-    <template v-slot:append-inner>
+    <template #append-inner>
       <v-btn
         icon
         variant="text"
@@ -28,9 +28,7 @@
         @click="handleSearch"
       >
         <v-icon size="small">mdi-arrow-right-circle</v-icon>
-        <v-tooltip activator="parent" location="top">
-          Execute search (Enter)
-        </v-tooltip>
+        <v-tooltip activator="parent" location="top"> Execute search (Enter) </v-tooltip>
       </v-btn>
     </template>
   </v-text-field>
@@ -49,7 +47,7 @@ const databaseStore = useDatabaseStore()
 // Two-way binding with store
 const searchTerm = computed({
   get: () => searchStore.searchTerm,
-  set: (value) => searchStore.setSearchTerm(value || ''),
+  set: value => searchStore.setSearchTerm(value || ''),
 })
 
 // Computed properties

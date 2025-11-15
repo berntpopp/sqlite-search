@@ -111,26 +111,31 @@ State is loaded on app initialization and updated when user makes changes.
 ## Key Files
 
 ### Electron Layer
+
 - `electron/main/index.js` - Main Electron process, all SQLite operations
 - `electron/preload/index.js` - Context bridge for secure IPC
 - `electron.vite.config.mjs` - electron-vite build configuration
 
 ### Vue Application
+
 - `src/App.vue` - Main app orchestrator with IPC event bridge (217 lines, Composition API)
 - `src/main.js` - Vue app initialization (Pinia + Vuetify + plugins)
 - `index.html` - Entry point HTML
 
 ### State Management
+
 - `src/stores/database.store.js` - Database state (Pinia Composition API)
 - `src/stores/search.store.js` - Search state (Pinia Composition API)
 - `src/stores/ui.store.js` - UI state (Pinia Composition API)
 
 ### Business Logic (Composables)
+
 - `src/composables/useDatabase.js` - Database operations
 - `src/composables/useSearch.js` - Search operations
 - `src/composables/useTheme.js` - Theme management
 
 ### Components
+
 - `src/components/ui/AppHeader.vue` - Header with navigation
 - `src/components/ui/HelpDialog.vue` - Self-contained help system
 - `src/components/ui/AppSnackbar.vue` - Global notifications
@@ -141,6 +146,7 @@ State is loaded on app initialization and updated when user makes changes.
 - `src/components/results/ResultDetailDialog.vue` - Detail view dialog
 
 ### Configuration
+
 - `src/config/faqPageConfig.json` - Self-contained FAQ/help content (no external links)
 - `src/styles/settings.scss` - Vuetify theme customization
 - `package.json` - Dependencies and scripts (pnpm)

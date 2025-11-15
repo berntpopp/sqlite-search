@@ -11,23 +11,24 @@
     clearable
     chips
     closable-chips
-    :hint="selectedColumns.length === 0 ? 'Select at least one column' : `${selectedColumns.length} column(s) selected`"
+    :hint="
+      selectedColumns.length === 0
+        ? 'Select at least one column'
+        : `${selectedColumns.length} column(s) selected`
+    "
     persistent-hint
     @update:model-value="handleColumnSelect"
   >
-    <template v-slot:prepend-inner>
+    <template #prepend-inner>
       <v-icon size="small">mdi-table-column</v-icon>
     </template>
 
     <!-- Compact chip display for selected columns -->
-    <template v-slot:selection="{ item, index }">
+    <template #selection="{ item, index }">
       <v-chip v-if="index < 2" size="small" closable>
         <span>{{ item.title }}</span>
       </v-chip>
-      <span
-        v-if="index === 2"
-        class="text-medium-emphasis text-caption align-self-center ml-1"
-      >
+      <span v-if="index === 2" class="text-medium-emphasis text-caption align-self-center ml-1">
         (+{{ selectedColumns.length - 2 }} more)
       </span>
     </template>
@@ -45,7 +46,7 @@ const searchStore = useSearchStore()
 // Two-way binding with store
 const selectedColumns = computed({
   get: () => databaseStore.selectedColumns,
-  set: (value) => {
+  set: value => {
     databaseStore.selectColumns(value || [])
   },
 })
