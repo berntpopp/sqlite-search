@@ -39,6 +39,7 @@ export default defineConfig({
   },
   renderer: {
     root: '.',
+    publicDir: 'public',
     build: {
       outDir: 'dist-electron/renderer',
       rollupOptions: {

@@ -9,6 +9,7 @@
 ## ✅ Completed Tasks
 
 ### 1. Build System Migration
+
 - ✅ Removed Vue CLI dependencies (babel.config.js, vue.config.js, jsconfig.json)
 - ✅ Installed electron-vite 4.0.1 (latest)
 - ✅ Created `electron.vite.config.ts` with proper Vite + Vuetify + Auto-import setup
@@ -22,6 +23,7 @@
   - Added unplugin-auto-import & unplugin-vue-components
 
 ### 2. Project Structure Reorganization
+
 - ✅ Created `electron/main/index.js` - Main process (ESM compatible)
 - ✅ Created `electron/preload/index.js` - Preload script (ESM compatible)
 - ✅ Created `index.html` - Vite entry point
@@ -29,6 +31,7 @@
 - ✅ Created `src/styles/settings.scss` for Vuetify customization
 
 ### 3. ESM Migration
+
 - ✅ Converted main process to ESM (`import` instead of `require`)
 - ✅ Converted preload to ESM
 - ✅ Used `fileURLToPath` for `__dirname` equivalent
@@ -37,6 +40,7 @@
 - ✅ Configured rollup output format as 'es'
 
 ### 4. Code Quality Tools
+
 - ✅ Created `eslint.config.js` - **ESLint 9 flat config**
   - @eslint/js recommended rules
   - eslint-plugin-vue flat/recommended
@@ -50,6 +54,7 @@
   - Flat config support enabled
 
 ### 5. Developer Experience
+
 - ✅ Created **Makefile** with targets:
   - `make install` - Install dependencies
   - `make dev` - Start development server
@@ -63,6 +68,7 @@
 - ✅ Created `.env.example` template
 
 ### 6. Configuration Files
+
 - ✅ Updated `.gitignore` with modern patterns
   - Auto-generated `.d.ts` files
   - ESLint cache
@@ -76,11 +82,13 @@
 ## 🔄 In Progress / Needs Testing
 
 ### Development Server
+
 - ⚠️ **Status:** Commands created but not fully tested
 - **Issue:** Dev server startup needs validation
 - **Next Step:** Debug electron-vite dev server if needed
 
 ### Production Build
+
 - ⚠️ **Status:** Not yet tested
 - **Next Step:** Run `make build` and verify output
 
@@ -89,6 +97,7 @@
 ## 📦 Dependencies Summary
 
 ### Production
+
 ```json
 {
   "@mdi/font": "7.4.47",
@@ -100,15 +109,16 @@
 ```
 
 ### Development
+
 ```json
 {
-  "electron": "33.4.11",       // ⬆️ from 28.2.1
-  "electron-vite": "4.0.1",    // ✨ new
-  "vite": "6.4.1",             // ✨ new
-  "eslint": "9.39.1",          // ⬆️ from 7.32.0
-  "prettier": "3.6.2",         // ✨ new
-  "typescript": "5.9.3",       // ✨ new
-  "vue-tsc": "2.2.12"          // ✨ new
+  "electron": "33.4.11", // ⬆️ from 28.2.1
+  "electron-vite": "4.0.1", // ✨ new
+  "vite": "6.4.1", // ✨ new
+  "eslint": "9.39.1", // ⬆️ from 7.32.0
+  "prettier": "3.6.2", // ✨ new
+  "typescript": "5.9.3", // ✨ new
+  "vue-tsc": "2.2.12" // ✨ new
 }
 ```
 
@@ -117,6 +127,7 @@
 ## 🎯 Architecture Improvements
 
 ### Before (Antipatterns)
+
 ```
 ❌ Vue CLI (deprecated)
 ❌ CommonJS (require)
@@ -128,6 +139,7 @@
 ```
 
 ### After (Modern Stack)
+
 ```
 ✅ electron-vite (active)
 ✅ ESM modules (import)
@@ -147,6 +159,7 @@
    - Modern sandbox and context isolation
 
 2. **Context Isolation:** Enabled
+
    ```javascript
    contextIsolation: true,
    nodeIntegration: false,
@@ -213,16 +226,16 @@ sqlite-search/
 
 ## 🏆 Success Metrics
 
-| Metric | Target | Actual | Status |
-|--------|--------|--------|--------|
-| Modern build tool | ✅ Vite | ✅ electron-vite 4.0.1 | ✅ |
-| ESM migration | ✅ All files | ✅ main + preload | ✅ |
-| ESLint 9 | ✅ Flat config | ✅ Working | ✅ |
-| Prettier | ✅ Configured | ✅ Working | ✅ |
-| Makefile | ✅ 8+ targets | ✅ 12 targets | ✅ |
-| TypeScript ready | ✅ Config | ✅ tsconfig.json | ✅ |
-| Electron update | ✅ 30+ | ✅ 33.4.11 | ✅ |
-| Dependencies | ✅ Modern | ✅ Latest stable | ✅ |
+| Metric            | Target         | Actual                 | Status |
+| ----------------- | -------------- | ---------------------- | ------ |
+| Modern build tool | ✅ Vite        | ✅ electron-vite 4.0.1 | ✅     |
+| ESM migration     | ✅ All files   | ✅ main + preload      | ✅     |
+| ESLint 9          | ✅ Flat config | ✅ Working             | ✅     |
+| Prettier          | ✅ Configured  | ✅ Working             | ✅     |
+| Makefile          | ✅ 8+ targets  | ✅ 12 targets          | ✅     |
+| TypeScript ready  | ✅ Config      | ✅ tsconfig.json       | ✅     |
+| Electron update   | ✅ 30+         | ✅ 33.4.11             | ✅     |
+| Dependencies      | ✅ Modern      | ✅ Latest stable       | ✅     |
 
 ---
 
@@ -230,7 +243,7 @@ sqlite-search/
 
 1. **Dependency versions matter:** Used exact latest versions to avoid conflicts
 2. **electron-vite is different from vite-plugin-electron:** Chose official tool
-3. **ESM in Electron requires care:** fileURLToPath for __dirname
+3. **ESM in Electron requires care:** fileURLToPath for \_\_dirname
 4. **Simplified approach works:** Removed complex plugins initially
 5. **Makefile improves DX:** Consistent interface across platforms
 

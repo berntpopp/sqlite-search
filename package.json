@@ -37,6 +37,7 @@
     "globals": "^15.14.0",
     "jsdom": "^25.0.1",
     "prettier": "^3.4.2",
+    "sass-embedded": "^1.93.3",
     "typescript": "^5.7.2",
     "unplugin-auto-import": "^20.2.0",
     "unplugin-vue-components": "^30.0.0",

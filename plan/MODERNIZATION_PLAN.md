@@ -14,14 +14,14 @@ This document outlines a comprehensive modernization plan for the sqlite-search 
 
 ### 1.1 Technology Stack Assessment
 
-| Component | Current Version | Latest Version | Status | Risk Level |
-|-----------|----------------|----------------|---------|------------|
-| Vue | 3.4.15 | 3.5.24 | Outdated | Low |
-| Vuetify | 3.5.2 | 3.10.11 | Outdated | Medium |
-| Electron | 28.2.1 | 39.2.0 | **Critically Outdated** | **High** |
-| Vue CLI | 5.0.8 | 5.0.9 (Deprecated) | **Deprecated** | **Critical** |
-| ESLint | 7.32.0 | 9.39.1 | **Very Outdated** | High |
-| Node.js | - | 20.19+ or 22.12+ | Required | - |
+| Component | Current Version | Latest Version     | Status                  | Risk Level   |
+| --------- | --------------- | ------------------ | ----------------------- | ------------ |
+| Vue       | 3.4.15          | 3.5.24             | Outdated                | Low          |
+| Vuetify   | 3.5.2           | 3.10.11            | Outdated                | Medium       |
+| Electron  | 28.2.1          | 39.2.0             | **Critically Outdated** | **High**     |
+| Vue CLI   | 5.0.8           | 5.0.9 (Deprecated) | **Deprecated**          | **Critical** |
+| ESLint    | 7.32.0          | 9.39.1             | **Very Outdated**       | High         |
+| Node.js   | -               | 20.19+ or 22.12+   | Required                | -            |
 
 ### 1.2 Critical Issues Identified
 
@@ -47,9 +47,11 @@ This document outlines a comprehensive modernization plan for the sqlite-search 
 
 4. **❌ SQL Injection Vulnerability**
    - **Issue:** `background.js:131` - Direct string interpolation in SQL
+
    ```javascript
-   const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`;
+   const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
    ```
+
    - **Violation:** Security best practices
    - **Impact:** Potential SQL injection via table names
    - **Solution:** Whitelist validation or parameterized table names
@@ -241,13 +243,15 @@ sqlite-search/
 ### Phase 1: Foundation (Week 1)
 
 #### Step 1.1: Setup New Build System
+
 - [ ] Install electron-vite and dependencies
 - [ ] Create `electron.vite.config.ts`
-- [ ] Migrate environment variables to VITE_ prefix
+- [ ] Migrate environment variables to VITE\_ prefix
 - [ ] Update package.json scripts
 - [ ] Test build and dev server
 
 #### Step 1.2: Setup Code Quality Tools
+
 - [ ] Install ESLint 9 + flat config
 - [ ] Install Prettier
 - [ ] Configure `.prettierrc.json`
@@ -256,6 +260,7 @@ sqlite-search/
 - [ ] Format entire codebase
 
 #### Step 1.3: Create Makefile
+
 - [ ] Install target (dependencies)
 - [ ] Dev target (electron:serve)
 - [ ] Build target (electron:build)
@@ -270,6 +275,7 @@ sqlite-search/
 ### Phase 2: Architecture Refactoring (Week 2-3)
 
 #### Step 2.1: Modularize Components
+
 - [ ] Extract `DatabaseSelector.vue`
 - [ ] Extract `TableSelector.vue`
 - [ ] Extract `ColumnSelector.vue`
@@ -283,6 +289,7 @@ sqlite-search/
 - [ ] Refactor `App.vue` to composition
 
 #### Step 2.2: Implement State Management
+
 - [ ] Install Pinia
 - [ ] Create `database.store.ts` (path, tables, columns)
 - [ ] Create `search.store.ts` (term, results, loading)
@@ -291,6 +298,7 @@ sqlite-search/
 - [ ] Remove direct localStorage calls from components
 
 #### Step 2.3: Create Service Layer
+
 - [ ] Create `electron.service.ts` abstraction
 - [ ] Implement type-safe IPC wrappers
 - [ ] Create composables (`useDatabase`, `useSearch`, `useTheme`)
@@ -304,6 +312,7 @@ sqlite-search/
 ### Phase 3: Security & Quality (Week 4)
 
 #### Step 3.1: Fix Security Issues
+
 - [ ] **CRITICAL:** Fix SQL injection in background.js
   - Implement table name whitelist validation
   - Use parameterized queries properly
@@ -313,12 +322,14 @@ sqlite-search/
 - [ ] Audit dependencies with `npm audit`
 
 #### Step 3.2: Fix Resource Leaks
+
 - [ ] Add `onUnmounted` cleanup for IPC listeners
 - [ ] Implement proper database connection pooling
 - [ ] Add error handling for all IPC calls
 - [ ] Implement loading states
 
 #### Step 3.3: Testing Infrastructure
+
 - [ ] Install Vitest + @vue/test-utils
 - [ ] Write unit tests for stores
 - [ ] Write unit tests for composables
@@ -334,6 +345,7 @@ sqlite-search/
 ### Phase 4: TypeScript Migration (Week 5-6) - Optional
 
 #### Step 4.1: Gradual TypeScript Introduction
+
 - [ ] Rename `electron.vite.config.js` → `.ts`
 - [ ] Create tsconfig.json files
 - [ ] Migrate main process to TypeScript
@@ -345,6 +357,7 @@ sqlite-search/
 - [ ] Create shared types in `types/`
 
 #### Step 4.2: Renderer TypeScript Migration
+
 - [ ] Migrate stores to TypeScript
 - [ ] Migrate services to TypeScript
 - [ ] Migrate composables to TypeScript
@@ -358,6 +371,7 @@ sqlite-search/
 ### Phase 5: Developer Experience (Week 7)
 
 #### Step 5.1: Optimization
+
 - [ ] Setup vite-plugin-vuetify for auto-import
 - [ ] Setup unplugin-vue-components
 - [ ] Configure code splitting
@@ -365,6 +379,7 @@ sqlite-search/
 - [ ] Add source maps for debugging
 
 #### Step 5.2: Documentation
+
 - [ ] Update README.md with new stack
 - [ ] Document component API (props, events, slots)
 - [ ] Add JSDoc/TSDoc comments
@@ -380,6 +395,7 @@ sqlite-search/
 ### 4.1 Component Modularization Example
 
 **Before (Antipattern):**
+
 ```vue
 <!-- App.vue - 593 lines, multiple responsibilities -->
 <template>
@@ -399,15 +415,24 @@ sqlite-search/
 
 <script>
 export default {
-  data() { /* 20+ reactive properties */ },
-  methods: { /* 15+ methods */ },
-  computed: { /* computed properties */ },
-  watch: { /* watchers */ }
+  data() {
+    /* 20+ reactive properties */
+  },
+  methods: {
+    /* 15+ methods */
+  },
+  computed: {
+    /* computed properties */
+  },
+  watch: {
+    /* watchers */
+  },
 }
 </script>
 ```
 
 **After (SOLID Compliant):**
+
 ```vue
 <!-- App.vue - ~50 lines, orchestration only -->
 <template>
@@ -439,6 +464,7 @@ applyTheme()
 ### 4.2 Service Layer Abstraction (DIP)
 
 **Before (Tight Coupling):**
+
 ```javascript
 // App.vue - Direct IPC calls
 methods: {
@@ -452,6 +478,7 @@ methods: {
 ```
 
 **After (Dependency Inversion):**
+
 ```typescript
 // services/electron.service.ts
 import type { SearchParams, SearchResult } from '@/types/database.types'
@@ -534,9 +561,7 @@ export const useDatabaseStore = defineStore('database', () => {
   const tables = ref<string[]>([])
   const selectedTable = ref<string>(localStorage.getItem('selectedTable') || '')
   const columns = ref<string[]>([])
-  const selectedColumns = ref<string[]>(
-    JSON.parse(localStorage.getItem('selectedColumns') || '[]')
-  )
+  const selectedColumns = ref<string[]>(JSON.parse(localStorage.getItem('selectedColumns') || '[]'))
 
   // Getters
   const isConnected = computed(() => !!path.value)
@@ -594,7 +619,7 @@ export const useDatabaseStore = defineStore('database', () => {
     selectTable,
     setColumns,
     selectColumns,
-    reset
+    reset,
   }
 })
 ```
@@ -602,13 +627,15 @@ export const useDatabaseStore = defineStore('database', () => {
 ### 4.4 SQL Injection Fix
 
 **Before (VULNERABLE):**
+
 ```javascript
 // background.js - LINE 131
-const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`;
+const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
 db.all(query, [matchQuery], callback)
 ```
 
 **After (SECURE):**
+
 ```typescript
 // electron/main/database/search.service.ts
 class SearchService {
@@ -628,9 +655,7 @@ class SearchService {
 
     // Validate columns against table schema
     const validColumns = await this.getTableColumns(db, params.selectedTable)
-    const invalidCols = params.selectedColumns.filter(
-      col => !validColumns.includes(col)
-    )
+    const invalidCols = params.selectedColumns.filter(col => !validColumns.includes(col))
     if (invalidCols.length > 0) {
       throw new Error(`Invalid columns: ${invalidCols.join(', ')}`)
     }
@@ -765,31 +790,31 @@ export default [
       parserOptions: {
         parser: '@typescript-eslint/parser',
         ecmaVersion: 'latest',
-        sourceType: 'module'
+        sourceType: 'module',
       },
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2021
-      }
+        ...globals.es2021,
+      },
     },
     rules: {
       'vue/multi-word-component-names': 'warn',
       'vue/no-unused-vars': 'error',
       'vue/script-setup-uses-vars': 'error',
       'no-console': 'warn',
-      'no-debugger': 'warn'
-    }
+      'no-debugger': 'warn',
+    },
   },
   {
     files: ['electron/**/*.{js,ts}'],
     languageOptions: {
       globals: {
-        ...globals.node
-      }
-    }
+        ...globals.node,
+      },
+    },
   },
-  configPrettier // Must be last
+  configPrettier, // Must be last
 ]
 ```
 
@@ -822,13 +847,7 @@ export default [
     "source.fixAll.eslint": "explicit"
   },
   "eslint.experimental.useFlatConfig": true,
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "typescriptreact",
-    "vue"
-  ],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact", "vue"],
   "[vue]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -954,10 +973,7 @@ import vuetify from 'vite-plugin-vuetify'
 import { fileURLToPath } from 'url'
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    vuetify({ autoImport: true })
-  ],
+  plugins: [vue(), vuetify({ autoImport: true })],
   test: {
     globals: true,
     environment: 'jsdom',
@@ -965,19 +981,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'tests/',
-        '**/*.spec.ts',
-        '**/*.config.ts'
-      ]
-    }
+      exclude: ['node_modules/', 'tests/', '**/*.spec.ts', '**/*.config.ts'],
+    },
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  }
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
 })
 ```
 
@@ -1043,8 +1054,8 @@ describe('DatabaseSelector', () => {
   it('should render select button', () => {
     const wrapper = mount(DatabaseSelector, {
       global: {
-        plugins: [vuetify, createPinia()]
-      }
+        plugins: [vuetify, createPinia()],
+      },
     })
 
     expect(wrapper.find('button').text()).toContain('Select Database')
@@ -1053,13 +1064,13 @@ describe('DatabaseSelector', () => {
   it('should call electron API when button clicked', async () => {
     const mockOpenFileDialog = vi.fn()
     window.electronAPI = {
-      openFileDialog: mockOpenFileDialog
+      openFileDialog: mockOpenFileDialog,
     } as any
 
     const wrapper = mount(DatabaseSelector, {
       global: {
-        plugins: [vuetify, createPinia()]
-      }
+        plugins: [vuetify, createPinia()],
+      },
     })
 
     await wrapper.find('button').trigger('click')
@@ -1196,46 +1207,46 @@ export default defineConfig({
     build: {
       rollupOptions: {
         output: {
-          format: 'es'
-        }
-      }
-    }
+          format: 'es',
+        },
+      },
+    },
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
         output: {
-          format: 'es'
-        }
-      }
-    }
+          format: 'es',
+        },
+      },
+    },
   },
   renderer: {
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
-      }
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
     },
     plugins: [
       vue(),
       vuetify({ autoImport: true }),
       Components({
         dts: true,
-        dirs: ['src/components']
+        dirs: ['src/components'],
       }),
       AutoImport({
         imports: [
           'vue',
           'pinia',
           {
-            vuetify: ['useTheme', 'useDisplay']
-          }
+            vuetify: ['useTheme', 'useDisplay'],
+          },
         ],
-        dts: true
-      })
-    ]
-  }
+        dts: true,
+      }),
+    ],
+  },
 })
 ```
 
@@ -1243,27 +1254,29 @@ export default defineConfig({
 
 ## 11. Risk Assessment & Mitigation
 
-| Risk | Probability | Impact | Mitigation |
-|------|------------|--------|------------|
-| Breaking changes during migration | High | High | Phased approach, maintain old code until tested |
-| SQL injection exploitation | Medium | Critical | Fix immediately in Phase 3 |
-| Data loss from localStorage migration | Low | Medium | Backup localStorage, test persistence |
-| Component refactoring introduces bugs | Medium | Medium | Write tests before refactoring |
-| TypeScript learning curve | Medium | Low | Make TypeScript optional (Phase 4) |
-| Build system incompatibility | Low | High | Test early in Phase 1 |
-| Vuetify 3 breaking changes | Low | Medium | Follow migration guide carefully |
+| Risk                                  | Probability | Impact   | Mitigation                                      |
+| ------------------------------------- | ----------- | -------- | ----------------------------------------------- |
+| Breaking changes during migration     | High        | High     | Phased approach, maintain old code until tested |
+| SQL injection exploitation            | Medium      | Critical | Fix immediately in Phase 3                      |
+| Data loss from localStorage migration | Low         | Medium   | Backup localStorage, test persistence           |
+| Component refactoring introduces bugs | Medium      | Medium   | Write tests before refactoring                  |
+| TypeScript learning curve             | Medium      | Low      | Make TypeScript optional (Phase 4)              |
+| Build system incompatibility          | Low         | High     | Test early in Phase 1                           |
+| Vuetify 3 breaking changes            | Low         | Medium   | Follow migration guide carefully                |
 
 ---
 
 ## 12. Success Criteria
 
 ### 12.1 Phase 1 Success
+
 - [x] App builds with `make build`
 - [x] App runs with `make dev`
 - [x] All code passes `make lint` and `make format`
 - [x] No regression in existing functionality
 
 ### 12.2 Phase 2 Success
+
 - [x] `App.vue` < 100 lines
 - [x] 10+ modular components created
 - [x] All state in Pinia stores
@@ -1271,6 +1284,7 @@ export default defineConfig({
 - [x] No direct localStorage calls in components
 
 ### 12.3 Phase 3 Success
+
 - [x] SQL injection vulnerability fixed
 - [x] `npm audit` shows 0 critical/high vulnerabilities
 - [x] Test coverage > 70%
@@ -1278,11 +1292,13 @@ export default defineConfig({
 - [x] No memory leaks detected
 
 ### 12.4 Phase 4 Success (Optional)
+
 - [x] 100% TypeScript coverage
 - [x] `make typecheck` passes with no errors
 - [x] All types exported from `types/`
 
 ### 12.5 Phase 5 Success
+
 - [x] Bundle size < 10MB
 - [x] Hot reload < 200ms
 - [x] Documentation complete
@@ -1292,20 +1308,21 @@ export default defineConfig({
 
 ## 13. Timeline Summary
 
-| Phase | Duration | Key Deliverables |
-|-------|----------|------------------|
-| Phase 1: Foundation | 1 week | Vite setup, tooling, Makefile |
-| Phase 2: Architecture | 2 weeks | Components, stores, services |
-| Phase 3: Security & Quality | 1 week | Fixes, tests, security |
-| Phase 4: TypeScript (Optional) | 2 weeks | Full type safety |
-| Phase 5: DX & Polish | 1 week | Optimization, docs |
-| **Total** | **5-7 weeks** | Production-ready modern app |
+| Phase                          | Duration      | Key Deliverables              |
+| ------------------------------ | ------------- | ----------------------------- |
+| Phase 1: Foundation            | 1 week        | Vite setup, tooling, Makefile |
+| Phase 2: Architecture          | 2 weeks       | Components, stores, services  |
+| Phase 3: Security & Quality    | 1 week        | Fixes, tests, security        |
+| Phase 4: TypeScript (Optional) | 2 weeks       | Full type safety              |
+| Phase 5: DX & Polish           | 1 week        | Optimization, docs            |
+| **Total**                      | **5-7 weeks** | Production-ready modern app   |
 
 ---
 
 ## 14. References
 
 ### 14.1 Official Documentation
+
 - electron-vite: https://electron-vite.org
 - Vite: https://vite.dev
 - Vue 3: https://vuejs.org
@@ -1315,11 +1332,13 @@ export default defineConfig({
 - Vitest: https://vitest.dev
 
 ### 14.2 Migration Guides
+
 - Vue CLI → Vite: https://vueschool.io/articles/vuejs-tutorials/how-to-migrate-from-vue-cli-to-vite/
 - Vuetify 2 → 3: https://vuetifyjs.com/en/getting-started/upgrade-guide/
 - ESLint 8 → 9: https://eslint.org/docs/latest/use/migrate-to-9.0.0
 
 ### 14.3 Best Practices
+
 - Electron Security: https://www.electronjs.org/docs/latest/tutorial/security
 - Vue 3 Composition API: https://vuejs.org/guide/extras/composition-api-faq.html
 - SOLID Principles: https://en.wikipedia.org/wiki/SOLID
@@ -1331,6 +1350,7 @@ export default defineConfig({
 This modernization plan transforms sqlite-search from a legacy Vue CLI application with architectural antipatterns into a modern, secure, maintainable application following SOLID, DRY, and KISS principles. The phased approach minimizes risk while delivering incremental value.
 
 **Key Benefits:**
+
 - ✅ **Security:** SQL injection fixed, latest Electron
 - ✅ **Maintainability:** Modular architecture, clear separation of concerns
 - ✅ **Developer Experience:** Fast HMR, modern tooling, Makefile automation
@@ -1339,6 +1359,7 @@ This modernization plan transforms sqlite-search from a legacy Vue CLI applicati
 - ✅ **Future-Proof:** Modern stack with active maintenance
 
 **Next Steps:**
+
 1. Review and approve this plan
 2. Create feature branch: `feat/modernization`
 3. Begin Phase 1: Foundation

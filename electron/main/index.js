@@ -23,11 +23,11 @@ async function createWindow() {
     height: 800,
     icon: path.join(__dirname, '../../public/favicon.ico'),
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false // Required for sqlite3
-    }
+      sandbox: false, // Required for sqlite3
+    },
   })
 
   // Load the appropriate URL based on environment
@@ -67,7 +67,7 @@ app.whenReady().then(() => {
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
   if (process.platform === 'win32') {
-    process.on('message', (data) => {
+    process.on('message', data => {
       if (data === 'graceful-exit') {
         app.quit()
       }
@@ -87,7 +87,7 @@ function initDbConnection(dbPath) {
     return null
   }
 
-  let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, (err) => {
+  let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
     if (err) {
       console.error(err.message)
     } else {
@@ -131,7 +131,7 @@ ipcMain.on('perform-search', (event, searchTerm, selectedTable, selectedColumns)
 })
 
 // Handling the table list request
-ipcMain.on('get-table-list', async (event) => {
+ipcMain.on('get-table-list', async event => {
   // Check if the database connection exists
   if (!db) {
     console.error('Database connection not established.')
@@ -150,7 +150,10 @@ ipcMain.on('get-table-list', async (event) => {
       console.error('Database error:', err)
       event.reply('table-list-error', err.message)
     } else {
-      event.reply('table-list', tables.map(t => t.name))
+      event.reply(
+        'table-list',
+        tables.map(t => t.name)
+      )
     }
   })
 })

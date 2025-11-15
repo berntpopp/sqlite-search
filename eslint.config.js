@@ -13,8 +13,8 @@ export default [
       '**/public/**',
       '**/coverage/**',
       '**/.auto-imports.d.ts',
-      '**/.components.d.ts'
-    ]
+      '**/.components.d.ts',
+    ],
   },
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
@@ -26,8 +26,8 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.node,
-        ...globals.es2021
-      }
+        ...globals.es2021,
+      },
     },
     rules: {
       'vue/multi-word-component-names': 'warn',
@@ -35,19 +35,19 @@ export default [
       'vue/script-setup-uses-vars': 'error',
       'no-console': 'warn',
       'no-debugger': 'warn',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
-    }
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
   },
   {
     files: ['electron/**/*.{js,mjs}'],
     languageOptions: {
       globals: {
-        ...globals.node
-      }
+        ...globals.node,
+      },
     },
     rules: {
-      'no-console': 'off' // Allow console in electron main process
-    }
+      'no-console': 'off', // Allow console in electron main process
+    },
   },
-  configPrettier // Must be last to override formatting rules
+  configPrettier, // Must be last to override formatting rules
 ]

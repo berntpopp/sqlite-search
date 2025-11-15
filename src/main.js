@@ -14,7 +14,7 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: 'dark'
+    defaultTheme: 'dark',
   },
   icons: {
     defaultSet: 'mdi',
@@ -25,6 +25,4 @@ const vuetify = createVuetify({
   },
 })
 
-createApp(App)
-  .use(vuetify)
-  .mount('#app')
+createApp(App).use(vuetify).mount('#app')

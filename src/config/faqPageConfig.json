@@ -1,26 +1,25 @@
 {
-    "title": "Frequently Asked Questions",
-    "sections": [
-      {
-        "header": "What is Sqlite Search?",
-        "content": "Sqlite Search is a web-technology-based application designed for sim ple full text search from a Sqlite database. It is designed to be easy to use and easy to deploy.",
-        "links": [
-          {
-            "title": "Learn More",
-            "url": "https://github.com/berntpopp/sqlite-search"
-          }
-        ]
-      },
-      {
-        "header": "How can I contribute?",
-        "content": "We welcome contributions from the community. Please visit our GitHub repository to get started.",
-        "links": [
-          {
-            "title": "GitHub Repository",
-            "url": "https://github.com/berntpopp/sqlite-search/issues"
-          }
-        ]
-      }
-    ]
-  }
-  
+  "title": "Frequently Asked Questions",
+  "sections": [
+    {
+      "header": "What is Sqlite Search?",
+      "content": "Sqlite Search is a web-technology-based application designed for sim ple full text search from a Sqlite database. It is designed to be easy to use and easy to deploy.",
+      "links": [
+        {
+          "title": "Learn More",
+          "url": "https://github.com/berntpopp/sqlite-search"
+        }
+      ]
+    },
+    {
+      "header": "How can I contribute?",
+      "content": "We welcome contributions from the community. Please visit our GitHub repository to get started.",
+      "links": [
+        {
+          "title": "GitHub Repository",
+          "url": "https://github.com/berntpopp/sqlite-search/issues"
+        }
+      ]
+    }
+  ]
+}

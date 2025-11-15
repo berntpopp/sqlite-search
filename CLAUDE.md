@@ -9,11 +9,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Running the Application
+
 - **Development mode**: `npm run electron:serve` - Starts the app with hot-reload and dev tools
 - **Web development**: `npm run serve` - Runs Vue app in browser (without Electron)
 - **Build production**: `npm run electron:build` - Creates distributable Electron app
 
 ### Code Quality
+
 - **Lint**: `npm run lint` - Run ESLint to check code style
 - **Build web**: `npm run build` - Build Vue app for production
 
@@ -39,10 +41,11 @@ The application uses a strict separation between main process (Node.js) and rend
 ### FTS5 Search Implementation
 
 Search queries use SQLite FTS5 column filter syntax:
+
 ```javascript
 // Constructs: {column1 column2 column3}: searchTerm
-const matchQuery = `{${selectedColumns.join(' ')}}: ${searchTerm}`;
-const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`;
+const matchQuery = `{${selectedColumns.join(' ')}}: ${searchTerm}`
+const query = `SELECT * FROM ${selectedTable} WHERE ${selectedTable} MATCH ?`
 ```
 
 This allows searching specific columns within FTS5 virtual tables.
@@ -50,6 +53,7 @@ This allows searching specific columns within FTS5 virtual tables.
 ### State Persistence
 
 The app uses localStorage to persist:
+
 - `databasePath`: Currently selected database file path
 - `selectedTable`: Last selected FTS5 table
 - `selectedColumns`: Array of columns to search within
