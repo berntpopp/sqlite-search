@@ -10,6 +10,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "build:dist": "electron-builder",
+    "dist": "pnpm run build && electron-builder",
     "preview": "electron-vite preview",
     "lint": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,ts,vue,json,md}\"",
