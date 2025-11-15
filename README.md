@@ -1,5 +1,10 @@
 # sqlite-search
 
+[![Build](https://github.com/berntpopp/sqlite-search/actions/workflows/build.yml/badge.svg)](https://github.com/berntpopp/sqlite-search/actions/workflows/build.yml)
+[![Release](https://github.com/berntpopp/sqlite-search/actions/workflows/release.yml/badge.svg)](https://github.com/berntpopp/sqlite-search/actions/workflows/release.yml)
+[![GitHub release](https://img.shields.io/github/v/release/berntpopp/sqlite-search)](https://github.com/berntpopp/sqlite-search/releases/latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## Overview
 
 `sqlite-search` is a modern Electron-based desktop application designed to search SQLite databases using full-text search (FTS5). Built with Vue 3, Vuetify 3, and electron-vite, it provides a user-friendly interface for selecting databases, performing searches, and viewing results.
@@ -13,6 +18,16 @@
 - **Copy to Clipboard**: Copy search result details to clipboard
 - **Dark/Light Theme**: Toggle between dark and light themes with persistent preferences
 - **MDB Converter**: Convert Microsoft Access (.mdb) databases to SQLite with FTS5 indexing
+
+## Download
+
+Pre-built installers are available for Windows, macOS, and Linux:
+
+**[Download Latest Release](https://github.com/berntpopp/sqlite-search/releases/latest)**
+
+- **Windows**: `sqlite-search-Setup-{version}.exe` (NSIS installer)
+- **macOS**: `sqlite-search-{version}.dmg` (requires macOS 10.13+)
+- **Linux**: `sqlite-search-{version}.AppImage` (universal) or `.deb` (Debian/Ubuntu)
 
 ## Setup and Installation
 

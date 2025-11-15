@@ -67,6 +67,11 @@
       "node_modules/**/*",
       "package.json"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "berntpopp",
+      "repo": "sqlite-search"
+    },
     "win": {
       "target": [
         "nsis"
