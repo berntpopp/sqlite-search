@@ -1,7 +1,7 @@
 // electron/main/index.js
 'use strict'
 
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -16,12 +16,24 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 // Set the default database path
 const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
 
+/**
+ * Disable default application menu for cleaner UI
+ * Best Practice: Call before app.ready for optimal performance
+ * - Windows/Linux: Completely removes the menu bar
+ * - macOS: Removes application menu (system menu bar remains)
+ * Reference: https://www.electronjs.org/docs/latest/tutorial/performance
+ */
+Menu.setApplicationMenu(null)
+
 async function createWindow() {
   // Create the browser window.
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     icon: path.join(__dirname, '../../public/favicon.ico'),
+    // Defense in depth: Auto-hide menu bar as fallback
+    // User can still reveal with Alt key if needed
+    autoHideMenuBar: true,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
