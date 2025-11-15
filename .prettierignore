@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-electron
+coverage
+.vscode
+public
+*.log
+pnpm-lock.yaml
+package-lock.json
+.auto-imports.d.ts
+.components.d.ts

@@ -1,54 +1,52 @@
 {
   "name": "sqlite-search",
-  "version": "0.2.0",
+  "version": "0.3.0",
+  "description": "Electron-based desktop application for searching SQLite databases using FTS5",
+  "main": "./dist-electron/main/index.js",
   "author": "Bernt Popp",
   "private": true,
+  "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint",
-    "electron:build": "vue-cli-service electron:build",
-    "electron:serve": "vue-cli-service electron:serve",
-    "postinstall": "electron-builder install-app-deps",
-    "postuninstall": "electron-builder install-app-deps"
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "build:dist": "electron-builder",
+    "preview": "electron-vite preview",
+    "lint": "eslint . --fix",
+    "format": "prettier --write \"**/*.{js,ts,vue,json,md}\"",
+    "typecheck": "vue-tsc --noEmit --skipLibCheck"
   },
-  "main": "background.js",
   "dependencies": {
-    "core-js": "^3.8.3",
+    "@mdi/font": "^7.4.47",
+    "pinia": "^2.3.0",
     "sqlite3": "^5.1.7",
-    "vue": "^3.2.13",
-    "vuetify": "^3.5.2"
+    "vue": "^3.5.13",
+    "vuetify": "^3.7.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.16",
-    "@babel/eslint-parser": "^7.12.16",
-    "@vue/cli-plugin-babel": "~5.0.0",
-    "@vue/cli-plugin-eslint": "~5.0.0",
-    "@vue/cli-service": "~5.0.0",
-    "electron": "^28.2.1",
-    "electron-devtools-installer": "^3.1.0",
-    "eslint": "^7.32.0",
-    "eslint-plugin-vue": "^8.0.3",
-    "vue-cli-plugin-electron-builder": "~2.1.1"
+    "@eslint/js": "^9.17.0",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/coverage-v8": "^4.0.9",
+    "@vue/test-utils": "^2.4.6",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^4.0.1",
+    "eslint": "^9.17.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-vue": "^9.31.0",
+    "eslint-plugin-vuetify": "^2.4.1",
+    "globals": "^15.14.0",
+    "jsdom": "^25.0.1",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "unplugin-auto-import": "^20.2.0",
+    "unplugin-vue-components": "^30.0.0",
+    "vite": "^6.0.5",
+    "vite-plugin-vuetify": "^2.1.2",
+    "vitest": "^4.0.9",
+    "vue-tsc": "^2.2.0"
   },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/vue3-essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "rules": {}
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead",
-    "not ie 11"
-  ]
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=9.0.0"
+  }
 }
