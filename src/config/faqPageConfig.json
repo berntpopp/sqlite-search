@@ -1,25 +1,37 @@
 {
-  "title": "Frequently Asked Questions",
+  "title": "Help & Documentation",
   "sections": [
     {
-      "header": "What is Sqlite Search?",
-      "content": "Sqlite Search is a web-technology-based application designed for sim ple full text search from a Sqlite database. It is designed to be easy to use and easy to deploy.",
-      "links": [
-        {
-          "title": "Learn More",
-          "url": "https://github.com/berntpopp/sqlite-search"
-        }
-      ]
+      "header": "What is SQLite Search?",
+      "content": "SQLite Search is a desktop application for performing full-text searches on SQLite databases using FTS5 (Full-Text Search 5). Built with modern web technologies (Vue 3, Vuetify 3, Electron), it provides an intuitive interface for searching through large datasets with powerful FTS5 query syntax support."
     },
     {
-      "header": "How can I contribute?",
-      "content": "We welcome contributions from the community. Please visit our GitHub repository to get started.",
-      "links": [
-        {
-          "title": "GitHub Repository",
-          "url": "https://github.com/berntpopp/sqlite-search/issues"
-        }
-      ]
+      "header": "Getting Started",
+      "content": "To begin: (1) Click 'Select Database' in the header to choose your SQLite database file. (2) Select a table from the dropdown - only FTS5 virtual tables will appear. (3) Choose columns to search (all selected by default). (4) Enter your search term and press Enter or click the search button. Results appear in a compact, sortable table below."
+    },
+    {
+      "header": "Database Requirements",
+      "content": "SQLite Search requires databases with FTS5 virtual tables. Regular tables won't appear in the selector. FTS5 tables are created using 'CREATE VIRTUAL TABLE ... USING fts5(...)' syntax. If no tables appear after selecting your database, it may not contain FTS5 virtual tables. You can verify this using any SQLite browser tool."
+    },
+    {
+      "header": "Search Syntax (FTS5)",
+      "content": "FTS5 supports powerful search: Simple terms ('protein'), exact phrases ('\"cell membrane\"'), boolean operators ('protein AND enzyme', 'gene OR protein', 'NOT obsolete'), prefix matching with asterisk ('bio*' matches biology, biochemistry), proximity search ('protein NEAR/5 enzyme' finds terms within 5 words), and complex combinations ('(gene OR protein) AND NOT obsolete')."
+    },
+    {
+      "header": "Using Results",
+      "content": "Search results display in a dense, sortable table. Click column headers to sort. Use the eye icon to view full details in a dialog. Use the clipboard icon to copy field values. The result count appears above the table and in status messages. Clear results with the clear button or start a new search."
+    },
+    {
+      "header": "Theme & Preferences",
+      "content": "Toggle between light and dark themes using the sun/moon icon in the header. Your theme preference is saved automatically and restored when you reopen the app. The dark theme is optimized for low-light environments and reduces eye strain."
+    },
+    {
+      "header": "Troubleshooting",
+      "content": "No tables? Ensure your database has FTS5 virtual tables, not regular tables. No results? Check your search syntax and try simpler terms or wildcard matching (*). App slow? Large result sets take time to render - try narrowing your search or selecting fewer columns. FTS5 searches are highly optimized even on large datasets."
+    },
+    {
+      "header": "About & License",
+      "content": "SQLite Search is open-source software licensed under the MIT License, allowing free use, modification, and distribution. Built with Vue 3 Composition API, Vuetify 3 Material Design, Electron for cross-platform desktop deployment, Pinia for state management, and electron-vite for modern build tooling. Uses SQLite's FTS5 extension for high-performance full-text search."
     }
   ]
 }

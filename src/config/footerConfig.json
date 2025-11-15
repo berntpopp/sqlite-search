@@ -1,19 +1,14 @@
 {
   "links": [
     {
-      "icon": "mdi-github",
-      "href": "https://github.com/berntpopp/sqlite-search",
-      "text": "GitHub"
+      "icon": "mdi-help-circle-outline",
+      "action": "help",
+      "text": "Help & Documentation"
     },
     {
-      "icon": "mdi-file-document-outline",
-      "href": "https://github.com/berntpopp/sqlite-search/wiki",
-      "text": "Documentation"
-    },
-    {
-      "icon": "mdi-certificate",
-      "href": "https://github.com/berntpopp/sqlite-search/blob/master/LICENSE",
-      "text": "License"
+      "icon": "mdi-information-outline",
+      "action": "about",
+      "text": "About & License"
     }
   ]
 }
