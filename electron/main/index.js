@@ -53,11 +53,9 @@ log.info('Default database path:', defaultDbPath)
 
 /**
  * Application menu configuration
- * Note: Menu is enabled for easier access to DevTools and other features
- * To disable menu for cleaner UI, uncomment the line below:
- * Menu.setApplicationMenu(null)
+ * Disable menu for cleaner production UI
  */
-// Menu.setApplicationMenu(null)
+Menu.setApplicationMenu(null)
 
 async function createWindow() {
   log.info('createWindow() called')
@@ -125,9 +123,6 @@ async function createWindow() {
 
       await win.loadFile(htmlPath)
       log.info('Production HTML loaded')
-      // Enable DevTools in production for debugging
-      win.webContents.openDevTools()
-      log.info('DevTools opened')
     }
 
     // Log when the window is ready to show
