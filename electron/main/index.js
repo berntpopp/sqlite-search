@@ -90,27 +90,37 @@ async function createWindow() {
 
     log.info('BrowserWindow created successfully')
 
-    // Load the appropriate URL based on environment
-    if (isDevelopment) {
-      // In development, Vite dev server runs on port 5173 by default
-      // electron-vite will set ELECTRON_RENDERER_URL
-      const rendererUrl = process.env.ELECTRON_RENDERER_URL || 'http://localhost:5173'
-      log.info('Loading development URL:', rendererUrl)
-      await win.loadURL(rendererUrl)
+    // Load the appropriate URL based on packaging state
+    // Best practice: Use app.isPackaged instead of NODE_ENV
+    // electron-vite sets ELECTRON_RENDERER_URL during development
+    if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
+      // Development mode: Load from Vite dev server
+      log.info('Loading development URL:', process.env.ELECTRON_RENDERER_URL)
+      await win.loadURL(process.env.ELECTRON_RENDERER_URL)
       log.info('Development URL loaded')
       win.webContents.openDevTools()
     } else {
-      // In production, load the built index.html
+      // Production mode: Load from built files
       const htmlPath = path.join(__dirname, '../renderer/index.html')
       log.info('Loading production HTML:', htmlPath)
+      log.info('app.isPackaged:', app.isPackaged)
+      log.info('__dirname:', __dirname)
       log.info('HTML file exists:', fs.existsSync(htmlPath))
 
       if (!fs.existsSync(htmlPath)) {
         log.error('CRITICAL: index.html not found at', htmlPath)
-        log.info('Directory contents:', __dirname)
-        log.info(fs.readdirSync(__dirname))
+        log.info('Directory contents of __dirname:')
+        try {
+          log.info(fs.readdirSync(__dirname))
+        } catch (e) {
+          log.error('Cannot read __dirname:', e.message)
+        }
         log.info('Parent directory:', path.join(__dirname, '..'))
-        log.info(fs.readdirSync(path.join(__dirname, '..')))
+        try {
+          log.info(fs.readdirSync(path.join(__dirname, '..')))
+        } catch (e) {
+          log.error('Cannot read parent directory:', e.message)
+        }
       }
 
       await win.loadFile(htmlPath)
