@@ -1,11 +1,11 @@
 // src/composables/useDatabase.js
-import { electronService } from '@/services/electron.service'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useUIStore } from '@/stores/ui.store'
 
 /**
  * Composable for database operations
  * Implements business logic for database selection and management
+ * Note: Uses direct Electron IPC calls, not promises
  */
 export function useDatabase() {
   const databaseStore = useDatabaseStore()
@@ -13,10 +13,11 @@ export function useDatabase() {
 
   /**
    * Select a new database file
+   * Uses Electron IPC directly - response comes via onTableList event
    */
   async function selectDatabase() {
     try {
-      const filePath = await electronService.openFileDialog()
+      const filePath = await window.electronAPI.openFileDialog()
 
       if (filePath) {
         // Update store
@@ -25,11 +26,11 @@ export function useDatabase() {
         // Reset table/column selections
         databaseStore.clearTableSelection()
 
-        // Change database in backend
-        electronService.changeDatabase(filePath)
+        // Change database in backend (no response expected)
+        window.electronAPI.changeDatabase(filePath)
 
-        // Load tables
-        await loadTables()
+        // Request tables list (response comes via onTableList event in App.vue)
+        window.electronAPI.getTableList()
 
         uiStore.showSuccess(`Database loaded: ${databaseStore.fileName}`)
       }
@@ -41,11 +42,11 @@ export function useDatabase() {
 
   /**
    * Load list of FTS5 tables from current database
+   * Response comes via onTableList event listener in App.vue
    */
-  async function loadTables() {
+  function loadTables() {
     try {
-      const tables = await electronService.getTableList()
-      databaseStore.setTables(tables.map(t => t.name))
+      window.electronAPI.getTableList()
     } catch (error) {
       console.error('Error loading tables:', error)
       uiStore.showError('Failed to load tables')
@@ -54,30 +55,15 @@ export function useDatabase() {
 
   /**
    * Select a table and load its columns
+   * Column response comes via onColumnsList event listener in App.vue
    */
-  async function selectTable(tableName) {
+  function selectTable(tableName) {
     try {
       databaseStore.selectTable(tableName)
-      await loadColumns(tableName)
+      window.electronAPI.getColumns(tableName)
     } catch (error) {
       console.error('Error selecting table:', error)
       uiStore.showError('Failed to select table')
-    }
-  }
-
-  /**
-   * Load columns for a specific table
-   */
-  async function loadColumns(tableName) {
-    try {
-      const columns = await electronService.getColumns(tableName)
-      databaseStore.setColumns(columns)
-
-      // Auto-select all columns by default
-      databaseStore.selectColumns(columns)
-    } catch (error) {
-      console.error('Error loading columns:', error)
-      uiStore.showError('Failed to load columns')
     }
   }
 
@@ -105,7 +91,6 @@ export function useDatabase() {
     selectDatabase,
     loadTables,
     selectTable,
-    loadColumns,
     resetDatabase,
     selectColumns: databaseStore.selectColumns,
   }

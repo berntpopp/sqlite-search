@@ -1,5 +1,4 @@
 // src/composables/useSearch.js
-import { electronService } from '@/services/electron.service'
 import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useUIStore } from '@/stores/ui.store'
@@ -7,6 +6,7 @@ import { useUIStore } from '@/stores/ui.store'
 /**
  * Composable for search operations
  * Implements business logic for FTS5 search
+ * Note: Uses direct Electron IPC calls, not promises
  */
 export function useSearch() {
   const searchStore = useSearchStore()
@@ -15,8 +15,9 @@ export function useSearch() {
 
   /**
    * Perform FTS5 search
+   * Results come via onSearchResults event listener in App.vue
    */
-  async function performSearch() {
+  function performSearch() {
     // Validation
     if (!searchStore.searchTerm) {
       uiStore.showError('Please enter a search term')
@@ -33,30 +34,21 @@ export function useSearch() {
       return
     }
 
-    // Perform search
+    // Perform search via IPC (response comes via onSearchResults event)
     try {
       searchStore.setLoading(true)
       searchStore.clearError()
 
-      const results = await electronService.performSearch(
+      window.electronAPI.performSearch(
         searchStore.searchTerm,
         databaseStore.selectedTable,
         databaseStore.selectedColumns
       )
-
-      searchStore.setResults(results)
-
-      if (results.length === 0) {
-        uiStore.showInfo('No results found')
-      } else {
-        uiStore.showSuccess(`Found ${results.length} result(s)`)
-      }
     } catch (error) {
       console.error('Search error:', error)
       searchStore.setError(error.message)
-      uiStore.showError(`Search failed: ${error.message}`)
-    } finally {
       searchStore.setLoading(false)
+      uiStore.showError(`Search failed: ${error.message}`)
     }
   }
 
