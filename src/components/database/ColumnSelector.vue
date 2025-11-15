@@ -45,11 +45,14 @@
 
     <!-- Compact chip display for selected columns -->
     <template #selection="{ item, index }">
-      <v-chip v-if="index < 2" size="small" closable>
+      <v-chip v-if="index < SEARCH_CONFIG.MAX_CHIP_PREVIEW" size="small" closable>
         <span>{{ item.title }}</span>
       </v-chip>
-      <span v-if="index === 2" class="text-medium-emphasis text-caption align-self-center ml-1">
-        (+{{ selectedColumns.length - 2 }} more)
+      <span
+        v-if="index === SEARCH_CONFIG.MAX_CHIP_PREVIEW"
+        class="text-medium-emphasis text-caption align-self-center ml-1"
+      >
+        (+{{ selectedColumns.length - SEARCH_CONFIG.MAX_CHIP_PREVIEW }} more)
       </span>
     </template>
   </v-autocomplete>

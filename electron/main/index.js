@@ -471,7 +471,11 @@ ipcMain.handle('open-file-dialog', async () => {
 ipcMain.on('change-database', (event, newPath) => {
   // Close the existing database connection if open
   if (db) {
-    db.close(err => {
+    // Store reference to old database and clear global immediately
+    const oldDb = db
+    db = null
+
+    oldDb.close(err => {
       if (err) {
         console.error('Error closing previous database:', err)
       } else {
