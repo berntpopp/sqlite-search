@@ -4,6 +4,7 @@ node_modules
 /dist-electron
 /dist_electron
 /out
+/release
 
 # database folder
 /db

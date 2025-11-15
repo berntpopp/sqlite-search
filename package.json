@@ -61,17 +61,15 @@
     "productName": "sqlite-search",
     "directories": {
       "buildResources": "build",
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "dist-electron/**/*",
-      "dist/**/*",
       "node_modules/**/*",
       "package.json"
     ],
     "asarUnpack": [
-      "node_modules/sqlite3/**/*",
-      "dist-electron/main/chunks/*.node"
+      "node_modules/sqlite3/**/*"
     ],
     "publish": {
       "provider": "github",
