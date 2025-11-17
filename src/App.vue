@@ -131,6 +131,8 @@ function setupIPCListeners() {
       databaseStore.setColumns(columns)
       // Auto-select ALL columns by default
       databaseStore.selectColumns(columns)
+      // Set current table for search store (enables sort/filter persistence)
+      searchStore.setCurrentTable(databaseStore.selectedTable)
       uiStore.showSuccess(`All ${columns.length} column(s) selected`)
     } else {
       uiStore.showError('The selected table has no columns or is not searchable')

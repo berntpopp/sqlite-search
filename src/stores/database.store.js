@@ -1,10 +1,12 @@
 /**
  * Database Store
  * Manages database connection state, table/column selections with localStorage persistence
+ * Enhanced with column management (visibility and ordering)
  * Uses Pinia Composition API pattern
  */
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { SEARCH_CONFIG } from '@/config/search.config'
 
 export const useDatabaseStore = defineStore('database', () => {
   // State - using ref for reactivity
@@ -13,6 +15,10 @@ export const useDatabaseStore = defineStore('database', () => {
   const selectedTable = ref(localStorage.getItem('selectedTable') || '')
   const columns = ref([])
   const selectedColumns = ref(JSON.parse(localStorage.getItem('selectedColumns') || '[]'))
+
+  // Column management state
+  const columnOrder = ref([]) // Array of column names in display order
+  const hiddenColumns = ref([]) // Array of hidden column names
 
   // Getters - using computed
   const isConnected = computed(() => !!path.value)
@@ -23,6 +29,122 @@ export const useDatabaseStore = defineStore('database', () => {
     const pathParts = path.value.split(/[/\\]/)
     return pathParts[pathParts.length - 1]
   })
+
+  /**
+   * Get visible columns in the configured order
+   * Returns columns that are not hidden, in the order specified by columnOrder
+   */
+  const visibleColumns = computed(() => {
+    if (columnOrder.value.length === 0) {
+      // If no custom order, use original order filtered by hidden columns
+      return selectedColumns.value.filter(col => !hiddenColumns.value.includes(col))
+    }
+
+    // Use custom order, filtered by hidden columns
+    return columnOrder.value.filter(col =>
+      selectedColumns.value.includes(col) && !hiddenColumns.value.includes(col)
+    )
+  })
+
+  /**
+   * Check if at least one column is visible
+   */
+  const hasVisibleColumns = computed(() => visibleColumns.value.length > 0)
+
+  /**
+   * Get count of hidden columns
+   */
+  const hiddenColumnCount = computed(() => hiddenColumns.value.length)
+
+  // Persistence helpers for column management
+  /**
+   * Generate localStorage key for table-specific column preferences
+   * @param {string} tableName - Name of the table
+   * @param {string} type - Type of preference (order, hidden)
+   * @returns {string} - localStorage key
+   */
+  function getColumnStorageKey(tableName, type) {
+    return `${SEARCH_CONFIG.STORAGE_KEY_PREFIX}_column_${type}_${tableName}`
+  }
+
+  /**
+   * Load column order from localStorage
+   * @param {string} tableName - Name of the table
+   */
+  function loadColumnOrder(tableName) {
+    if (!tableName) return
+
+    const key = getColumnStorageKey(tableName, 'order')
+    const stored = localStorage.getItem(key)
+
+    if (stored) {
+      try {
+        columnOrder.value = JSON.parse(stored)
+      } catch (e) {
+        console.warn('Failed to parse column order:', e)
+        columnOrder.value = []
+      }
+    } else {
+      columnOrder.value = []
+    }
+  }
+
+  /**
+   * Save column order to localStorage
+   * @param {string} tableName - Name of the table
+   */
+  function saveColumnOrder(tableName) {
+    if (!tableName) return
+
+    const key = getColumnStorageKey(tableName, 'order')
+    localStorage.setItem(key, JSON.stringify(columnOrder.value))
+  }
+
+  /**
+   * Load hidden columns from localStorage
+   * @param {string} tableName - Name of the table
+   */
+  function loadHiddenColumns(tableName) {
+    if (!tableName) return
+
+    const key = getColumnStorageKey(tableName, 'hidden')
+    const stored = localStorage.getItem(key)
+
+    if (stored) {
+      try {
+        hiddenColumns.value = JSON.parse(stored)
+      } catch (e) {
+        console.warn('Failed to parse hidden columns:', e)
+        hiddenColumns.value = []
+      }
+    } else {
+      hiddenColumns.value = []
+    }
+  }
+
+  /**
+   * Save hidden columns to localStorage
+   * @param {string} tableName - Name of the table
+   */
+  function saveHiddenColumns(tableName) {
+    if (!tableName) return
+
+    const key = getColumnStorageKey(tableName, 'hidden')
+    localStorage.setItem(key, JSON.stringify(hiddenColumns.value))
+  }
+
+  // Watch for column management changes and persist
+  watch(columnOrder, () => {
+    if (selectedTable.value) {
+      saveColumnOrder(selectedTable.value)
+    }
+  }, { deep: true })
+
+  watch(hiddenColumns, () => {
+    if (selectedTable.value) {
+      saveHiddenColumns(selectedTable.value)
+    }
+  }, { deep: true })
 
   // Actions
   /**
@@ -53,6 +175,9 @@ export const useDatabaseStore = defineStore('database', () => {
     // Reset columns when table changes
     selectedColumns.value = []
     localStorage.removeItem('selectedColumns')
+    // Load column preferences for this table
+    loadColumnOrder(table)
+    loadHiddenColumns(table)
   }
 
   /**
@@ -70,6 +195,107 @@ export const useDatabaseStore = defineStore('database', () => {
   function selectColumns(cols) {
     selectedColumns.value = cols
     localStorage.setItem('selectedColumns', JSON.stringify(cols))
+
+    // Initialize column order if not already set
+    if (columnOrder.value.length === 0) {
+      columnOrder.value = [...cols]
+    }
+  }
+
+  /**
+   * Set custom column order
+   * @param {string[]} newOrder - Array of column names in desired order
+   */
+  function setColumnOrder(newOrder) {
+    columnOrder.value = newOrder
+  }
+
+  /**
+   * Move column up in the order
+   * @param {string} columnName - Name of the column to move
+   */
+  function moveColumnUp(columnName) {
+    const index = columnOrder.value.indexOf(columnName)
+    if (index > 0) {
+      const newOrder = [...columnOrder.value]
+      ;[newOrder[index - 1], newOrder[index]] = [newOrder[index], newOrder[index - 1]]
+      columnOrder.value = newOrder
+    }
+  }
+
+  /**
+   * Move column down in the order
+   * @param {string} columnName - Name of the column to move
+   */
+  function moveColumnDown(columnName) {
+    const index = columnOrder.value.indexOf(columnName)
+    if (index >= 0 && index < columnOrder.value.length - 1) {
+      const newOrder = [...columnOrder.value]
+      ;[newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]]
+      columnOrder.value = newOrder
+    }
+  }
+
+  /**
+   * Toggle column visibility
+   * @param {string} columnName - Name of the column
+   */
+  function toggleColumnVisibility(columnName) {
+    const index = hiddenColumns.value.indexOf(columnName)
+
+    if (index === -1) {
+      // Hide column (but ensure at least one column remains visible)
+      const wouldBeVisible = visibleColumns.value.length - 1
+      if (wouldBeVisible >= SEARCH_CONFIG.COLUMN_MANAGEMENT.MIN_VISIBLE_COLUMNS) {
+        hiddenColumns.value = [...hiddenColumns.value, columnName]
+      }
+    } else {
+      // Show column
+      hiddenColumns.value = hiddenColumns.value.filter(col => col !== columnName)
+    }
+  }
+
+  /**
+   * Hide a specific column
+   * @param {string} columnName - Name of the column to hide
+   */
+  function hideColumn(columnName) {
+    if (!hiddenColumns.value.includes(columnName)) {
+      const wouldBeVisible = visibleColumns.value.length - 1
+      if (wouldBeVisible >= SEARCH_CONFIG.COLUMN_MANAGEMENT.MIN_VISIBLE_COLUMNS) {
+        hiddenColumns.value = [...hiddenColumns.value, columnName]
+      }
+    }
+  }
+
+  /**
+   * Show a specific column
+   * @param {string} columnName - Name of the column to show
+   */
+  function showColumn(columnName) {
+    hiddenColumns.value = hiddenColumns.value.filter(col => col !== columnName)
+  }
+
+  /**
+   * Show all columns
+   */
+  function showAllColumns() {
+    hiddenColumns.value = []
+  }
+
+  /**
+   * Reset column order to default (original order)
+   */
+  function resetColumnOrder() {
+    columnOrder.value = [...selectedColumns.value]
+  }
+
+  /**
+   * Reset all column preferences
+   */
+  function resetColumnPreferences() {
+    columnOrder.value = [...selectedColumns.value]
+    hiddenColumns.value = []
   }
 
   /**
@@ -82,6 +308,8 @@ export const useDatabaseStore = defineStore('database', () => {
     selectedTable.value = ''
     columns.value = []
     selectedColumns.value = []
+    columnOrder.value = []
+    hiddenColumns.value = []
     localStorage.removeItem('databasePath')
     localStorage.removeItem('selectedTable')
     localStorage.removeItem('selectedColumns')
@@ -95,6 +323,8 @@ export const useDatabaseStore = defineStore('database', () => {
     selectedTable.value = ''
     columns.value = []
     selectedColumns.value = []
+    columnOrder.value = []
+    hiddenColumns.value = []
     localStorage.removeItem('selectedTable')
     localStorage.removeItem('selectedColumns')
   }
@@ -106,17 +336,31 @@ export const useDatabaseStore = defineStore('database', () => {
     selectedTable,
     columns,
     selectedColumns,
+    columnOrder,
+    hiddenColumns,
     // Getters
     isConnected,
     hasSelectedTable,
     hasColumns,
     fileName,
+    visibleColumns,
+    hasVisibleColumns,
+    hiddenColumnCount,
     // Actions
     setPath,
     setTables,
     selectTable,
     setColumns,
     selectColumns,
+    setColumnOrder,
+    moveColumnUp,
+    moveColumnDown,
+    toggleColumnVisibility,
+    hideColumn,
+    showColumn,
+    showAllColumns,
+    resetColumnOrder,
+    resetColumnPreferences,
     reset,
     clearTableSelection,
   }
