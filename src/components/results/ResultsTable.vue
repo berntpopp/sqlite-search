@@ -71,7 +71,7 @@
 
     <!-- Enhanced data table with sorting, filtering, and custom column headers -->
     <v-data-table
-      v-model:sort-by="sortBy"
+      v-model:sort-by="searchStore.sortBy"
       :headers="tableHeaders"
       :items="searchStore.filteredResults"
       density="compact"
@@ -196,7 +196,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
@@ -210,15 +210,15 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 // Component state
 const showColumnManagement = ref(false)
 
-// Two-way binding for sortBy with store
-const sortBy = computed({
-  get() {
-    return searchStore.sortBy
+// Watch visible columns and cleanup sortBy when columns are hidden
+watch(
+  () => databaseStore.visibleColumns,
+  (newVisibleColumns) => {
+    // Clean up sort descriptors to only include visible columns
+    searchStore.cleanupSortByColumns(newVisibleColumns)
   },
-  set(value) {
-    searchStore.setSortBy(value)
-  },
-})
+  { immediate: true }
+)
 
 /**
  * Generate table headers from visible columns (respecting order and visibility)
@@ -233,8 +233,8 @@ const tableHeaders = computed(() => {
     align: 'start',
   }))
 
-  // Add actions column
-  headers.push({
+  // Add actions column at the beginning
+  headers.unshift({
     title: 'Actions',
     value: 'actions',
     key: 'actions',

@@ -259,6 +259,22 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   /**
+   * Clean up sortBy array to remove columns that are not in the provided list
+   * Called when columns are hidden or table changes
+   * @param {string[]} validColumns - Array of valid column names
+   */
+  function cleanupSortByColumns(validColumns) {
+    if (sortBy.value.length > 0) {
+      const cleaned = sortBy.value.filter(sort => validColumns.includes(sort.key))
+      if (cleaned.length !== sortBy.value.length) {
+        sortBy.value = cleaned
+        // eslint-disable-next-line no-console
+        console.log('Cleaned up sortBy - removed hidden columns')
+      }
+    }
+  }
+
+  /**
    * Set filter for a specific column
    * @param {string} columnName - Name of the column
    * @param {string} filterValue - Filter value
@@ -335,6 +351,7 @@ export const useSearchStore = defineStore('search', () => {
     setCurrentTable,
     setSortBy,
     clearSort,
+    cleanupSortByColumns,
     setColumnFilter,
     clearColumnFilter,
     clearAllFilters,

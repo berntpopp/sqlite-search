@@ -50,6 +50,21 @@
       </v-tooltip>
     </v-btn>
 
+    <!-- Auto-select TEXT columns toggle -->
+    <v-btn
+      icon
+      variant="text"
+      size="small"
+      class="mx-1"
+      :color="uiStore.autoSelectTextColumns ? 'primary' : 'default'"
+      @click="uiStore.toggleAutoSelectTextColumns"
+    >
+      <v-icon size="small">mdi-format-text</v-icon>
+      <v-tooltip activator="parent" location="bottom">
+        {{ uiStore.autoSelectTextColumns ? 'Auto-select TEXT columns: ON' : 'Auto-select TEXT columns: OFF' }}
+      </v-tooltip>
+    </v-btn>
+
     <!-- Theme toggle button -->
     <v-btn icon variant="text" size="small" class="mx-1" @click="toggleTheme">
       <v-icon size="small">{{ themeIcon }}</v-icon>

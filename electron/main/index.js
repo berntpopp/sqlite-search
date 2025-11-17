@@ -269,7 +269,9 @@ function refreshValidTables(database) {
 }
 
 /**
- * Fetches and caches valid column names for a table
+ * Fetches and caches valid column information for a table
+ * Returns structured data with name and type for each column
+ * For FTS5 tables, queries the base table to get actual column types
  * This prevents SQL injection by ensuring only known columns can be queried
  */
 function getValidColumns(database, tableName) {
@@ -286,16 +288,48 @@ function getValidColumns(database, tableName) {
       return
     }
 
+    // Check if this is an FTS5 table and find the base table name
+    // FTS5 tables are named with _fts suffix in our conversion script
+    const baseTableName = tableName.replace(/_fts$/, '')
+    const isFTS5 = tableName !== baseTableName
+
+    // Query the base table for type information (FTS5 tables don't store types)
+    const tableToQuery = isFTS5 ? baseTableName : tableName
+
     // Now safe to use table name (validated against whitelist)
-    const columnListQuery = `PRAGMA table_info(${tableName});`
+    // PRAGMA table_info returns: cid, name, type, notnull, dflt_value, pk
+    const columnListQuery = `PRAGMA table_info(${tableToQuery});`
     database.all(columnListQuery, [], (err, columns) => {
       if (err) {
         console.error('Failed to fetch columns:', err)
-        reject(err)
+        // If base table query fails, try the original table
+        if (isFTS5 && tableToQuery !== tableName) {
+          const fallbackQuery = `PRAGMA table_info(${tableName});`
+          database.all(fallbackQuery, [], (err2, columns2) => {
+            if (err2) {
+              console.error('Fallback query also failed:', err2)
+              reject(err2)
+            } else {
+              const columnData = columns2.map(col => ({
+                name: col.name,
+                type: col.type || 'TEXT'
+              }))
+              validColumnsCache.set(tableName, columnData)
+              resolve(columnData)
+            }
+          })
+        } else {
+          reject(err)
+        }
       } else {
-        const columnNames = columns.map(col => col.name)
-        validColumnsCache.set(tableName, columnNames)
-        resolve(columnNames)
+        // Return structured data with name and type
+        const columnData = columns.map(col => ({
+          name: col.name,
+          type: col.type || 'TEXT'
+        }))
+        validColumnsCache.set(tableName, columnData)
+        console.log(`Loaded column types for ${tableName}:`, columnData.slice(0, 5))
+        resolve(columnData)
       }
     })
   })
@@ -319,7 +353,9 @@ function isValidTable(tableName) {
 async function areValidColumns(database, tableName, columnNames) {
   try {
     const validCols = await getValidColumns(database, tableName)
-    return columnNames.every(col => validCols.includes(col))
+    // Extract names from structured column data
+    const validColNames = validCols.map(col => col.name)
+    return columnNames.every(col => validColNames.includes(col))
   } catch (error) {
     console.error('Column validation error:', error)
     return false
@@ -334,7 +370,7 @@ function initDbConnection(dbPath) {
     return null
   }
 
-  let db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
+  const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
     if (err) {
       console.error(err.message)
     } else {

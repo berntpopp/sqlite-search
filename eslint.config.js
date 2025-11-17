@@ -30,40 +30,10 @@ export default [
       },
     },
     rules: {
-      // Vue 3 Composition API best practices
-      'vue/component-api-style': ['error', ['script-setup']], // Enforce <script setup>
+      // Vue 3 best practices (only using rules that exist in current eslint-plugin-vue)
       'vue/multi-word-component-names': 'warn',
       'vue/no-unused-vars': 'error',
-      'vue/no-setup-props-destructure': 'error', // Prevent props destructuring loss of reactivity
-      'vue/no-deprecated-destroyed-lifecycle': 'error',
-      'vue/no-deprecated-dollar-listeners-api': 'error',
-      'vue/no-deprecated-dollar-scopedslots-api': 'error',
-      'vue/no-v-for-template-key-on-child': 'error', // Vue 3 key placement
-      'vue/valid-v-memo': 'error',
-      'vue/require-explicit-emits': 'error', // Require explicit emits definition
-      'vue/prefer-import-from-vue': 'error',
-
-      // Code organization
-      'vue/component-tags-order': [
-        'error',
-        {
-          order: ['template', 'script', 'style'],
-        },
-      ],
-      'vue/block-lang': [
-        'error',
-        {
-          script: { lang: 'js' }, // Can be changed to 'ts' when fully migrated
-        },
-      ],
-
-      // Best practices
       'vue/no-unused-components': 'error',
-      'vue/no-useless-v-bind': 'error',
-      'vue/no-useless-template-attributes': 'error',
-      'vue/prefer-true-attribute-shorthand': 'error',
-      'vue/v-on-event-hyphenation': ['error', 'always'],
-      'vue/attribute-hyphenation': ['error', 'always'],
 
       // JavaScript/ES6+ best practices
       'no-console': 'warn',

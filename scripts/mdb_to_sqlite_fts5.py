@@ -231,9 +231,32 @@ class MDBToSQLiteConverter:
 
                 self._log(f"  CSV contains {len(csv_columns)} columns")
 
-                # Create sanitized schema from CSV columns (all as TEXT for simplicity)
-                # This ensures column names match exactly what mdb-export provides
-                sanitized_schema = [(col, 'TEXT') for col in csv_columns]
+                # Map CSV columns to schema types
+                # CSV column names may differ from schema (e.g., C, CREATE omitted)
+                # Match by sanitized column name to preserve original data types
+                sanitized_schema = []
+                schema_map = {}
+
+                # Build case-insensitive lookup map from original schema
+                for col_name, col_type in schema:
+                    # Sanitize schema column name the same way
+                    safe_name = col_name.replace('`', '').replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+                    if safe_name:
+                        safe_name = re.sub(r'[^\w]', '_', safe_name)
+                        safe_name = re.sub(r'_+', '_', safe_name).strip('_')
+                        if safe_name and not safe_name[0].isdigit():
+                            schema_map[safe_name.upper()] = col_type
+
+                # Match CSV columns with schema types
+                for csv_col in csv_columns:
+                    col_type = schema_map.get(csv_col.upper(), 'TEXT')  # Default to TEXT if not found
+                    sanitized_schema.append((csv_col, col_type))
+
+                # Log type distribution for verification
+                type_counts = {}
+                for _, col_type in sanitized_schema:
+                    type_counts[col_type] = type_counts.get(col_type, 0) + 1
+                self._log(f"  Column types: {dict(type_counts)}")
 
                 # Create regular table with proper quoting
                 columns_def = ", ".join([

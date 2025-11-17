@@ -13,7 +13,7 @@ export const useDatabaseStore = defineStore('database', () => {
   const path = ref(localStorage.getItem('databasePath') || '')
   const tables = ref([])
   const selectedTable = ref(localStorage.getItem('selectedTable') || '')
-  const columns = ref([])
+  const columns = ref([]) // Array of { name: string, type: string } objects
   const selectedColumns = ref(JSON.parse(localStorage.getItem('selectedColumns') || '[]'))
 
   // Column management state
@@ -29,6 +29,52 @@ export const useDatabaseStore = defineStore('database', () => {
     const pathParts = path.value.split(/[/\\]/)
     return pathParts[pathParts.length - 1]
   })
+
+  /**
+   * Get column names from structured column data
+   * For backward compatibility with components expecting string arrays
+   */
+  const columnNames = computed(() => {
+    return columns.value.map(col => col.name)
+  })
+
+  /**
+   * Get only TEXT-type columns for auto-selection
+   * Includes: TEXT, VARCHAR, CHAR, CLOB, and empty type (defaults to TEXT in SQLite)
+   */
+  const textColumns = computed(() => {
+    return columns.value
+      .filter(col => {
+        const type = (col.type || '').toUpperCase()
+        return (
+          type === '' ||
+          type === 'TEXT' ||
+          type.startsWith('VARCHAR') ||
+          type.startsWith('CHAR') ||
+          type === 'CLOB'
+        )
+      })
+      .map(col => col.name)
+  })
+
+  /**
+   * Get column type for a specific column name
+   * @param {string} columnName - Name of the column
+   * @returns {string} - Column type (e.g., 'TEXT', 'INTEGER', 'REAL')
+   */
+  function getColumnType(columnName) {
+    const column = columns.value.find(col => col.name === columnName)
+    return column ? column.type : ''
+  }
+
+  /**
+   * Check if a column is a text type
+   * @param {string} columnName - Name of the column
+   * @returns {boolean} - True if column is text type
+   */
+  function isTextColumn(columnName) {
+    return textColumns.value.includes(columnName)
+  }
 
   /**
    * Get visible columns in the configured order
@@ -184,7 +230,7 @@ export const useDatabaseStore = defineStore('database', () => {
 
   /**
    * Update list of available columns for selected table
-   * @param {string[]} newColumns - Array of column names
+   * @param {Array<{name: string, type: string}>} newColumns - Array of column objects with name and type
    */
   function setColumns(newColumns) {
     columns.value = newColumns
@@ -193,26 +239,49 @@ export const useDatabaseStore = defineStore('database', () => {
   /**
    * Select columns to search and persist to localStorage
    * Reconciles column order with actual columns to prevent mismatches
-   * @param {string[]} cols - Array of column names to search within
+   * @param {string[]|null} cols - Array of column names to search within, or null to auto-select text columns
+   * @param {boolean} autoSelectTextOnly - If true, auto-select only TEXT columns (default: false)
    */
-  function selectColumns(cols) {
-    selectedColumns.value = cols
-    localStorage.setItem('selectedColumns', JSON.stringify(cols))
+  function selectColumns(cols, autoSelectTextOnly = false) {
+    // Auto-select text columns if requested or cols is null
+    let columnsToSelect = cols
+    if (cols === null || autoSelectTextOnly) {
+      columnsToSelect = textColumns.value
+      // eslint-disable-next-line no-console
+      console.log('Auto-selected TEXT columns:', columnsToSelect)
+    }
+
+    selectedColumns.value = columnsToSelect
+    localStorage.setItem('selectedColumns', JSON.stringify(columnsToSelect))
 
     // Reconcile columnOrder with actual columns
     // This handles cases where table structure changed between sessions
     if (columnOrder.value.length === 0) {
       // First time - use natural order
-      columnOrder.value = [...cols]
+      columnOrder.value = [...columnsToSelect]
     } else {
       // Reconcile: keep existing order for matching columns, append new ones
-      const existingOrder = columnOrder.value.filter(col => cols.includes(col))
-      const newColumns = cols.filter(col => !columnOrder.value.includes(col))
+      const existingOrder = columnOrder.value.filter(col => columnsToSelect.includes(col))
+      const newColumns = columnsToSelect.filter(col => !columnOrder.value.includes(col))
       columnOrder.value = [...existingOrder, ...newColumns]
     }
 
     // Clean up hidden columns - remove any that no longer exist
-    hiddenColumns.value = hiddenColumns.value.filter(col => cols.includes(col))
+    hiddenColumns.value = hiddenColumns.value.filter(col => columnsToSelect.includes(col))
+
+    // Auto-hide non-text columns if auto-select is enabled
+    if (autoSelectTextOnly && columns.value.length > 0) {
+      const nonTextCols = columnNames.value.filter(col => !textColumns.value.includes(col))
+      hiddenColumns.value = [...new Set([...hiddenColumns.value, ...nonTextCols])]
+      // eslint-disable-next-line no-console
+      console.log('Auto-hidden non-TEXT columns:', nonTextCols)
+    } else if (!autoSelectTextOnly) {
+      // When auto-select is disabled, show ALL selected columns
+      // Clear hidden columns for columns that are now selected
+      hiddenColumns.value = hiddenColumns.value.filter(col => !columnsToSelect.includes(col))
+      // eslint-disable-next-line no-console
+      console.log('Showing all selected columns')
+    }
   }
 
   /**
@@ -388,9 +457,14 @@ export const useDatabaseStore = defineStore('database', () => {
     hasSelectedTable,
     hasColumns,
     fileName,
+    columnNames,
+    textColumns,
     visibleColumns,
     hasVisibleColumns,
     hiddenColumnCount,
+    // Helpers
+    getColumnType,
+    isTextColumn,
     // Actions
     setPath,
     setTables,
