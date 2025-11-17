@@ -50,10 +50,7 @@ jobs:
         env:
           # GitHub token for publishing releases
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # macOS code signing (optional - will skip if not configured)
-          CSC_LINK: ${{ secrets.MAC_CERTS }}
-          CSC_KEY_PASSWORD: ${{ secrets.MAC_CERTS_PASSWORD }}
-          # Windows code signing (optional - will skip if not configured)
+          # Disable code signing auto-discovery (signing configured in package.json)
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
@@ -61,14 +58,14 @@ jobs:
         with:
           name: ${{ matrix.os }}-artifacts
           path: |
-            dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.snap
-            dist/*.zip
-            dist/*.tar.gz
-            dist/*.yml
-            dist/*.blockmap
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.snap
+            release/*.zip
+            release/*.tar.gz
+            release/*.yml
+            release/*.blockmap
           if-no-files-found: warn
