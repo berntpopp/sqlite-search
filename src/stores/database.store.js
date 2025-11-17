@@ -190,16 +190,27 @@ export const useDatabaseStore = defineStore('database', () => {
 
   /**
    * Select columns to search and persist to localStorage
+   * Reconciles column order with actual columns to prevent mismatches
    * @param {string[]} cols - Array of column names to search within
    */
   function selectColumns(cols) {
     selectedColumns.value = cols
     localStorage.setItem('selectedColumns', JSON.stringify(cols))
 
-    // Initialize column order if not already set
+    // Reconcile columnOrder with actual columns
+    // This handles cases where table structure changed between sessions
     if (columnOrder.value.length === 0) {
+      // First time - use natural order
       columnOrder.value = [...cols]
+    } else {
+      // Reconcile: keep existing order for matching columns, append new ones
+      const existingOrder = columnOrder.value.filter(col => cols.includes(col))
+      const newColumns = cols.filter(col => !columnOrder.value.includes(col))
+      columnOrder.value = [...existingOrder, ...newColumns]
     }
+
+    // Clean up hidden columns - remove any that no longer exist
+    hiddenColumns.value = hiddenColumns.value.filter(col => cols.includes(col))
   }
 
   /**

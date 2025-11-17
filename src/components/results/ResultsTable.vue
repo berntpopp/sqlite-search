@@ -80,14 +80,23 @@
       :multi-sort="true"
       class="results-table"
     >
-      <!-- Custom header slots for filtering -->
+      <!-- Custom header slots with sort indicators and filtering -->
       <template
         v-for="column in databaseStore.visibleColumns"
         :key="`header-${column}`"
-        #[`header.${column}`]="{ column: headerColumn }"
+        #[`header.${column}`]="{ column: headerColumn, getSortIcon, toggleSort, isSorted }"
       >
-        <div class="d-flex align-center justify-space-between">
-          <span class="header-title">{{ headerColumn.title }}</span>
+        <div class="d-flex align-center justify-space-between header-wrapper">
+          <!-- Clickable header text with sort icon -->
+          <div class="d-flex align-center flex-grow-1 sortable-header" @click="toggleSort(headerColumn)">
+            <span class="header-title">{{ headerColumn.title }}</span>
+            <v-icon v-if="isSorted(headerColumn)" size="small" class="ml-1">
+              {{ getSortIcon(headerColumn) }}
+            </v-icon>
+            <v-icon v-else size="small" class="ml-1 sort-icon-inactive">
+              mdi-sort
+            </v-icon>
+          </div>
           <!-- Filter menu -->
           <v-menu :close-on-content-click="false" location="bottom">
             <template #activator="{ props }">
@@ -290,10 +299,37 @@ function copyRow(item) {
 }
 
 /* Header styling with filter button */
+.header-wrapper {
+  width: 100%;
+  gap: 4px;
+}
+
+.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.2s;
+  min-width: 0;
+}
+
+.sortable-header:hover {
+  opacity: 0.7;
+}
+
 .header-title {
   font-weight: 600;
   font-size: 0.875rem;
-  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sort-icon-inactive {
+  opacity: 0.3;
+  transition: opacity 0.2s;
+}
+
+.sortable-header:hover .sort-icon-inactive {
+  opacity: 0.6;
 }
 
 /* Truncate long cell content */
