@@ -81,6 +81,7 @@ export const useDatabaseStore = defineStore('database', () => {
       try {
         columnOrder.value = JSON.parse(stored)
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to parse column order:', e)
         columnOrder.value = []
       }
@@ -114,6 +115,7 @@ export const useDatabaseStore = defineStore('database', () => {
       try {
         hiddenColumns.value = JSON.parse(stored)
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to parse hidden columns:', e)
         hiddenColumns.value = []
       }

@@ -96,6 +96,7 @@ export const useSearchStore = defineStore('search', () => {
       try {
         sortBy.value = JSON.parse(stored)
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to parse sort preferences:', e)
         sortBy.value = []
       }
@@ -129,6 +130,7 @@ export const useSearchStore = defineStore('search', () => {
       try {
         columnFilters.value = JSON.parse(stored)
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.warn('Failed to parse filter preferences:', e)
         columnFilters.value = {}
       }
