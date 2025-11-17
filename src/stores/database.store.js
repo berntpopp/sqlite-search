@@ -243,9 +243,9 @@ export const useDatabaseStore = defineStore('database', () => {
    * @param {boolean} autoSelectTextOnly - If true, auto-select only TEXT columns (default: false)
    */
   function selectColumns(cols, autoSelectTextOnly = false) {
-    // Auto-select text columns if requested or cols is null
+    // Auto-select text columns if cols is null/undefined AND autoSelectTextOnly is true
     let columnsToSelect = cols
-    if (cols === null || autoSelectTextOnly) {
+    if ((cols === null || cols === undefined) && autoSelectTextOnly) {
       columnsToSelect = textColumns.value
       // eslint-disable-next-line no-console
       console.log('Auto-selected TEXT columns:', columnsToSelect)
