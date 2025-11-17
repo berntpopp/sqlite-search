@@ -176,9 +176,10 @@
       </template>
 
       <!-- Custom cell rendering with truncation -->
+      <!-- IMPORTANT: Use selectedColumns (not visibleColumns) to match ALL data columns -->
       <template
-        v-for="column in databaseStore.visibleColumns"
-        :key="`item-${column}`"
+        v-for="column in databaseStore.selectedColumns"
+        :key="column"
         #[`item.${column}`]="{ value }"
       >
         <span class="text-truncate-cell" :title="value">
