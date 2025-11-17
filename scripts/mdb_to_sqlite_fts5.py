@@ -210,33 +210,30 @@ class MDBToSQLiteConverter:
             cursor = conn.cursor()
 
             try:
-                # Sanitize column names for SQL
-                sanitized_schema = []
-                for col_name, col_type in schema:
-                    # Remove special characters (backticks, quotes, brackets)
-                    safe_name = col_name.replace('`', '').replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+                # First, read CSV header to get ACTUAL column names from mdb-export
+                # mdb-export may have different columns than mdb-schema reports
+                csv_columns = []
+                with open(csv_path, 'r', encoding='utf-8', errors='replace') as csvfile:
+                    csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+                    try:
+                        csv_header = next(csv_reader)
+                        for col_name in csv_header:
+                            # Sanitize column name
+                            safe_name = col_name.replace('`', '').replace('"', '').replace("'", '').replace('[', '').replace(']', '').strip()
+                            if safe_name:
+                                safe_name = re.sub(r'[^\w]', '_', safe_name)
+                                safe_name = re.sub(r'_+', '_', safe_name).strip('_')
+                                if safe_name and not safe_name[0].isdigit():
+                                    csv_columns.append(safe_name)
+                    except StopIteration:
+                        self._error(f"CSV file is empty for table: {table_name}")
+                        return
 
-                    # Skip invalid/empty column names
-                    if not safe_name or len(safe_name) < 1:
-                        continue
+                self._log(f"  CSV contains {len(csv_columns)} columns")
 
-                    # Replace spaces and invalid chars with underscores, keep only alphanumeric + underscore
-                    safe_name = re.sub(r'[^\w]', '_', safe_name)
-
-                    # Remove leading/trailing underscores and collapse multiple underscores
-                    safe_name = re.sub(r'_+', '_', safe_name).strip('_')
-
-                    # Skip if name became empty after sanitization
-                    if not safe_name:
-                        continue
-
-                    # Ensure doesn't start with number
-                    if safe_name[0].isdigit():
-                        safe_name = 'col_' + safe_name
-
-                    # Ensure type is valid (default to TEXT for unknown types)
-                    safe_type = col_type if col_type in ['INTEGER', 'TEXT', 'REAL', 'BLOB', 'NUMERIC'] else 'TEXT'
-                    sanitized_schema.append((safe_name, safe_type))
+                # Create sanitized schema from CSV columns (all as TEXT for simplicity)
+                # This ensures column names match exactly what mdb-export provides
+                sanitized_schema = [(col, 'TEXT') for col in csv_columns]
 
                 # Create regular table with proper quoting
                 columns_def = ", ".join([
@@ -252,12 +249,13 @@ class MDBToSQLiteConverter:
                     csv_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
 
                     try:
-                        _ = next(csv_reader)  # Skip header
+                        # Skip header row (we already read it above)
+                        _ = next(csv_reader)
                     except StopIteration:
                         self._error(f"CSV file is empty for table: {table_name}")
                         return
 
-                    # Prepare INSERT statement with proper quoting
+                    # Prepare INSERT statement using CSV columns
                     column_names = ", ".join([f'"{col[0]}"' for col in sanitized_schema])
                     placeholders = ", ".join(["?" for _ in sanitized_schema])
                     insert_sql = f'INSERT INTO "{table_name}" ({column_names}) VALUES ({placeholders})'
@@ -338,30 +336,49 @@ class MDBToSQLiteConverter:
         """
         Create FTS5 virtual table for full-text search.
 
+        CRITICAL: When using external content tables (content='table_name'),
+        ALL columns from the source table must be included in the FTS5 table
+        to maintain column position alignment. Non-text columns should be
+        marked as UNINDEXED to prevent indexing while preserving positions.
+
         Args:
             cursor: SQLite cursor
             table_name: Name of the base table
-            schema: Table schema
+            schema: Table schema (list of (column_name, data_type) tuples)
             fts_columns: Columns to include in FTS5 index ('all' or list of column names)
         """
         fts_table_name = f"{table_name}_fts"
 
-        # Determine which columns to index
+        # Determine which columns should be indexed
         if fts_columns == ['all']:
-            # Index all text columns
-            text_columns = [
+            # Index all text columns, but include ALL columns in FTS5 table
+            indexed_columns = {
                 col[0] for col in schema
                 if 'TEXT' in col[1].upper() or 'VARCHAR' in col[1].upper() or 'CHAR' in col[1].upper()
-            ]
+            }
         else:
-            text_columns = fts_columns
+            # Use specified columns for indexing
+            indexed_columns = set(fts_columns)
 
-        if not text_columns:
+        if not indexed_columns:
             self._log(f"  No text columns found for FTS5 index")
             return
 
-        # Build FTS5 CREATE statement with external content table
-        columns_str = ", ".join([f'"{col}"' for col in text_columns])
+        # Build FTS5 column definitions
+        # IMPORTANT: Include ALL columns to match source table positions
+        # Use UNINDEXED for non-text columns to preserve alignment
+        column_defs = []
+        indexed_count = 0
+        for col_name, col_type in schema:
+            if col_name in indexed_columns:
+                # This column will be indexed for full-text search
+                column_defs.append(f'"{col_name}"')
+                indexed_count += 1
+            else:
+                # Mark as UNINDEXED to skip indexing but maintain position
+                column_defs.append(f'"{col_name}" UNINDEXED')
+
+        columns_str = ", ".join(column_defs)
 
         # FTS5 options
         fts_options = [
@@ -388,7 +405,8 @@ class MDBToSQLiteConverter:
             f'INSERT INTO "{fts_table_name}"("{fts_table_name}") VALUES("rebuild")'
         )
 
-        self._log(f"  ✓ Created FTS5 index on columns: {', '.join(text_columns)}")
+        indexed_column_names = [col[0] for col in schema if col[0] in indexed_columns]
+        self._log(f"  ✓ Created FTS5 with {len(schema)} columns ({indexed_count} indexed): {', '.join(indexed_column_names)}")
 
     def convert(self, tables: Optional[List[str]] = None, fts_columns: str = "all"):
         """
