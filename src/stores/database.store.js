@@ -35,22 +35,15 @@ export const useDatabaseStore = defineStore('database', () => {
    * Returns columns that are not hidden, in the order specified by columnOrder
    */
   const visibleColumns = computed(() => {
-    let result
     if (columnOrder.value.length === 0) {
       // If no custom order, use original order filtered by hidden columns
-      result = selectedColumns.value.filter(col => !hiddenColumns.value.includes(col))
-      console.log('🔍 DEBUG visibleColumns (no custom order):', result)
+      return selectedColumns.value.filter(col => !hiddenColumns.value.includes(col))
     } else {
       // Use custom order, filtered by hidden columns
-      result = columnOrder.value.filter(col =>
+      return columnOrder.value.filter(col =>
         selectedColumns.value.includes(col) && !hiddenColumns.value.includes(col)
       )
-      console.log('🔍 DEBUG visibleColumns (custom order):', result)
-      console.log('🔍 DEBUG - based on columnOrder:', columnOrder.value)
-      console.log('🔍 DEBUG - filtered by selectedColumns:', selectedColumns.value)
-      console.log('🔍 DEBUG - filtered by hiddenColumns:', hiddenColumns.value)
     }
-    return result
   })
 
   /**
@@ -201,10 +194,6 @@ export const useDatabaseStore = defineStore('database', () => {
    * @param {string[]} cols - Array of column names to search within
    */
   function selectColumns(cols) {
-    console.log('🔍 DEBUG selectColumns called with:', cols)
-    console.log('🔍 DEBUG current columnOrder BEFORE reconcile:', columnOrder.value)
-    console.log('🔍 DEBUG current hiddenColumns BEFORE reconcile:', hiddenColumns.value)
-
     selectedColumns.value = cols
     localStorage.setItem('selectedColumns', JSON.stringify(cols))
 
@@ -212,28 +201,16 @@ export const useDatabaseStore = defineStore('database', () => {
     // This handles cases where table structure changed between sessions
     if (columnOrder.value.length === 0) {
       // First time - use natural order
-      console.log('🔍 DEBUG First time - initializing columnOrder with natural order')
       columnOrder.value = [...cols]
     } else {
       // Reconcile: keep existing order for matching columns, append new ones
       const existingOrder = columnOrder.value.filter(col => cols.includes(col))
       const newColumns = cols.filter(col => !columnOrder.value.includes(col))
-      console.log('🔍 DEBUG Reconciling...')
-      console.log('🔍 DEBUG - existingOrder:', existingOrder)
-      console.log('🔍 DEBUG - newColumns:', newColumns)
       columnOrder.value = [...existingOrder, ...newColumns]
     }
 
     // Clean up hidden columns - remove any that no longer exist
-    const oldHiddenColumns = [...hiddenColumns.value]
     hiddenColumns.value = hiddenColumns.value.filter(col => cols.includes(col))
-    if (oldHiddenColumns.length !== hiddenColumns.value.length) {
-      console.log('🔍 DEBUG Cleaned up hiddenColumns:', oldHiddenColumns, '=>', hiddenColumns.value)
-    }
-
-    console.log('🔍 DEBUG selectedColumns AFTER:', selectedColumns.value)
-    console.log('🔍 DEBUG columnOrder AFTER:', columnOrder.value)
-    console.log('🔍 DEBUG hiddenColumns AFTER:', hiddenColumns.value)
   }
 
   /**
@@ -338,7 +315,6 @@ export const useDatabaseStore = defineStore('database', () => {
       const hiddenKey = getColumnStorageKey(selectedTable.value, 'hidden')
       localStorage.removeItem(orderKey)
       localStorage.removeItem(hiddenKey)
-      console.log('🧹 Cleared column preferences from localStorage')
     }
   }
 
@@ -358,8 +334,6 @@ export const useDatabaseStore = defineStore('database', () => {
       const filtersKey = `${SEARCH_CONFIG.STORAGE_KEY_PREFIX}_filters_${selectedTable.value}`
       localStorage.removeItem(sortKey)
       localStorage.removeItem(filtersKey)
-
-      console.log('🧹 Cleared ALL cache for table:', selectedTable.value)
 
       // Reset local state
       columnOrder.value = [...selectedColumns.value]
