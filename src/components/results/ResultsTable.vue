@@ -1,4 +1,26 @@
 <template>
+  <!-- DEBUG PANEL (TEMPORARY) -->
+  <v-card v-if="searchStore.hasResults" class="mb-4" color="warning" variant="tonal">
+    <v-card-title class="text-subtitle-2">
+      🐛 DEBUG INFO (Remove after fixing)
+    </v-card-title>
+    <v-card-text class="text-caption">
+      <div><strong>selectedColumns:</strong> {{ JSON.stringify(databaseStore.selectedColumns) }}</div>
+      <div><strong>columnOrder:</strong> {{ JSON.stringify(databaseStore.columnOrder) }}</div>
+      <div><strong>hiddenColumns:</strong> {{ JSON.stringify(databaseStore.hiddenColumns) }}</div>
+      <div><strong>visibleColumns:</strong> {{ JSON.stringify(databaseStore.visibleColumns) }}</div>
+      <div v-if="searchStore.filteredResults.length > 0">
+        <strong>First result keys:</strong> {{ JSON.stringify(Object.keys(searchStore.filteredResults[0])) }}
+      </div>
+      <div v-if="searchStore.filteredResults.length > 0">
+        <strong>First result values:</strong> {{ JSON.stringify(searchStore.filteredResults[0]) }}
+      </div>
+      <div>
+        <strong>Generated headers (value prop):</strong> {{ JSON.stringify(tableHeaders.map(h => h.value)) }}
+      </div>
+    </v-card-text>
+  </v-card>
+
   <!-- Enhanced results table with sorting, filtering, and column management -->
   <v-card v-if="searchStore.hasResults" elevation="1" class="results-card">
     <!-- Results count header with filter info -->
@@ -209,6 +231,27 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 // Component state
 const showColumnManagement = ref(false)
 
+// DEBUG: Watch for changes and log state
+import { watch } from 'vue'
+watch(
+  () => databaseStore.visibleColumns,
+  (newVal) => {
+    console.log('🔍 DEBUG visibleColumns changed:', newVal)
+  },
+  { immediate: true }
+)
+
+watch(
+  () => searchStore.filteredResults,
+  (newVal) => {
+    if (newVal.length > 0) {
+      console.log('🔍 DEBUG first result keys:', Object.keys(newVal[0]))
+      console.log('🔍 DEBUG first result data:', newVal[0])
+    }
+  },
+  { immediate: true }
+)
+
 // Two-way binding for sortBy with store
 const sortBy = computed({
   get() {
@@ -224,6 +267,12 @@ const sortBy = computed({
  * Headers include sorting configuration and keys for filtering
  */
 const tableHeaders = computed(() => {
+  console.log('🔍 DEBUG tableHeaders computing...')
+  console.log('🔍 DEBUG databaseStore.selectedColumns:', databaseStore.selectedColumns)
+  console.log('🔍 DEBUG databaseStore.columnOrder:', databaseStore.columnOrder)
+  console.log('🔍 DEBUG databaseStore.hiddenColumns:', databaseStore.hiddenColumns)
+  console.log('🔍 DEBUG databaseStore.visibleColumns:', databaseStore.visibleColumns)
+
   const headers = databaseStore.visibleColumns.map(column => ({
     title: column,
     value: column,
@@ -231,6 +280,8 @@ const tableHeaders = computed(() => {
     sortable: true,
     align: 'start',
   }))
+
+  console.log('🔍 DEBUG generated headers:', headers.map(h => h.value))
 
   // Add actions column
   headers.push({
