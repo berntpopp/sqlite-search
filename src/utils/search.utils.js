@@ -117,6 +117,6 @@ export function truncateText(text, maxLength = 50) {
 
   const str = String(text)
   return str.length > maxLength
-    ? str.substring(0, maxLength) + '...'
+    ? `${str.substring(0, maxLength)}...`
     : str
 }

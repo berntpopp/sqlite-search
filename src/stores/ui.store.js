@@ -9,6 +9,7 @@ import { ref, computed } from 'vue'
 export const useUIStore = defineStore('ui', () => {
   // State
   const isDarkTheme = ref(localStorage.getItem('theme') === 'dark')
+  const autoSelectTextColumns = ref(localStorage.getItem('autoSelectTextColumns') !== 'false') // Default true
   const detailsDialog = ref(false)
   const helpDialog = ref(false)
   const snackbar = ref(false)
@@ -35,6 +36,14 @@ export const useUIStore = defineStore('ui', () => {
   function setTheme(theme) {
     isDarkTheme.value = theme === 'dark'
     localStorage.setItem('theme', theme)
+  }
+
+  /**
+   * Toggle auto-select TEXT columns and persist to localStorage
+   */
+  function toggleAutoSelectTextColumns() {
+    autoSelectTextColumns.value = !autoSelectTextColumns.value
+    localStorage.setItem('autoSelectTextColumns', String(autoSelectTextColumns.value))
   }
 
   /**
@@ -122,6 +131,7 @@ export const useUIStore = defineStore('ui', () => {
   return {
     // State
     isDarkTheme,
+    autoSelectTextColumns,
     detailsDialog,
     helpDialog,
     snackbar,
@@ -133,6 +143,7 @@ export const useUIStore = defineStore('ui', () => {
     // Actions
     toggleTheme,
     setTheme,
+    toggleAutoSelectTextColumns,
     openDetailsDialog,
     closeDetailsDialog,
     openHelpDialog,

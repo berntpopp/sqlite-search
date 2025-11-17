@@ -129,9 +129,35 @@ function setupIPCListeners() {
   const onColumnsListHandler = (event, columns) => {
     if (columns && columns.length > 0) {
       databaseStore.setColumns(columns)
-      // Auto-select ALL columns by default
-      databaseStore.selectColumns(columns)
-      uiStore.showSuccess(`All ${columns.length} column(s) selected`)
+
+      // Check if auto-select TEXT columns is enabled
+      const autoSelectText = uiStore.autoSelectTextColumns
+
+      if (autoSelectText) {
+        // Auto-select TEXT columns only
+        databaseStore.selectColumns(null, true)
+      } else {
+        // Select all columns
+        databaseStore.selectColumns(databaseStore.columnNames)
+      }
+
+      // Set current table for search store (enables sort/filter persistence)
+      searchStore.setCurrentTable(databaseStore.selectedTable)
+
+      const textColCount = databaseStore.textColumns.length
+      const totalColCount = columns.length
+
+      if (autoSelectText) {
+        if (textColCount < totalColCount) {
+          uiStore.showSuccess(
+            `${textColCount} TEXT column(s) auto-selected (${totalColCount - textColCount} non-text hidden)`
+          )
+        } else {
+          uiStore.showSuccess(`All ${textColCount} column(s) selected (all are TEXT)`)
+        }
+      } else {
+        uiStore.showSuccess(`All ${totalColCount} column(s) selected`)
+      }
     } else {
       uiStore.showError('The selected table has no columns or is not searchable')
     }

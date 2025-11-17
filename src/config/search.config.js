@@ -37,4 +37,62 @@ export const SEARCH_CONFIG = {
    * @type {number}
    */
   MAX_RESULTS_DISPLAY: 1000,
+
+  /**
+   * Default sort order for table columns
+   * @type {string}
+   */
+  DEFAULT_SORT_ORDER: 'asc',
+
+  /**
+   * Maximum number of columns that can be sorted simultaneously
+   * Prevents performance issues with complex multi-column sorting
+   * @type {number}
+   */
+  MAX_SORT_COLUMNS: 3,
+
+  /**
+   * Minimum filter string length to trigger filtering
+   * Prevents unnecessary filtering on very short strings
+   * @type {number}
+   */
+  MIN_FILTER_LENGTH: 1,
+
+  /**
+   * Filter debounce delay in milliseconds
+   * Delays filter application to improve performance during typing
+   * @type {number}
+   */
+  FILTER_DEBOUNCE_MS: 300,
+
+  /**
+   * LocalStorage key prefix for table preferences
+   * Used to namespace localStorage keys per table
+   * @type {string}
+   */
+  STORAGE_KEY_PREFIX: 'sqlite_search',
+
+  /**
+   * Column management settings
+   */
+  COLUMN_MANAGEMENT: {
+    /**
+     * Minimum number of visible columns required
+     * Prevents hiding all columns
+     * @type {number}
+     */
+    MIN_VISIBLE_COLUMNS: 1,
+
+    /**
+     * Show column management button by default
+     * @type {boolean}
+     */
+    SHOW_MANAGEMENT_BUTTON: true,
+
+    /**
+     * Enable column reordering
+     * @type {boolean}
+     */
+    ENABLE_REORDERING: true,
+  },
 }

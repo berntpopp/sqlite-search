@@ -30,12 +30,20 @@ export default [
       },
     },
     rules: {
+      // Vue 3 best practices (only using rules that exist in current eslint-plugin-vue)
       'vue/multi-word-component-names': 'warn',
       'vue/no-unused-vars': 'error',
-      // 'vue/script-setup-uses-vars' is no longer needed in eslint-plugin-vue >= 9.0
+      'vue/no-unused-components': 'error',
+
+      // JavaScript/ES6+ best practices
       'no-console': 'warn',
       'no-debugger': 'warn',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      'object-shorthand': ['error', 'always'],
+      'prefer-template': 'error',
+      'prefer-arrow-callback': 'error',
     },
   },
   {
