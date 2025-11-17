@@ -39,9 +39,9 @@
               size="small"
               variant="outlined"
               prepend-icon="mdi-restore"
-              @click="databaseStore.resetColumnPreferences()"
+              @click="resetWithConfirm"
             >
-              Reset
+              Reset All
             </v-btn>
           </div>
         </div>
@@ -135,6 +135,7 @@
 
 <script setup>
 import { useDatabaseStore } from '@/stores/database.store'
+import { useSearchStore } from '@/stores/search.store'
 import { SEARCH_CONFIG } from '@/config/search.config'
 
 // Props and emits
@@ -148,6 +149,21 @@ defineProps({
 defineEmits(['update:modelValue'])
 
 const databaseStore = useDatabaseStore()
+
+/**
+ * Reset all preferences with confirmation
+ * Clears ALL cache including sort, filters, and column preferences
+ */
+function resetWithConfirm() {
+  if (confirm('Reset ALL settings (columns, sort, filters) for this table? This will clear all cached preferences.')) {
+    databaseStore.clearAllTableCache()
+
+    // Also clear sort and filters from search store
+    const searchStore = useSearchStore()
+    searchStore.clearSort()
+    searchStore.clearAllFilters()
+  }
+}
 
 /**
  * Check if a column is currently hidden

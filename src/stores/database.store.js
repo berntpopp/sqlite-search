@@ -325,11 +325,46 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   /**
-   * Reset all column preferences
+   * Reset all column preferences and clear localStorage cache
    */
   function resetColumnPreferences() {
+    // Reset to defaults
     columnOrder.value = [...selectedColumns.value]
     hiddenColumns.value = []
+
+    // Clear localStorage cache for current table
+    if (selectedTable.value) {
+      const orderKey = getColumnStorageKey(selectedTable.value, 'order')
+      const hiddenKey = getColumnStorageKey(selectedTable.value, 'hidden')
+      localStorage.removeItem(orderKey)
+      localStorage.removeItem(hiddenKey)
+      console.log('🧹 Cleared column preferences from localStorage')
+    }
+  }
+
+  /**
+   * Clear ALL localStorage cache for current table (columns, sort, filters)
+   */
+  function clearAllTableCache() {
+    if (selectedTable.value) {
+      // Clear column preferences
+      const orderKey = getColumnStorageKey(selectedTable.value, 'order')
+      const hiddenKey = getColumnStorageKey(selectedTable.value, 'hidden')
+      localStorage.removeItem(orderKey)
+      localStorage.removeItem(hiddenKey)
+
+      // Clear sort and filter preferences (from search store)
+      const sortKey = `${SEARCH_CONFIG.STORAGE_KEY_PREFIX}_sort_${selectedTable.value}`
+      const filtersKey = `${SEARCH_CONFIG.STORAGE_KEY_PREFIX}_filters_${selectedTable.value}`
+      localStorage.removeItem(sortKey)
+      localStorage.removeItem(filtersKey)
+
+      console.log('🧹 Cleared ALL cache for table:', selectedTable.value)
+
+      // Reset local state
+      columnOrder.value = [...selectedColumns.value]
+      hiddenColumns.value = []
+    }
   }
 
   /**
@@ -395,6 +430,7 @@ export const useDatabaseStore = defineStore('database', () => {
     showAllColumns,
     resetColumnOrder,
     resetColumnPreferences,
+    clearAllTableCache,
     reset,
     clearTableSelection,
   }
