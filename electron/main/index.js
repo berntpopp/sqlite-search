@@ -271,7 +271,8 @@ function refreshValidTables(database) {
 /**
  * Fetches and caches valid column information for a table
  * Returns structured data with name and type for each column
- * For FTS5 tables, queries the base table to get actual column types
+ * For FTS5 tables, queries the actual FTS5 table for column names (for validation),
+ * then enriches with type info from the base table if available
  * This prevents SQL injection by ensuring only known columns can be queried
  */
 function getValidColumns(database, tableName) {
@@ -293,37 +294,42 @@ function getValidColumns(database, tableName) {
     const baseTableName = tableName.replace(/_fts$/, '')
     const isFTS5 = tableName !== baseTableName
 
-    // Query the base table for type information (FTS5 tables don't store types)
-    const tableToQuery = isFTS5 ? baseTableName : tableName
-
-    // Now safe to use table name (validated against whitelist)
+    // IMPORTANT: Always query the actual table for column names (for validation)
+    // This fixes a bug where base table had columns not in FTS5 table
     // PRAGMA table_info returns: cid, name, type, notnull, dflt_value, pk
-    const columnListQuery = `PRAGMA table_info(${tableToQuery});`
-    database.all(columnListQuery, [], (err, columns) => {
+    const columnListQuery = `PRAGMA table_info(${tableName});`
+    database.all(columnListQuery, [], (err, ftsColumns) => {
       if (err) {
-        console.error('Failed to fetch columns:', err)
-        // If base table query fails, try the original table
-        if (isFTS5 && tableToQuery !== tableName) {
-          const fallbackQuery = `PRAGMA table_info(${tableName});`
-          database.all(fallbackQuery, [], (err2, columns2) => {
-            if (err2) {
-              console.error('Fallback query also failed:', err2)
-              reject(err2)
-            } else {
-              const columnData = columns2.map(col => ({
-                name: col.name,
-                type: col.type || 'TEXT'
-              }))
-              validColumnsCache.set(tableName, columnData)
-              resolve(columnData)
-            }
-          })
-        } else {
-          reject(err)
-        }
+        console.error('Failed to fetch columns from table:', err)
+        reject(err)
+        return
+      }
+
+      // For FTS5 tables, try to get type info from base table to enrich the data
+      if (isFTS5) {
+        const baseTableQuery = `PRAGMA table_info(${baseTableName});`
+        database.all(baseTableQuery, [], (err2, baseColumns) => {
+          // Create a map of base table column types for lookup
+          const baseTypeMap = new Map()
+          if (!err2 && baseColumns) {
+            baseColumns.forEach(col => {
+              baseTypeMap.set(col.name, col.type || 'TEXT')
+            })
+          }
+
+          // Build column data using FTS5 column names, enriched with base table types
+          const columnData = ftsColumns.map(col => ({
+            name: col.name,
+            // Use type from base table if available, otherwise default to TEXT
+            type: baseTypeMap.get(col.name) || col.type || 'TEXT'
+          }))
+          validColumnsCache.set(tableName, columnData)
+          console.log(`Loaded column types for FTS5 table ${tableName}:`, columnData.slice(0, 5))
+          resolve(columnData)
+        })
       } else {
-        // Return structured data with name and type
-        const columnData = columns.map(col => ({
+        // Non-FTS5 table: use columns directly
+        const columnData = ftsColumns.map(col => ({
           name: col.name,
           type: col.type || 'TEXT'
         }))
