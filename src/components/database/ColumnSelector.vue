@@ -74,7 +74,7 @@
       <span v-if="index === 0" class="text-body-2">
         <strong>{{ selectedColumns.length }}</strong>
         <span class="text-medium-emphasis">
-          of {{ databaseStore.columns.length }} columns
+          of {{ totalColumnCount }} columns
         </span>
       </span>
     </template>
@@ -96,6 +96,16 @@ const selectedColumns = computed({
   set: value => {
     databaseStore.selectColumns(value || [])
   },
+})
+
+/**
+ * Total column count - uses columns.length if available, otherwise selectedColumns.length
+ * This handles race condition where selectedColumns loads from localStorage before columns are fetched
+ */
+const totalColumnCount = computed(() => {
+  return databaseStore.columns.length > 0
+    ? databaseStore.columns.length
+    : selectedColumns.value.length
 })
 
 /**
