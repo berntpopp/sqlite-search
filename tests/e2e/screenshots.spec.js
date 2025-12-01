@@ -87,7 +87,7 @@ const test = base.extend({
     console.log('⏳ Waiting for window...')
     const window = await electronApp.firstWindow()
 
-    // Set viewport size
+    // Set viewport size (larger for better screenshots)
     await window.setViewportSize({ width: 1400, height: 900 })
 
     // Wait for various load states
@@ -107,7 +107,24 @@ const test = base.extend({
 
     // Additional wait for Vue hydration
     console.log('⏳ Waiting for Vue hydration...')
-    await window.waitForTimeout(3000)
+    await window.waitForTimeout(2000)
+
+    // Wait for database to be loaded (indicated by table selector being visible)
+    console.log('⏳ Waiting for database to load...')
+    const tableSelector = window.locator('[data-testid="table-selector"]')
+    const welcomeScreen = window.locator('text=Welcome to SQLite Search')
+
+    // Wait up to 10 seconds for either table selector (db loaded) or welcome screen (no db)
+    await Promise.race([
+      tableSelector.waitFor({ state: 'visible', timeout: 10000 }).then(() => {
+        console.log('✅ Database loaded - Table selector visible')
+      }),
+      welcomeScreen.waitFor({ state: 'visible', timeout: 10000 }).then(() => {
+        console.log('⚠️ Welcome screen shown - Database may not have loaded')
+      }),
+    ]).catch(() => {
+      console.log('⚠️ Timeout waiting for UI state')
+    })
 
     // Log page content for debugging
     const title = await window.title()

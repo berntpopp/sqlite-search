@@ -49,8 +49,13 @@ log.info('Environment:', isDevelopment ? 'development' : 'production')
 log.info('NODE_ENV:', process.env.NODE_ENV)
 
 // Set the default database path
-const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
+// Support SQLITE_SEARCH_TEST_DB env var for E2E testing
+const testDbPath = process.env.SQLITE_SEARCH_TEST_DB
+const defaultDbPath = testDbPath || path.join(app.getPath('userData'), 'db/db.sqlite')
 log.info('Default database path:', defaultDbPath)
+if (testDbPath) {
+  log.info('Using test database from SQLITE_SEARCH_TEST_DB env var')
+}
 
 /**
  * Application menu configuration
@@ -129,6 +134,11 @@ async function createWindow() {
     // Log when the window is ready to show
     win.once('ready-to-show', () => {
       log.info('Window ready-to-show event fired')
+      // If a database is pre-loaded (e.g., via SQLITE_SEARCH_TEST_DB), notify renderer
+      if (currentDatabasePath && db) {
+        log.info('Notifying renderer of pre-loaded database:', currentDatabasePath)
+        win.webContents.send('database-loaded', currentDatabasePath)
+      }
     })
 
     // Log renderer process console messages
@@ -240,6 +250,9 @@ let validTables = []
 
 // Cache for valid column names per table (security: whitelist validation)
 const validColumnsCache = new Map()
+
+// Track current database path for IPC queries and E2E testing
+let currentDatabasePath = null
 
 /**
  * Fetches and caches valid FTS5 table names for whitelist validation
@@ -373,14 +386,17 @@ function initDbConnection(dbPath) {
   // Check if the database file exists
   if (!fs.existsSync(dbPath)) {
     console.log('Default database file not found. Awaiting user selection.')
+    currentDatabasePath = null
     return null
   }
 
   const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
     if (err) {
       console.error(err.message)
+      currentDatabasePath = null
     } else {
       console.log('Connected to the sqlite database at:', dbPath)
+      currentDatabasePath = dbPath
       // Initialize table whitelist on connection
       refreshValidTables(db).catch(err => {
         console.error('Failed to initialize table whitelist:', err)
@@ -530,9 +546,16 @@ ipcMain.on('change-database', (event, newPath) => {
 
       // Connect to the new database (will auto-refresh whitelist)
       db = initDbConnection(newPath)
+      currentDatabasePath = newPath
     })
   } else {
     // No existing database, just connect to new one
     db = initDbConnection(newPath)
+    currentDatabasePath = newPath
   }
+})
+
+// Handler to get current database path (useful for E2E testing)
+ipcMain.handle('get-current-database', () => {
+  return currentDatabasePath
 })

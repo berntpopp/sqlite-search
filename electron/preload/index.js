@@ -22,4 +22,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   changeDatabase: filePath => ipcRenderer.send('change-database', filePath),
 
   onDatabaseError: callback => ipcRenderer.on('database-connection-error', callback),
+
+  // Get current database path (useful for E2E testing with pre-loaded database)
+  getCurrentDatabase: () => ipcRenderer.invoke('get-current-database'),
+  onDatabaseLoaded: callback => ipcRenderer.on('database-loaded', callback),
 })

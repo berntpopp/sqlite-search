@@ -201,6 +201,15 @@ function setupIPCListeners() {
     uiStore.showError(`Database error: ${errorMessage}`)
   }
   window.electronAPI.onDatabaseError(onDatabaseErrorHandler)
+
+  // Listener for pre-loaded database (e.g., via SQLITE_SEARCH_TEST_DB env var)
+  const onDatabaseLoadedHandler = (event, dbPath) => {
+    console.log('Database pre-loaded by main process:', dbPath)
+    databaseStore.setPath(dbPath)
+    // Trigger loading tables
+    window.electronAPI.getTableList()
+  }
+  window.electronAPI.onDatabaseLoaded(onDatabaseLoadedHandler)
 }
 
 /**
