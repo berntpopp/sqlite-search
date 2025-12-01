@@ -76,61 +76,54 @@
                   </div>
                 </template>
 
-                <v-card variant="outlined" class="mb-2">
+                <v-card variant="outlined" class="history-card mb-2">
                   <v-card-text class="pa-3">
-                    <!-- Search Term -->
-                    <div class="d-flex align-start mb-2">
-                      <v-icon icon="mdi-magnify" size="small" class="mr-2 mt-1" />
-                      <div class="flex-grow-1">
-                        <div class="text-subtitle-2 font-weight-bold">
-                          {{ entry.searchTerm }}
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                          {{ entry.resultCount }}
-                          {{ entry.resultCount === 1 ? 'result' : 'results' }}
-                        </div>
-                      </div>
+                    <!-- Header: Search Term + Star -->
+                    <div class="d-flex align-center mb-1">
+                      <v-icon icon="mdi-magnify" size="small" class="mr-2 text-primary" />
+                      <span class="text-subtitle-2 font-weight-medium flex-grow-1 text-truncate">
+                        {{ entry.searchTerm }}
+                      </span>
                       <v-btn
                         :icon="entry.favorite ? 'mdi-star' : 'mdi-star-outline'"
-                        :color="entry.favorite ? 'warning' : 'grey'"
+                        :color="entry.favorite ? 'warning' : 'grey-lighten-1'"
                         variant="text"
                         size="x-small"
-                        @click="historyStore.toggleFavorite(entry.id)"
+                        density="compact"
+                        @click.stop="historyStore.toggleFavorite(entry.id)"
                       />
                     </div>
 
-                    <!-- Database Info -->
-                    <div class="text-caption text-medium-emphasis mb-1">
-                      <v-icon icon="mdi-database" size="x-small" class="mr-1" />
-                      {{ getFileName(entry.databasePath) }}
-                    </div>
-
-                    <!-- Table & Columns -->
-                    <div class="text-caption text-medium-emphasis mb-2">
-                      <v-icon icon="mdi-table" size="x-small" class="mr-1" />
-                      {{ entry.table }}
+                    <!-- Meta: Results + Table -->
+                    <div class="d-flex align-center text-caption text-medium-emphasis mb-2">
+                      <span>{{ entry.resultCount }} {{ entry.resultCount === 1 ? 'result' : 'results' }}</span>
+                      <span class="mx-1">&bull;</span>
+                      <span>{{ entry.table }}</span>
                       <span v-if="entry.columns.length > 0" class="ml-1">
-                        ({{ entry.columns.join(', ') }})
+                        ({{ entry.columns.length }} {{ entry.columns.length === 1 ? 'col' : 'cols' }})
                       </span>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="d-flex gap-2">
+                    <!-- Actions Row -->
+                    <div class="d-flex align-center">
                       <v-btn
                         variant="tonal"
                         size="small"
                         color="primary"
+                        density="compact"
                         prepend-icon="mdi-restore"
                         @click="reactivateSearch(entry)"
                       >
                         Restore
                       </v-btn>
+                      <v-spacer />
                       <v-btn
+                        icon="mdi-delete-outline"
                         variant="text"
-                        size="small"
-                        color="error"
-                        icon="mdi-delete"
-                        @click="historyStore.removeEntry(entry.id)"
+                        size="x-small"
+                        color="grey"
+                        density="compact"
+                        @click.stop="historyStore.removeEntry(entry.id)"
                       />
                     </div>
                   </v-card-text>
@@ -162,61 +155,54 @@
                   </div>
                 </template>
 
-                <v-card variant="outlined" class="mb-2">
+                <v-card variant="outlined" class="history-card mb-2">
                   <v-card-text class="pa-3">
-                    <!-- Search Term -->
-                    <div class="d-flex align-start mb-2">
-                      <v-icon icon="mdi-magnify" size="small" class="mr-2 mt-1" />
-                      <div class="flex-grow-1">
-                        <div class="text-subtitle-2 font-weight-bold">
-                          {{ entry.searchTerm }}
-                        </div>
-                        <div class="text-caption text-medium-emphasis">
-                          {{ entry.resultCount }}
-                          {{ entry.resultCount === 1 ? 'result' : 'results' }}
-                        </div>
-                      </div>
+                    <!-- Header: Search Term + Star -->
+                    <div class="d-flex align-center mb-1">
+                      <v-icon icon="mdi-magnify" size="small" class="mr-2 text-warning" />
+                      <span class="text-subtitle-2 font-weight-medium flex-grow-1 text-truncate">
+                        {{ entry.searchTerm }}
+                      </span>
                       <v-btn
                         icon="mdi-star"
                         color="warning"
                         variant="text"
                         size="x-small"
-                        @click="historyStore.toggleFavorite(entry.id)"
+                        density="compact"
+                        @click.stop="historyStore.toggleFavorite(entry.id)"
                       />
                     </div>
 
-                    <!-- Database Info -->
-                    <div class="text-caption text-medium-emphasis mb-1">
-                      <v-icon icon="mdi-database" size="x-small" class="mr-1" />
-                      {{ getFileName(entry.databasePath) }}
-                    </div>
-
-                    <!-- Table & Columns -->
-                    <div class="text-caption text-medium-emphasis mb-2">
-                      <v-icon icon="mdi-table" size="x-small" class="mr-1" />
-                      {{ entry.table }}
+                    <!-- Meta: Results + Table -->
+                    <div class="d-flex align-center text-caption text-medium-emphasis mb-2">
+                      <span>{{ entry.resultCount }} {{ entry.resultCount === 1 ? 'result' : 'results' }}</span>
+                      <span class="mx-1">&bull;</span>
+                      <span>{{ entry.table }}</span>
                       <span v-if="entry.columns.length > 0" class="ml-1">
-                        ({{ entry.columns.join(', ') }})
+                        ({{ entry.columns.length }} {{ entry.columns.length === 1 ? 'col' : 'cols' }})
                       </span>
                     </div>
 
-                    <!-- Actions -->
-                    <div class="d-flex gap-2">
+                    <!-- Actions Row -->
+                    <div class="d-flex align-center">
                       <v-btn
                         variant="tonal"
                         size="small"
                         color="primary"
+                        density="compact"
                         prepend-icon="mdi-restore"
                         @click="reactivateSearch(entry)"
                       >
                         Restore
                       </v-btn>
+                      <v-spacer />
                       <v-btn
+                        icon="mdi-delete-outline"
                         variant="text"
-                        size="small"
-                        color="error"
-                        icon="mdi-delete"
-                        @click="historyStore.removeEntry(entry.id)"
+                        size="x-small"
+                        color="grey"
+                        density="compact"
+                        @click.stop="historyStore.removeEntry(entry.id)"
                       />
                     </div>
                   </v-card-text>
@@ -294,15 +280,6 @@ function formatTime(timestamp) {
 }
 
 /**
- * Extract filename from path
- */
-function getFileName(path) {
-  if (!path) return 'Unknown'
-  const parts = path.split(/[/\\]/)
-  return parts[parts.length - 1]
-}
-
-/**
  * Reactivate a search from history
  */
 function reactivateSearch(entry) {
@@ -369,5 +346,22 @@ function close() {
 <style scoped>
 .gap-2 {
   gap: 8px;
+}
+
+/* Compact history cards */
+.history-card {
+  transition: border-color 0.2s;
+}
+
+.history-card:hover {
+  border-color: rgb(var(--v-theme-primary));
+}
+
+/* Truncate long search terms */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 </style>

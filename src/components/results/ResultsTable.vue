@@ -1,6 +1,6 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and column management -->
-  <v-card v-if="searchStore.hasResults" elevation="1" class="results-card" data-testid="results-card">
+  <v-card v-if="searchStore.hasResults || searchStore.hasSearched" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -74,10 +74,12 @@
       v-model:sort-by="searchStore.sortBy"
       :headers="tableHeaders"
       :items="searchStore.filteredResults"
+      :loading="searchStore.loading"
       density="compact"
       :items-per-page="25"
       :items-per-page-options="[10, 25, 50, 100]"
       :multi-sort="true"
+      hover
       class="results-table"
       data-testid="results-table"
     >
@@ -180,14 +182,31 @@
         </div>
       </template>
 
-      <!-- Empty state -->
+      <!-- Empty state - using EmptyState component -->
       <template #no-data>
-        <div class="text-center pa-4">
-          <v-icon size="large" color="grey">mdi-magnify-close</v-icon>
-          <p class="text-medium-emphasis mt-2">
-            {{ searchStore.hasActiveFilters ? 'No results match your filters' : 'No results found' }}
-          </p>
-        </div>
+        <EmptyState
+          v-if="searchStore.hasActiveFilters"
+          variant="no-results"
+          icon="mdi-filter-off-outline"
+          title="No results match your filters"
+          subtitle="Try adjusting or clearing your column filters"
+          :compact="true"
+          primary-action="Clear Filters"
+          primary-action-icon="mdi-filter-remove"
+          @primary-action="clearAllFilters"
+        />
+        <EmptyState
+          v-else
+          variant="no-results"
+          icon="mdi-magnify-close"
+          :title="`No results for &quot;${searchStore.searchTerm}&quot;`"
+          :suggestions="noResultsSuggestions"
+          suggestions-title="Try these:"
+          :compact="true"
+          primary-action="Clear Search"
+          primary-action-icon="mdi-close"
+          @primary-action="clearSearch"
+        />
       </template>
     </v-data-table>
 
@@ -203,6 +222,7 @@ import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
 import { SEARCH_CONFIG } from '@/config/search.config'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
@@ -210,6 +230,22 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 
 // Component state
 const showColumnManagement = ref(false)
+
+// No results suggestions
+const noResultsSuggestions = [
+  'Check spelling of your search terms',
+  'Try using wildcards (e.g., gene* instead of gene)',
+  'Use broader search terms',
+  'Search fewer columns'
+]
+
+/**
+ * Clear search and reset state
+ */
+function clearSearch() {
+  searchStore.setSearchTerm('')
+  searchStore.clearResults()
+}
 
 // Watch visible columns and cleanup sortBy when columns are hidden
 watch(
@@ -364,5 +400,20 @@ function copyRow(item) {
 /* Filter menu card styling */
 :deep(.v-menu > .v-overlay__content) {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Zebra striping for better row tracking */
+:deep(.v-data-table__tr:nth-child(even)) {
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+/* Enhanced hover state */
+:deep(.v-data-table__tr:hover) {
+  background-color: rgba(var(--v-theme-primary), 0.04) !important;
+}
+
+/* Loading overlay */
+:deep(.v-data-table__progress) {
+  background-color: rgba(var(--v-theme-surface), 0.8);
 }
 </style>
