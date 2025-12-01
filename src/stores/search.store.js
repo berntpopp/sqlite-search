@@ -21,6 +21,9 @@ export const useSearchStore = defineStore('search', () => {
   const columnFilters = ref({}) // { columnName: filterValue }
   const currentTableName = ref('') // Track current table for persistence
 
+  // Track if a search has been performed (for empty state handling)
+  const hasSearched = ref(false)
+
   // Getters
   const hasResults = computed(() => searchResults.value.length > 0)
   const resultCount = computed(() => searchResults.value.length)
@@ -180,6 +183,7 @@ export const useSearchStore = defineStore('search', () => {
   function setResults(results) {
     searchResults.value = results
     error.value = null
+    hasSearched.value = true
   }
 
   /**
@@ -227,6 +231,7 @@ export const useSearchStore = defineStore('search', () => {
   function clearResults() {
     searchResults.value = []
     error.value = null
+    hasSearched.value = false
   }
 
   /**
@@ -318,6 +323,7 @@ export const useSearchStore = defineStore('search', () => {
     sortBy.value = []
     columnFilters.value = {}
     currentTableName.value = ''
+    hasSearched.value = false
   }
 
   return {
@@ -330,6 +336,7 @@ export const useSearchStore = defineStore('search', () => {
     sortBy,
     columnFilters,
     currentTableName,
+    hasSearched,
     // Getters
     hasResults,
     resultCount,

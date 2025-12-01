@@ -55,40 +55,65 @@ describe('UI Store', () => {
     })
   })
 
-  describe('Database State', () => {
-    it('should initialize with null database path', () => {
+  describe('Snackbar Notifications', () => {
+    it('should initialize with snackbar hidden', () => {
       const store = useUIStore()
-      expect(store.databasePath).toBeNull()
+      expect(store.snackbar).toBe(false)
     })
 
-    it('should set database path', () => {
+    it('should show snackbar with message', () => {
       const store = useUIStore()
-      const path = '/path/to/database.sqlite'
-      store.setDatabasePath(path)
-      expect(store.databasePath).toBe(path)
+      store.showSnackbar('Test message', 'info', 3000)
+      expect(store.snackbar).toBe(true)
+      expect(store.snackbarText).toBe('Test message')
+      expect(store.snackbarColor).toBe('info')
     })
 
-    it('should persist database path to localStorage', () => {
+    it('should show error snackbar', () => {
       const store = useUIStore()
-      const path = '/path/to/database.sqlite'
-      store.setDatabasePath(path)
-      expect(localStorage.setItem).toHaveBeenCalledWith('databasePath', path)
+      store.showError('Error message')
+      expect(store.snackbar).toBe(true)
+      expect(store.snackbarText).toBe('Error message')
+      expect(store.snackbarColor).toBe('error')
+    })
+
+    it('should show success snackbar', () => {
+      const store = useUIStore()
+      store.showSuccess('Success message')
+      expect(store.snackbar).toBe(true)
+      expect(store.snackbarText).toBe('Success message')
+      expect(store.snackbarColor).toBe('success')
+    })
+
+    it('should close snackbar', () => {
+      const store = useUIStore()
+      store.showSnackbar('Test', 'info', 3000)
+      store.closeSnackbar()
+      expect(store.snackbar).toBe(false)
     })
   })
 
-  describe('Loading State', () => {
-    it('should initialize with loading false', () => {
+  describe('Dialog State', () => {
+    it('should initialize with dialogs closed', () => {
       const store = useUIStore()
-      expect(store.isLoading).toBe(false)
+      expect(store.detailsDialog).toBe(false)
+      expect(store.helpDialog).toBe(false)
     })
 
-    it('should set loading state', () => {
+    it('should open and close details dialog', () => {
       const store = useUIStore()
-      store.setLoading(true)
-      expect(store.isLoading).toBe(true)
+      store.openDetailsDialog()
+      expect(store.detailsDialog).toBe(true)
+      store.closeDetailsDialog()
+      expect(store.detailsDialog).toBe(false)
+    })
 
-      store.setLoading(false)
-      expect(store.isLoading).toBe(false)
+    it('should open and close help dialog', () => {
+      const store = useUIStore()
+      store.openHelpDialog()
+      expect(store.helpDialog).toBe(true)
+      store.closeHelpDialog()
+      expect(store.helpDialog).toBe(false)
     })
   })
 })

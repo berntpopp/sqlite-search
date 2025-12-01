@@ -1,6 +1,6 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and column management -->
-  <v-card v-if="searchStore.hasResults" elevation="1" class="results-card" data-testid="results-card">
+  <v-card v-if="searchStore.hasSearched" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -72,15 +72,96 @@
     <!-- Enhanced data table with sorting, filtering, and custom column headers -->
     <v-data-table
       v-model:sort-by="searchStore.sortBy"
+      v-model:page="currentPage"
+      v-model:items-per-page="itemsPerPage"
       :headers="tableHeaders"
       :items="searchStore.filteredResults"
+      :loading="searchStore.loading"
       density="compact"
-      :items-per-page="25"
-      :items-per-page-options="[10, 25, 50, 100]"
+      :items-per-page-options="itemsPerPageOptions"
       :multi-sort="true"
+      hover
       class="results-table"
       data-testid="results-table"
     >
+      <!-- Top pagination controls for better UX on long tables -->
+      <template #top>
+        <div class="table-controls-top d-flex align-center justify-space-between px-4 py-2">
+          <!-- Left: Page info -->
+          <div class="d-flex align-center text-body-2 text-medium-emphasis">
+            <span>
+              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }}
+            </span>
+          </div>
+
+          <!-- Right: Pagination controls -->
+          <div class="d-flex align-center ga-3">
+            <!-- Items per page -->
+            <div class="d-flex align-center ga-2">
+              <span class="text-body-2 text-medium-emphasis">Rows:</span>
+              <v-select
+                v-model="itemsPerPage"
+                :items="itemsPerPageOptions"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="items-per-page-select"
+              />
+            </div>
+
+            <!-- Page navigation -->
+            <div class="d-flex align-center">
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage <= 1"
+                @click="currentPage = 1"
+              >
+                <v-icon size="small">mdi-page-first</v-icon>
+                <v-tooltip activator="parent" location="top">First page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage <= 1"
+                @click="currentPage--"
+              >
+                <v-icon size="small">mdi-chevron-left</v-icon>
+                <v-tooltip activator="parent" location="top">Previous page</v-tooltip>
+              </v-btn>
+
+              <span class="text-body-2 mx-2">
+                <strong>{{ currentPage }}</strong>
+                <span class="text-medium-emphasis"> / {{ totalPages }}</span>
+              </span>
+
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage++"
+              >
+                <v-icon size="small">mdi-chevron-right</v-icon>
+                <v-tooltip activator="parent" location="top">Next page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage = totalPages"
+              >
+                <v-icon size="small">mdi-page-last</v-icon>
+                <v-tooltip activator="parent" location="top">Last page</v-tooltip>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+        <v-divider />
+      </template>
       <!-- Custom header slots with sort indicators and filtering -->
       <template
         v-for="column in databaseStore.visibleColumns"
@@ -180,16 +261,38 @@
         </div>
       </template>
 
-      <!-- Empty state -->
+      <!-- Empty slot - hidden when using external empty state -->
       <template #no-data>
-        <div class="text-center pa-4">
-          <v-icon size="large" color="grey">mdi-magnify-close</v-icon>
-          <p class="text-medium-emphasis mt-2">
-            {{ searchStore.hasActiveFilters ? 'No results match your filters' : 'No results found' }}
-          </p>
-        </div>
+        <span></span>
       </template>
     </v-data-table>
+
+    <!-- Empty state - OUTSIDE table to avoid horizontal scroll issues -->
+    <div v-if="!searchStore.hasResults && !searchStore.loading" class="empty-state-container">
+      <EmptyState
+        v-if="searchStore.hasActiveFilters"
+        variant="no-results"
+        icon="mdi-filter-off-outline"
+        title="No results match your filters"
+        subtitle="Try adjusting or clearing your column filters"
+        :compact="true"
+        primary-action="Clear Filters"
+        primary-action-icon="mdi-filter-remove"
+        @primary-action="clearAllFilters"
+      />
+      <EmptyState
+        v-else
+        variant="no-results"
+        icon="mdi-magnify-close"
+        :title="`No results for &quot;${searchStore.searchTerm}&quot;`"
+        :suggestions="noResultsSuggestions"
+        suggestions-title="Try these:"
+        :compact="true"
+        primary-action="Clear Search"
+        primary-action-icon="mdi-close"
+        @primary-action="clearSearch"
+      />
+    </div>
 
     <!-- Column Management Dialog -->
     <ColumnManagementDialog v-model="showColumnManagement" />
@@ -203,6 +306,7 @@ import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
 import { SEARCH_CONFIG } from '@/config/search.config'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
@@ -210,6 +314,46 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 
 // Component state
 const showColumnManagement = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = ref(25)
+const itemsPerPageOptions = [10, 25, 50, 100]
+
+/**
+ * Calculate total pages based on filtered results
+ */
+const totalPages = computed(() => {
+  const total = searchStore.filteredResults.length
+  return Math.max(1, Math.ceil(total / itemsPerPage.value))
+})
+
+/**
+ * Pagination info for display (start-end of total)
+ */
+const paginationInfo = computed(() => {
+  const total = searchStore.filteredResults.length
+  if (total === 0) {
+    return { start: 0, end: 0, total: 0 }
+  }
+  const start = (currentPage.value - 1) * itemsPerPage.value + 1
+  const end = Math.min(currentPage.value * itemsPerPage.value, total)
+  return { start, end, total }
+})
+
+// No results suggestions
+const noResultsSuggestions = [
+  'Check spelling of your search terms',
+  'Try using wildcards (e.g., gene* instead of gene)',
+  'Use broader search terms',
+  'Search fewer columns'
+]
+
+/**
+ * Clear search and reset state
+ */
+function clearSearch() {
+  searchStore.setSearchTerm('')
+  searchStore.clearResults()
+}
 
 // Watch visible columns and cleanup sortBy when columns are hidden
 watch(
@@ -219,6 +363,14 @@ watch(
     searchStore.cleanupSortByColumns(newVisibleColumns)
   },
   { immediate: true }
+)
+
+// Reset to page 1 when search results change (new search or filters applied)
+watch(
+  () => searchStore.filteredResults.length,
+  () => {
+    currentPage.value = 1
+  }
 )
 
 /**
@@ -300,6 +452,28 @@ function copyRow(item) {
   font-size: 0.875rem;
 }
 
+/* Top pagination controls styling */
+.table-controls-top {
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  min-height: 44px;
+}
+
+/* Compact items-per-page select */
+.items-per-page-select {
+  width: 80px;
+  flex: 0 0 auto;
+}
+
+.items-per-page-select :deep(.v-field) {
+  font-size: 0.875rem;
+}
+
+.items-per-page-select :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 32px;
+}
+
 /* Header styling with filter button */
 .header-wrapper {
   width: 100%;
@@ -364,5 +538,26 @@ function copyRow(item) {
 /* Filter menu card styling */
 :deep(.v-menu > .v-overlay__content) {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Zebra striping for better row tracking */
+:deep(.v-data-table__tr:nth-child(even)) {
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+}
+
+/* Enhanced hover state */
+:deep(.v-data-table__tr:hover) {
+  background-color: rgba(var(--v-theme-primary), 0.04) !important;
+}
+
+/* Loading overlay */
+:deep(.v-data-table__progress) {
+  background-color: rgba(var(--v-theme-surface), 0.8);
+}
+
+/* Empty state container - outside table to avoid scroll issues */
+.empty-state-container {
+  padding: 32px 16px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>

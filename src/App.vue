@@ -63,8 +63,19 @@
           </v-col>
         </v-row>
 
-        <!-- Results table -->
-        <ResultsTable />
+        <!-- Results table or empty state -->
+        <ResultsTable v-if="searchStore.hasResults || searchStore.hasSearched" />
+
+        <!-- Ready to search empty state -->
+        <EmptyState
+          v-else-if="databaseStore.hasSelectedTable && databaseStore.selectedColumns.length > 0"
+          variant="ready"
+          icon="mdi-database-search-outline"
+          title="Ready to Search"
+          :subtitle="`Search across ${databaseStore.selectedColumns.length} columns in ${databaseStore.selectedTable}`"
+          :show-syntax-hints="true"
+          @hint-click="insertSearchHint"
+        />
       </v-container>
     </v-main>
 
@@ -95,6 +106,7 @@ import SearchInput from '@/components/search/SearchInput.vue'
 import ResultsTable from '@/components/results/ResultsTable.vue'
 import ResultDetailDialog from '@/components/results/ResultDetailDialog.vue'
 import HistoryDrawer from '@/components/HistoryDrawer.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 // Stores and composables
 const databaseStore = useDatabaseStore()
@@ -106,6 +118,16 @@ const { applyTheme } = useTheme()
 
 // Component state
 const showHistoryDrawer = ref(false)
+
+/**
+ * Insert syntax hint into search term
+ * @param {string} hint - Syntax hint to insert
+ */
+function insertSearchHint(hint) {
+  const currentTerm = searchStore.searchTerm || ''
+  const newTerm = currentTerm ? `${currentTerm} ${hint}` : hint
+  searchStore.setSearchTerm(newTerm)
+}
 
 // Store event listener cleanup functions
 let cleanupFunctions = []
