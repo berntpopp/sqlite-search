@@ -19,6 +19,12 @@ const FTS5_PREFIX_PATTERN = /\*\s*$/
 const FTS5_PHRASE_PATTERN = /^".*"$/
 
 /**
+ * Characters that require a term to be quoted in FTS5
+ * Periods, colons, parentheses, etc. cause syntax errors if unquoted
+ */
+const FTS5_SPECIAL_CHARS = /[.():^+\-/\\@#$%&=<>[\]{}|~`!?,;]/
+
+/**
  * Detects if a search term contains FTS5 query syntax
  *
  * @param {string} searchTerm - Raw user input
@@ -58,6 +64,91 @@ export function containsFts5Syntax(searchTerm) {
 }
 
 /**
+ * Checks if a term needs to be quoted for FTS5
+ *
+ * @param {string} term - Individual search term
+ * @returns {boolean} True if term contains special characters
+ */
+function needsQuoting(term) {
+  return FTS5_SPECIAL_CHARS.test(term)
+}
+
+/**
+ * Quotes a term for FTS5, escaping internal quotes
+ *
+ * @param {string} term - Term to quote
+ * @returns {string} Quoted term
+ */
+function quoteTerm(term) {
+  return `"${term.replace(/"/g, '""')}"`
+}
+
+/**
+ * Processes an FTS5 query with boolean operators, quoting terms as needed
+ *
+ * Terms containing special characters (like periods in "NM_007294.4") must be
+ * quoted to avoid FTS5 syntax errors. This function parses boolean queries
+ * and quotes individual terms while preserving operators.
+ *
+ * @param {string} query - Query containing FTS5 operators
+ * @returns {string} Processed query with properly quoted terms
+ *
+ * @example
+ * processFts5BooleanQuery('BRCA1 AND NM_007294.4')
+ * // => 'BRCA1 AND "NM_007294.4"'
+ */
+function processFts5BooleanQuery(query) {
+  // Handle NEAR queries specially - pass through as-is for now
+  if (FTS5_NEAR_PATTERN.test(query)) {
+    return query
+  }
+
+  // Split by boolean operators while preserving them
+  // This regex matches AND, OR, NOT as whole words
+  const parts = query.split(/\b(AND|OR|NOT)\b/)
+
+  return parts
+    .map((part) => {
+      const trimmed = part.trim()
+
+      // Empty parts
+      if (!trimmed) {
+        return ''
+      }
+
+      // Keep operators as-is
+      if (/^(AND|OR|NOT)$/.test(trimmed)) {
+        return trimmed
+      }
+
+      // Already quoted phrase - keep as-is
+      if (/^".*"$/.test(trimmed)) {
+        return trimmed
+      }
+
+      // Prefix query (ends with *) - handle the base term
+      if (/\*$/.test(trimmed)) {
+        const baseTerm = trimmed.slice(0, -1)
+        // If base term needs quoting, we can't use prefix syntax
+        // Fall back to quoting the whole thing as a phrase
+        if (needsQuoting(baseTerm)) {
+          return quoteTerm(baseTerm)
+        }
+        return trimmed
+      }
+
+      // Regular term - quote if it contains special characters
+      if (needsQuoting(trimmed)) {
+        return quoteTerm(trimmed)
+      }
+
+      return trimmed
+    })
+    .filter(Boolean)
+    .join(' ')
+}
+
+/**
  * Escapes a search term for safe use in FTS5 MATCH queries
  *
  * FTS5 Query Modes:
@@ -80,9 +171,9 @@ export function containsFts5Syntax(searchTerm) {
  * // => '"hello world"'
  *
  * @example
- * // Boolean search - preserved
- * escapeFts5SearchTerm('BRCA1 AND NM_007294')
- * // => 'BRCA1 AND NM_007294'
+ * // Boolean search - operators preserved, special chars quoted
+ * escapeFts5SearchTerm('BRCA1 AND NM_007294.4')
+ * // => 'BRCA1 AND "NM_007294.4"'
  *
  * @example
  * // Prefix search - preserved
@@ -101,12 +192,11 @@ export function escapeFts5SearchTerm(searchTerm) {
 
   const trimmed = searchTerm.trim()
 
-  // If the query contains FTS5 syntax, preserve it
+  // If the query contains FTS5 syntax, process it to handle special characters
   if (containsFts5Syntax(trimmed)) {
-    // For advanced queries, we only need to escape unbalanced quotes
-    // that aren't part of phrase queries
-    // Most FTS5 syntax should pass through as-is
-    return trimmed
+    // Process boolean queries to quote terms with special characters
+    // e.g., "BRCA1 AND NM_007294.4" => "BRCA1 AND "NM_007294.4""
+    return processFts5BooleanQuery(trimmed)
   }
 
   // Simple search: wrap in quotes for literal phrase matching
