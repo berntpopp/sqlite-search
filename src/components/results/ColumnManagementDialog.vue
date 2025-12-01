@@ -2,11 +2,11 @@
   <!-- Column Management Dialog for show/hide and reordering columns -->
   <v-dialog :model-value="modelValue" max-width="600" @update:model-value="$emit('update:modelValue', $event)">
     <v-card>
-      <!-- Header -->
-      <v-card-title class="d-flex align-center justify-space-between py-3 px-4 bg-primary">
+      <!-- Header - unified style with other dialogs -->
+      <v-card-title class="d-flex align-center justify-space-between py-3 px-4">
         <div class="d-flex align-center">
-          <v-icon start>mdi-table-cog</v-icon>
-          <span>Manage Columns</span>
+          <v-icon size="small" class="mr-2">mdi-table-cog</v-icon>
+          <span class="text-h6">Manage Columns</span>
         </div>
         <v-btn
           icon
@@ -14,7 +14,7 @@
           size="small"
           @click="$emit('update:modelValue', false)"
         >
-          <v-icon>mdi-close</v-icon>
+          <v-icon size="small">mdi-close</v-icon>
         </v-btn>
       </v-card-title>
 
@@ -50,7 +50,7 @@
         <v-card variant="outlined" class="column-list">
           <v-list density="compact" class="pa-0">
             <v-list-item
-              v-for="(column, index) in databaseStore.columnOrder"
+              v-for="(column, index) in effectiveColumnOrder"
               :key="column"
               class="column-item"
               :class="{ 'column-hidden': isColumnHidden(column) }"
@@ -92,7 +92,7 @@
                     icon
                     variant="text"
                     size="x-small"
-                    :disabled="index === databaseStore.columnOrder.length - 1"
+                    :disabled="index === effectiveColumnOrder.length - 1"
                     @click="databaseStore.moveColumnDown(column)"
                   >
                     <v-icon size="small">mdi-chevron-down</v-icon>
@@ -107,7 +107,7 @@
         <!-- Summary info -->
         <div class="mt-4 d-flex align-center justify-space-between">
           <div class="text-caption text-medium-emphasis">
-            {{ databaseStore.visibleColumns.length }} of {{ databaseStore.columnOrder.length }} columns visible
+            {{ databaseStore.visibleColumns.length }} of {{ effectiveColumnOrder.length }} columns visible
           </div>
           <div v-if="databaseStore.hiddenColumnCount > 0" class="text-caption text-warning">
             <v-icon size="small" class="mr-1">mdi-alert-circle-outline</v-icon>
@@ -118,15 +118,15 @@
 
       <v-divider></v-divider>
 
-      <!-- Footer actions -->
-      <v-card-actions class="pa-4">
+      <!-- Footer actions - unified style with other dialogs -->
+      <v-card-actions class="px-4 py-3">
         <v-spacer></v-spacer>
         <v-btn
           color="primary"
-          variant="elevated"
+          variant="text"
           @click="$emit('update:modelValue', false)"
         >
-          Done
+          Close
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -134,6 +134,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
 import { SEARCH_CONFIG } from '@/config/search.config'
@@ -149,6 +150,16 @@ defineProps({
 defineEmits(['update:modelValue'])
 
 const databaseStore = useDatabaseStore()
+
+/**
+ * Effective column order - uses columnOrder if available, otherwise selectedColumns
+ * This handles the case where columnOrder hasn't been initialized yet
+ */
+const effectiveColumnOrder = computed(() => {
+  return databaseStore.columnOrder.length > 0
+    ? databaseStore.columnOrder
+    : databaseStore.selectedColumns
+})
 
 /**
  * Reset all preferences with confirmation
