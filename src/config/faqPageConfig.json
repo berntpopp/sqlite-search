@@ -1,37 +1,136 @@
 {
   "title": "Help & Documentation",
+  "subtitle": "Learn how to use SQLite Search effectively",
   "sections": [
     {
+      "id": "overview",
       "header": "What is SQLite Search?",
-      "content": "SQLite Search is a desktop application for performing full-text searches on SQLite databases using FTS5 (Full-Text Search 5). Built with modern web technologies (Vue 3, Vuetify 3, Electron), it provides an intuitive interface for searching through large datasets with powerful FTS5 query syntax support."
+      "icon": "mdi-information-outline",
+      "color": "primary",
+      "content": {
+        "intro": "SQLite Search is a desktop application for performing full-text searches on SQLite databases using FTS5.",
+        "features": [
+          "Fast full-text search powered by SQLite FTS5",
+          "Support for boolean operators (AND, OR, NOT)",
+          "Wildcard and phrase search capabilities",
+          "Dark/light theme with persistent preferences",
+          "Search history with restore functionality"
+        ],
+        "tech": "Built with Vue 3, Vuetify 3, and Electron"
+      }
     },
     {
+      "id": "getting-started",
       "header": "Getting Started",
-      "content": "To begin: (1) Click 'Select Database' in the header to choose your SQLite database file. (2) Select a table from the dropdown - only FTS5 virtual tables will appear. (3) Choose columns to search (all selected by default). (4) Enter your search term and press Enter or click the search button. Results appear in a compact, sortable table below."
+      "icon": "mdi-rocket-launch-outline",
+      "color": "success",
+      "content": {
+        "intro": "Follow these steps to start searching your database:",
+        "steps": [
+          "Click the database button in the header to select your SQLite file",
+          "Choose an FTS5 table from the dropdown (only FTS5 tables are shown)",
+          "Select which columns to search (TEXT columns auto-selected by default)",
+          "Enter your search term and press Enter or click the search button",
+          "View results in the table below - click rows for details"
+        ]
+      }
     },
     {
+      "id": "database",
       "header": "Database Requirements",
-      "content": "SQLite Search requires databases with FTS5 virtual tables. Regular tables won't appear in the selector. FTS5 tables are created using 'CREATE VIRTUAL TABLE ... USING fts5(...)' syntax. If no tables appear after selecting your database, it may not contain FTS5 virtual tables. You can verify this using any SQLite browser tool."
+      "icon": "mdi-database-outline",
+      "color": "warning",
+      "content": {
+        "intro": "SQLite Search requires databases with FTS5 (Full-Text Search 5) virtual tables.",
+        "requirements": [
+          "Database must contain at least one FTS5 virtual table",
+          "Regular SQLite tables will not appear in the selector",
+          "FTS5 tables are created using: CREATE VIRTUAL TABLE ... USING fts5(...)"
+        ],
+        "note": "If no tables appear after selecting your database, verify it contains FTS5 virtual tables using any SQLite browser tool."
+      }
     },
     {
+      "id": "search-syntax",
       "header": "Search Syntax (FTS5)",
-      "content": "FTS5 supports powerful search: Simple terms ('protein'), exact phrases ('\"cell membrane\"'), boolean operators ('protein AND enzyme', 'gene OR protein', 'NOT obsolete'), prefix matching with asterisk ('bio*' matches biology, biochemistry), proximity search ('protein NEAR/5 enzyme' finds terms within 5 words), and complex combinations ('(gene OR protein) AND NOT obsolete')."
+      "icon": "mdi-code-tags",
+      "color": "info",
+      "content": {
+        "intro": "FTS5 supports powerful search operators:",
+        "examples": [
+          { "syntax": "protein", "description": "Simple term search" },
+          { "syntax": "\"cell membrane\"", "description": "Exact phrase (use quotes)" },
+          { "syntax": "protein AND enzyme", "description": "Both terms must match" },
+          { "syntax": "gene OR protein", "description": "Either term matches" },
+          { "syntax": "cancer NOT benign", "description": "Exclude term" },
+          { "syntax": "bio*", "description": "Prefix wildcard (matches biology, biochemistry)" },
+          { "syntax": "protein NEAR/5 enzyme", "description": "Terms within 5 words" }
+        ],
+        "tip": "Combine operators for complex queries: (gene OR protein) AND NOT obsolete"
+      }
     },
     {
-      "header": "Using Results",
-      "content": "Search results display in a dense, sortable table. Click column headers to sort. Use the eye icon to view full details in a dialog. Use the clipboard icon to copy field values. The result count appears above the table and in status messages. Clear results with the clear button or start a new search."
+      "id": "results",
+      "header": "Working with Results",
+      "icon": "mdi-table-eye",
+      "color": "secondary",
+      "content": {
+        "intro": "Search results are displayed in an interactive table:",
+        "features": [
+          "Click column headers to sort results",
+          "Use the eye icon to view full record details",
+          "Use the copy icon to copy field values to clipboard",
+          "Adjust visible columns with the COLUMNS button",
+          "Clear results with the CLEAR button"
+        ],
+        "pagination": "Large result sets are paginated - use the controls at the bottom to navigate."
+      }
     },
     {
-      "header": "Theme & Preferences",
-      "content": "Toggle between light and dark themes using the sun/moon icon in the header. Your theme preference is saved automatically and restored when you reopen the app. The dark theme is optimized for low-light environments and reduces eye strain."
+      "id": "history",
+      "header": "Search History",
+      "icon": "mdi-history",
+      "color": "primary",
+      "content": {
+        "intro": "Your searches are automatically saved for quick access:",
+        "features": [
+          "Click the history icon in the header to view past searches",
+          "Each entry shows the search term, result count, and context",
+          "Click RESTORE to re-run a previous search",
+          "Delete individual entries or clear all history"
+        ],
+        "note": "History is stored locally and persists across sessions."
+      }
     },
     {
+      "id": "settings",
+      "header": "Theme & Settings",
+      "icon": "mdi-cog-outline",
+      "color": "default",
+      "content": {
+        "intro": "Customize the application to your preferences:",
+        "options": [
+          { "icon": "mdi-weather-sunny", "name": "Theme Toggle", "description": "Switch between light and dark mode" },
+          { "icon": "mdi-format-text", "name": "Auto-select TEXT", "description": "Automatically select TEXT columns for searching" },
+          { "icon": "mdi-refresh", "name": "Reset State", "description": "Clear all selections and return to initial state" }
+        ],
+        "persistence": "All preferences are saved automatically and restored on next launch."
+      }
+    },
+    {
+      "id": "troubleshooting",
       "header": "Troubleshooting",
-      "content": "No tables? Ensure your database has FTS5 virtual tables, not regular tables. No results? Check your search syntax and try simpler terms or wildcard matching (*). App slow? Large result sets take time to render - try narrowing your search or selecting fewer columns. FTS5 searches are highly optimized even on large datasets."
-    },
-    {
-      "header": "About & License",
-      "content": "SQLite Search is open-source software licensed under the MIT License, allowing free use, modification, and distribution. Built with Vue 3 Composition API, Vuetify 3 Material Design, Electron for cross-platform desktop deployment, Pinia for state management, and electron-vite for modern build tooling. Uses SQLite's FTS5 extension for high-performance full-text search."
+      "icon": "mdi-lifebuoy",
+      "color": "error",
+      "content": {
+        "intro": "Common issues and solutions:",
+        "issues": [
+          { "problem": "No tables appear", "solution": "Ensure your database contains FTS5 virtual tables, not regular tables" },
+          { "problem": "No search results", "solution": "Try simpler terms, use wildcards (*), or check column selection" },
+          { "problem": "Syntax error", "solution": "Check FTS5 syntax - special characters may need quoting" },
+          { "problem": "App is slow", "solution": "Large result sets take time - try narrowing your search" }
+        ]
+      }
     }
   ]
 }
