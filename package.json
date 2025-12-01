@@ -78,9 +78,14 @@
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "portable",
+        "zip"
       ],
       "icon": "build/icon.ico"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.exe"
     },
     "nsis": {
       "oneClick": true,
@@ -88,6 +93,10 @@
       "allowToChangeInstallationDirectory": false
     },
     "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
       "identity": null,
@@ -96,7 +105,8 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "zip"
       ],
       "category": "Development",
       "icon": "build/icon.png"
