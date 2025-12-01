@@ -1,19 +1,11 @@
 /**
- * Comprehensive Screenshot Generator for UI Review
+ * Comprehensive E2E Screenshot Tests for sqlite-search
  *
- * This script captures screenshots of all UI states for:
- * - Visual debugging
- * - UI review
- * - Documentation
- * - Regression testing
+ * Generates screenshots of all UI states for documentation and visual regression testing.
+ * Tests all menu items, FAQ sections, search features, and UI states.
  *
- * Usage (PowerShell):
- *   pnpm run test:e2e:setup          # Generate test database first
- *   pnpm run test:e2e:screenshots    # Run this script
- *
- * Screenshots are saved to: e2e-results/screenshots/
- *
- * @module e2e/screenshots.spec
+ * Run in PowerShell (NOT WSL2):
+ *   pnpm run build && pnpm run test:e2e:screenshots
  */
 import { test as base, _electron } from '@playwright/test'
 import path from 'path'
@@ -22,9 +14,11 @@ import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+
+// Paths
 const ROOT_DIR = path.resolve(__dirname, '../..')
-const SCREENSHOTS_DIR = path.join(ROOT_DIR, 'e2e-results', 'screenshots')
 const TEST_DB_PATH = path.join(__dirname, 'test-data', 'test.db')
+const SCREENSHOTS_DIR = path.join(ROOT_DIR, 'e2e-results', 'screenshots')
 
 // Ensure screenshots directory exists
 if (!fs.existsSync(SCREENSHOTS_DIR)) {
@@ -32,49 +26,36 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
 }
 
 /**
- * Check if renderer build exists
+ * Check if build files exist
  */
 function checkBuildExists() {
-  const rendererHtml = path.join(ROOT_DIR, 'dist-electron', 'renderer', 'index.html')
-  const mainJs = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
+  const mainPath = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
+  const rendererPath = path.join(ROOT_DIR, 'dist-electron', 'renderer', 'index.html')
 
-  console.log('🔍 Checking build files...')
-  console.log(`   Main JS: ${mainJs} - ${fs.existsSync(mainJs) ? '✅' : '❌'}`)
-  console.log(`   Renderer: ${rendererHtml} - ${fs.existsSync(rendererHtml) ? '✅' : '❌'}`)
+  console.log('Checking build files...')
+  console.log(`   Main JS: ${mainPath} - ${fs.existsSync(mainPath) ? '✅' : '❌'}`)
+  console.log(`   Renderer: ${rendererPath} - ${fs.existsSync(rendererPath) ? '✅' : '❌'}`)
 
-  if (!fs.existsSync(mainJs) || !fs.existsSync(rendererHtml)) {
-    console.error('')
-    console.error('❌ Build files not found!')
-    console.error('   Run: pnpm run build')
-    console.error('')
-    return false
-  }
-  return true
+  return fs.existsSync(mainPath) && fs.existsSync(rendererPath)
 }
 
 /**
- * Custom test fixture for screenshot generation
+ * Custom test fixture
  */
 const test = base.extend({
   electronApp: async ({}, use) => {
-    // Check build exists
     if (!checkBuildExists()) {
       throw new Error('Build files not found. Run: pnpm run build')
     }
 
     const mainPath = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
+    console.log(`🚀 Launching Electron app with test DB: ${TEST_DB_PATH}`)
 
-    console.log('🚀 Launching Electron app...')
-    console.log(`   Main: ${mainPath}`)
-    console.log(`   Test DB: ${TEST_DB_PATH}`)
-
-    // Important: Set NODE_ENV to production so the app loads built files correctly
     const electronApp = await _electron.launch({
       args: [mainPath],
       env: {
         ...process.env,
         NODE_ENV: 'production',
-        // Set test database path
         SQLITE_SEARCH_TEST_DB: TEST_DB_PATH,
       },
     })
@@ -84,11 +65,9 @@ const test = base.extend({
   },
 
   window: async ({ electronApp }, use) => {
-    console.log('⏳ Waiting for window...')
     const window = await electronApp.firstWindow()
 
-    // Resize the actual Electron window (not just viewport)
-    // This ensures screenshots match what users see
+    // Resize to consistent size
     await electronApp.evaluate(async ({ BrowserWindow }) => {
       const win = BrowserWindow.getAllWindows()[0]
       if (win) {
@@ -96,114 +75,54 @@ const test = base.extend({
         win.center()
       }
     })
-    await window.waitForTimeout(500) // Wait for resize
 
-    // Wait for various load states
-    console.log('⏳ Waiting for DOM content...')
+    // Wait for app to be ready
     await window.waitForLoadState('domcontentloaded')
-
-    console.log('⏳ Waiting for network idle...')
-    await window.waitForLoadState('networkidle').catch(() => {
-      console.log('   Network idle timeout (continuing anyway)')
-    })
-
-    // Wait for Vuetify to render - look for the app container
-    console.log('⏳ Waiting for Vuetify app...')
-    await window.waitForSelector('.v-application', { timeout: 30000 }).catch(() => {
-      console.log('   Warning: .v-application not found')
-    })
-
-    // Additional wait for Vue hydration
-    console.log('⏳ Waiting for Vue hydration...')
+    await window.waitForSelector('.v-application', { timeout: 30000 })
     await window.waitForTimeout(2000)
 
-    // Wait for database to be loaded (indicated by table selector being visible)
-    console.log('⏳ Waiting for database to load...')
+    // Wait for database to load
     const tableSelector = window.locator('[data-testid="table-selector"]')
-    const welcomeScreen = window.locator('text=Welcome to SQLite Search')
-
-    // Wait up to 10 seconds for either table selector (db loaded) or welcome screen (no db)
-    await Promise.race([
-      tableSelector.waitFor({ state: 'visible', timeout: 10000 }).then(() => {
-        console.log('✅ Database loaded - Table selector visible')
-      }),
-      welcomeScreen.waitFor({ state: 'visible', timeout: 10000 }).then(() => {
-        console.log('⚠️ Welcome screen shown - Database may not have loaded')
-      }),
-    ]).catch(() => {
-      console.log('⚠️ Timeout waiting for UI state')
+    await tableSelector.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {
+      console.log('⚠️ Table selector not visible - database may not have loaded')
     })
-
-    // Log page content for debugging
-    const title = await window.title()
-    console.log(`✅ Window ready - Title: "${title}"`)
 
     await use(window)
   },
 })
 
-/**
- * Helper to save screenshot with consistent naming
- */
+// ============================================================================
+// HELPERS
+// ============================================================================
+
 async function screenshot(window, name, description = '') {
-  // Small wait to ensure rendering is complete
-  await window.waitForTimeout(500)
-
-  const filename = `${name}.png`
-  const filepath = path.join(SCREENSHOTS_DIR, filename)
-
-  // Take screenshot
-  await window.screenshot({ path: filepath, fullPage: false })
-  console.log(`📸 ${name}: ${description || filename}`)
-
+  await window.waitForTimeout(300)
+  const filepath = path.join(SCREENSHOTS_DIR, `${name}.png`)
+  await window.screenshot({ path: filepath })
+  console.log(`📸 ${name}: ${description}`)
   return filepath
 }
 
-/**
- * Helper to wait and take screenshot
- */
-async function waitAndScreenshot(window, name, description, waitMs = 500) {
-  await window.waitForTimeout(waitMs)
-  return screenshot(window, name, description)
-}
-
-/**
- * Helper to set up table and columns for search tests
- * Each test launches a fresh app, so we need to select table/columns before searching
- */
 async function setupForSearch(window) {
-  // Select table
   const tableSelector = window.locator('[data-testid="table-selector"]')
   if (await tableSelector.isVisible().catch(() => false)) {
     await tableSelector.click()
     await window.waitForTimeout(500)
-
-    // Select first table (genes_fts)
     const firstTable = window.locator('.v-list-item').first()
     if (await firstTable.isVisible().catch(() => false)) {
       await firstTable.click()
-      await window.waitForTimeout(1000) // Wait for columns to load
+      await window.waitForTimeout(1500)
     }
   }
-
-  // Columns are auto-selected, wait for search input to be enabled
-  await window.waitForTimeout(500)
 }
 
-/**
- * Helper to set up AND perform a search that returns results
- */
-async function setupWithResults(window) {
-  await setupForSearch(window)
-
-  // Perform a search that returns results
+async function performSearch(window, term) {
   const searchInput = window.locator('[data-testid="search-input"] input')
   const searchButton = window.locator('[data-testid="search-button"]')
-
   if (await searchInput.isVisible().catch(() => false)) {
-    await searchInput.fill('BRCA')
+    await searchInput.fill(term)
     await searchButton.click()
-    await window.waitForTimeout(2000) // Wait for results
+    await window.waitForTimeout(2000)
   }
 }
 
@@ -211,341 +130,342 @@ async function setupWithResults(window) {
 // SCREENSHOT TESTS
 // ============================================================================
 
-test.describe('UI Screenshots - Complete Application Tour', () => {
+test.describe('Complete UI Screenshot Tour', () => {
   test.describe.configure({ mode: 'serial' })
 
-  test('00 - Debug Window State', async ({ window }) => {
-    // Debug: check what's actually rendered
-    const html = await window.content()
-    console.log('📄 Page HTML length:', html.length)
-    console.log('📄 First 500 chars:', html.substring(0, 500))
+  // --------------------------------------------------------------------------
+  // 1. INITIAL STATE & HEADER
+  // --------------------------------------------------------------------------
 
-    // Check if body has content
-    const bodyContent = await window.locator('body').innerHTML()
-    console.log('📄 Body content length:', bodyContent.length)
+  test('01 - Initial App State', async ({ window }) => {
+    await screenshot(window, '01-app-initial', 'Application initial state with database loaded')
+  })
 
-    // Check for common elements
-    const hasVApp = await window.locator('.v-application').count()
-    console.log('🔍 .v-application count:', hasVApp)
+  test('02 - Header Controls', async ({ window }) => {
+    // Database button
+    await screenshot(window, '02a-header-database-btn', 'Database selection button showing filename')
 
-    const hasVAppBar = await window.locator('.v-app-bar').count()
-    console.log('🔍 .v-app-bar count:', hasVAppBar)
+    // History button (hover)
+    const historyBtn = window.locator('button:has(.mdi-history)').first()
+    if (await historyBtn.isVisible().catch(() => false)) {
+      await historyBtn.hover()
+      await window.waitForTimeout(500)
+      await screenshot(window, '02b-header-history-btn', 'History button with tooltip')
+    }
 
-    // Wait more if needed
-    if (hasVApp === 0) {
-      console.log('⏳ Waiting additional 5 seconds for app to load...')
-      await window.waitForTimeout(5000)
+    // Auto-select TEXT toggle
+    const textToggle = window.locator('button:has(.mdi-format-text)').first()
+    if (await textToggle.isVisible().catch(() => false)) {
+      await textToggle.hover()
+      await window.waitForTimeout(500)
+      await screenshot(window, '02c-header-text-toggle', 'Auto-select TEXT columns toggle')
+    }
+
+    // Theme toggle
+    const themeBtn = window.locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)').first()
+    if (await themeBtn.isVisible().catch(() => false)) {
+      await themeBtn.hover()
+      await window.waitForTimeout(500)
+      await screenshot(window, '02d-header-theme-btn', 'Theme toggle button')
+    }
+
+    // Reset button
+    const resetBtn = window.locator('button:has(.mdi-refresh)').first()
+    if (await resetBtn.isVisible().catch(() => false)) {
+      await resetBtn.hover()
+      await window.waitForTimeout(500)
+      await screenshot(window, '02e-header-reset-btn', 'Reset application state button')
     }
   })
 
-  test('01 - Initial Launch State', async ({ window }) => {
-    await screenshot(window, '01-initial-launch', 'Application just launched')
-  })
+  // --------------------------------------------------------------------------
+  // 2. HELP DIALOG & ALL FAQ ITEMS
+  // --------------------------------------------------------------------------
 
-  test('02 - App Header and Navigation', async ({ window }) => {
-    // Capture header area
-    await screenshot(window, '02-app-header', 'Application header with title and controls')
+  test('03 - Help Dialog & All FAQ Items', async ({ window }) => {
+    // Open help dialog
+    const helpBtn = window.locator('button:has-text("Help")')
+    await helpBtn.click()
+    await window.waitForTimeout(800)
+    await screenshot(window, '03a-help-dialog', 'Help dialog opened')
 
-    // Click theme toggle if visible
-    const themeToggle = window.locator('[data-testid="theme-toggle"], .mdi-weather-night, .mdi-weather-sunny').first()
-    if (await themeToggle.isVisible().catch(() => false)) {
-      await themeToggle.click()
-      await waitAndScreenshot(window, '02b-theme-dark', 'Dark theme enabled')
+    // Expand and screenshot each FAQ item (8 total)
+    const faqItems = [
+      'What is SQLite Search?',
+      'Getting Started',
+      'Database Requirements',
+      'Search Syntax (FTS5)',
+      'Using Results',
+      'Theme & Preferences',
+      'Troubleshooting',
+      'About & License',
+    ]
 
-      await themeToggle.click()
-      await waitAndScreenshot(window, '02c-theme-light', 'Light theme restored')
-    }
-  })
-
-  test('03 - Help/FAQ Dialog', async ({ window }) => {
-    // Find and click help button
-    const helpButton = window.locator('[data-testid="help-button"], .mdi-help-circle, button:has-text("Help")').first()
-
-    if (await helpButton.isVisible().catch(() => false)) {
-      await helpButton.click()
-      await waitAndScreenshot(window, '03-help-dialog-open', 'Help dialog opened', 1000)
-
-      // Try to expand FAQ sections
-      const faqItems = window.locator('.v-expansion-panel')
-      const faqCount = await faqItems.count()
-
-      for (let i = 0; i < Math.min(faqCount, 5); i++) {
-        const panel = faqItems.nth(i)
-        const header = panel.locator('.v-expansion-panel-title')
-
-        if (await header.isVisible().catch(() => false)) {
-          await header.click()
-          await waitAndScreenshot(window, `03-faq-item-${i + 1}`, `FAQ item ${i + 1} expanded`, 300)
-        }
-      }
-
-      // Close help dialog
-      const closeButton = window.locator('.v-dialog button:has-text("Close"), .v-dialog .mdi-close').first()
-      if (await closeButton.isVisible().catch(() => false)) {
-        await closeButton.click()
+    for (let i = 0; i < faqItems.length; i++) {
+      const itemTitle = faqItems[i]
+      const item = window.locator(`.v-expansion-panel:has-text("${itemTitle}")`)
+      if (await item.isVisible().catch(() => false)) {
+        await item.click()
         await window.waitForTimeout(500)
-      } else {
-        // Press Escape to close
-        await window.keyboard.press('Escape')
-        await window.waitForTimeout(500)
+        await screenshot(window, `03-faq-${i + 1}-${itemTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}`, `FAQ: ${itemTitle}`)
       }
     }
+
+    // Close dialog
+    await window.keyboard.press('Escape')
+    await window.waitForTimeout(500)
   })
 
-  test('04 - Database Selection', async ({ window }) => {
-    // Look for file dialog button or database selector
-    const selectDbButton = window.locator('[data-testid="select-database-btn"], button:has-text("Select Database"), button:has-text("Open"), .mdi-folder-open').first()
+  // --------------------------------------------------------------------------
+  // 3. THEME TOGGLE (DARK MODE)
+  // --------------------------------------------------------------------------
 
-    if (await selectDbButton.isVisible().catch(() => false)) {
-      await screenshot(window, '04-database-selector', 'Database selection button visible')
-    }
+  test('04 - Dark Mode Theme', async ({ window }) => {
+    // Toggle to dark mode
+    const themeBtn = window.locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)').first()
+    if (await themeBtn.isVisible().catch(() => false)) {
+      await themeBtn.click()
+      await window.waitForTimeout(800)
+      await screenshot(window, '04a-dark-mode', 'Application in dark mode')
 
-    // Check if database path is shown
-    const dbPath = window.locator('[data-testid="database-path"], .database-path')
-    if (await dbPath.isVisible().catch(() => false)) {
-      await screenshot(window, '04b-database-path', 'Current database path displayed')
+      // Show help dialog in dark mode
+      const helpBtn = window.locator('button:has-text("Help")')
+      await helpBtn.click()
+      await window.waitForTimeout(800)
+      await screenshot(window, '04b-dark-mode-help', 'Help dialog in dark mode')
+      await window.keyboard.press('Escape')
+      await window.waitForTimeout(500)
+
+      // Toggle back to light mode
+      await themeBtn.click()
+      await window.waitForTimeout(500)
     }
   })
+
+  // --------------------------------------------------------------------------
+  // 4. TABLE & COLUMN SELECTORS
+  // --------------------------------------------------------------------------
 
   test('05 - Table Selector', async ({ window }) => {
+    await screenshot(window, '05a-table-selector-initial', 'Table selector initial state')
+
     const tableSelector = window.locator('[data-testid="table-selector"]')
-
     if (await tableSelector.isVisible().catch(() => false)) {
-      await screenshot(window, '05-table-selector-closed', 'Table selector (closed)')
-
-      // Click to open dropdown
       await tableSelector.click()
-      await waitAndScreenshot(window, '05b-table-selector-open', 'Table selector dropdown open', 500)
+      await window.waitForTimeout(500)
+      await screenshot(window, '05b-table-selector-open', 'Table selector dropdown open (genes_fts, variants_fts)')
 
-      // Select first table if available
-      const firstOption = window.locator('.v-list-item').first()
-      if (await firstOption.isVisible().catch(() => false)) {
-        await firstOption.click()
-        await waitAndScreenshot(window, '05c-table-selected', 'Table selected', 1000)
+      // Select genes_fts
+      const genesTable = window.locator('.v-list-item:has-text("genes_fts")')
+      if (await genesTable.isVisible().catch(() => false)) {
+        await genesTable.click()
+        await window.waitForTimeout(1500)
+        await screenshot(window, '05c-table-genes-selected', 'genes_fts table selected')
       }
     }
   })
 
   test('06 - Column Selector', async ({ window }) => {
+    await setupForSearch(window)
+
     const columnSelector = window.locator('[data-testid="column-selector"]')
-
     if (await columnSelector.isVisible().catch(() => false)) {
-      await screenshot(window, '06-column-selector-closed', 'Column selector (closed)')
+      await screenshot(window, '06a-column-selector-filled', 'Column selector with columns auto-selected')
 
-      // Click to open
       await columnSelector.click()
-      await waitAndScreenshot(window, '06b-column-selector-open', 'Column selector dropdown open', 500)
+      await window.waitForTimeout(500)
+      await screenshot(window, '06b-column-selector-dropdown', 'Column selector dropdown open')
 
       // Look for quick action buttons
-      const textOnlyBtn = window.locator('button:has-text("TEXT Only")')
-      if (await textOnlyBtn.isVisible().catch(() => false)) {
+      const selectAllBtn = window.locator('button:has-text("All"), button:has(.mdi-select-all)')
+      if (await selectAllBtn.isVisible().catch(() => false)) {
         await screenshot(window, '06c-column-quick-actions', 'Column quick action buttons')
       }
 
-      // Select columns
-      const columnItems = window.locator('.v-list-item')
-      const colCount = await columnItems.count()
-      for (let i = 0; i < Math.min(colCount, 3); i++) {
-        const item = columnItems.nth(i)
-        if (await item.isVisible().catch(() => false)) {
-          await item.click()
-          await window.waitForTimeout(200)
-        }
-      }
-
-      // Click outside to close
       await window.keyboard.press('Escape')
-      await waitAndScreenshot(window, '06d-columns-selected', 'Columns selected', 500)
+      await window.waitForTimeout(300)
     }
   })
 
-  test('07 - Search Input States', async ({ window }) => {
-    // Set up table and columns first (each test gets fresh app)
+  // --------------------------------------------------------------------------
+  // 5. SEARCH INPUT & FTS5 SYNTAX
+  // --------------------------------------------------------------------------
+
+  test('07 - Search Input & FTS5 Syntax', async ({ window }) => {
     await setupForSearch(window)
 
-    // Use the actual input element inside Vuetify's v-text-field wrapper
     const searchInput = window.locator('[data-testid="search-input"] input')
-
     if (await searchInput.isVisible().catch(() => false)) {
-      await screenshot(window, '07-search-input-empty', 'Empty search input with hint')
+      await screenshot(window, '07a-search-empty', 'Empty search input with FTS5 syntax hint')
 
-      // Type a search term
+      // Simple search
       await searchInput.fill('BRCA1')
-      await screenshot(window, '07b-search-input-filled', 'Search input with text')
+      await screenshot(window, '07b-search-simple', 'Simple search term: BRCA1')
 
-      // Clear and show different queries
-      await searchInput.fill('BRCA1 AND NM_007294.4')
-      await screenshot(window, '07c-search-boolean-and', 'Boolean AND query')
+      // Boolean AND
+      await searchInput.fill('BRCA1 AND repair')
+      await screenshot(window, '07c-search-and', 'Boolean AND: BRCA1 AND repair')
 
+      // Boolean OR
       await searchInput.fill('TP53 OR EGFR')
-      await screenshot(window, '07d-search-boolean-or', 'Boolean OR query')
+      await screenshot(window, '07d-search-or', 'Boolean OR: TP53 OR EGFR')
 
+      // Boolean NOT
       await searchInput.fill('cancer NOT benign')
-      await screenshot(window, '07e-search-boolean-not', 'Boolean NOT query')
+      await screenshot(window, '07e-search-not', 'Boolean NOT: cancer NOT benign')
 
+      // Prefix wildcard
       await searchInput.fill('BRCA*')
-      await screenshot(window, '07f-search-prefix', 'Prefix wildcard query')
+      await screenshot(window, '07f-search-wildcard', 'Prefix wildcard: BRCA*')
+
+      // Phrase search
+      await searchInput.fill('"tumor suppressor"')
+      await screenshot(window, '07g-search-phrase', 'Exact phrase: "tumor suppressor"')
     }
   })
 
-  test('08 - Search Execution and Results', async ({ window }) => {
-    // Set up table and columns first
+  // --------------------------------------------------------------------------
+  // 6. SEARCH RESULTS
+  // --------------------------------------------------------------------------
+
+  test('08 - Search Execution & Results', async ({ window }) => {
     await setupForSearch(window)
 
-    const searchInput = window.locator('[data-testid="search-input"] input')
-    const searchButton = window.locator('[data-testid="search-button"]')
+    // Search for BRCA (should match BRCA1 and BRCA2)
+    await performSearch(window, 'BRCA')
+    await screenshot(window, '08a-search-results', 'Search results for BRCA (2 genes)')
 
-    if (await searchInput.isVisible().catch(() => false)) {
-      // Perform a search that should return results
-      await searchInput.fill('BRCA')
-      await searchButton.click()
-      await waitAndScreenshot(window, '08-search-loading', 'Search in progress', 500)
+    // Results table
+    const resultsTable = window.locator('[data-testid="results-table"]')
+    if (await resultsTable.isVisible().catch(() => false)) {
+      await screenshot(window, '08b-results-table', 'Results table with gene data')
+    }
+  })
 
-      // Wait for results
-      await window.waitForTimeout(2000)
-      await screenshot(window, '08b-search-results', 'Search results displayed')
+  test('09 - Second Table (variants_fts)', async ({ window }) => {
+    // Select variants table
+    const tableSelector = window.locator('[data-testid="table-selector"]')
+    if (await tableSelector.isVisible().catch(() => false)) {
+      await tableSelector.click()
+      await window.waitForTimeout(500)
 
-      // Check results table
-      const resultsTable = window.locator('[data-testid="results-table"]')
-      if (await resultsTable.isVisible().catch(() => false)) {
-        await screenshot(window, '08c-results-table', 'Results table with data')
-      }
+      const variantsTable = window.locator('.v-list-item:has-text("variants_fts")')
+      if (await variantsTable.isVisible().catch(() => false)) {
+        await variantsTable.click()
+        await window.waitForTimeout(1500)
+        await screenshot(window, '09a-variants-table', 'variants_fts table selected')
 
-      // Check results count
-      const resultsCount = window.locator('[data-testid="results-count"]')
-      if (await resultsCount.isVisible().catch(() => false)) {
-        await screenshot(window, '08d-results-count', 'Results count indicator')
+        // Search for pathogenic variants
+        await performSearch(window, 'Pathogenic')
+        await screenshot(window, '09b-variants-results', 'Pathogenic variants search results')
       }
     }
   })
 
-  test('09 - Results Table Interactions', async ({ window }) => {
-    // Set up with search results first
-    await setupWithResults(window)
-
-    const resultsCard = window.locator('[data-testid="results-card"]')
-
-    if (await resultsCard.isVisible().catch(() => false)) {
-      // Column sorting
-      const sortableHeader = window.locator('.v-data-table th').first()
-      if (await sortableHeader.isVisible().catch(() => false)) {
-        await sortableHeader.click()
-        await waitAndScreenshot(window, '09-results-sorted', 'Results sorted by column')
-      }
-
-      // Column filtering
-      const filterButton = window.locator('.v-data-table th .mdi-filter, .v-data-table th .mdi-filter-outline').first()
-      if (await filterButton.isVisible().catch(() => false)) {
-        await filterButton.click()
-        await waitAndScreenshot(window, '09b-column-filter-menu', 'Column filter menu open', 500)
-
-        // Type in filter
-        const filterInput = window.locator('.v-menu .v-text-field input').first()
-        if (await filterInput.isVisible().catch(() => false)) {
-          await filterInput.fill('pathogenic')
-          await waitAndScreenshot(window, '09c-column-filter-active', 'Column filter active', 500)
-        }
-
-        await window.keyboard.press('Escape')
-      }
-
-      // Pagination
-      const pagination = window.locator('.v-data-table-footer')
-      if (await pagination.isVisible().catch(() => false)) {
-        await screenshot(window, '09d-pagination', 'Results pagination controls')
-      }
-    }
-  })
+  // --------------------------------------------------------------------------
+  // 7. ROW INTERACTIONS
+  // --------------------------------------------------------------------------
 
   test('10 - Row Detail Dialog', async ({ window }) => {
-    // Set up with search results first
-    await setupWithResults(window)
+    await setupForSearch(window)
+    await performSearch(window, 'BRCA1')
 
-    // Click view details button on first row
-    const viewDetailsBtn = window.locator('[data-testid="results-table"] .mdi-eye, button:has(.mdi-eye)').first()
-
-    if (await viewDetailsBtn.isVisible().catch(() => false)) {
-      await viewDetailsBtn.click()
-      await waitAndScreenshot(window, '10-row-detail-dialog', 'Row detail dialog open', 1000)
-
-      // Close dialog
+    // Click view details on first row
+    const viewBtn = window.locator('[data-testid="results-table"] button:has(.mdi-eye)').first()
+    if (await viewBtn.isVisible().catch(() => false)) {
+      await viewBtn.click()
+      await window.waitForTimeout(800)
+      await screenshot(window, '10a-row-detail-dialog', 'Row detail dialog showing full record')
       await window.keyboard.press('Escape')
       await window.waitForTimeout(500)
     }
   })
 
   test('11 - Copy Row Action', async ({ window }) => {
-    // Set up with search results first
-    await setupWithResults(window)
+    await setupForSearch(window)
+    await performSearch(window, 'BRCA1')
 
-    // Click copy button on first row
-    const copyBtn = window.locator('[data-testid="results-table"] .mdi-content-copy, button:has(.mdi-content-copy)').first()
-
+    // Click copy on first row
+    const copyBtn = window.locator('[data-testid="results-table"] button:has(.mdi-content-copy)').first()
     if (await copyBtn.isVisible().catch(() => false)) {
       await copyBtn.click()
-      await waitAndScreenshot(window, '11-copy-action', 'Copy row action (snackbar may appear)', 500)
+      await window.waitForTimeout(800)
+      await screenshot(window, '11a-copy-action', 'Copy action with snackbar notification')
     }
   })
 
-  test('12 - Clear Results', async ({ window }) => {
-    // Set up with search results first
-    await setupWithResults(window)
+  // --------------------------------------------------------------------------
+  // 8. SEARCH HISTORY
+  // --------------------------------------------------------------------------
 
-    const clearBtn = window.locator('[data-testid="results-card"] button:has-text("Clear")')
-
-    if (await clearBtn.isVisible().catch(() => false)) {
-      await screenshot(window, '12-before-clear', 'Before clearing results')
-      await clearBtn.click()
-      await waitAndScreenshot(window, '12b-after-clear', 'After clearing results', 500)
-    }
-  })
-
-  test('13 - Error States', async ({ window }) => {
-    // Set up table and columns first
+  test('12 - Search History Drawer', async ({ window }) => {
     await setupForSearch(window)
 
-    const searchInput = window.locator('[data-testid="search-input"] input')
+    // Perform a few searches to populate history
+    await performSearch(window, 'BRCA1')
+    await performSearch(window, 'TP53')
+    await performSearch(window, 'tumor')
 
-    if (await searchInput.isVisible().catch(() => false)) {
-      // Try to trigger an error with invalid syntax (if possible)
-      await searchInput.fill('((invalid syntax')
-      await window.locator('[data-testid="search-button"]').click()
-      await waitAndScreenshot(window, '13-error-state', 'Error state (if any)', 2000)
-    }
-  })
+    // Open history drawer
+    const historyBtn = window.locator('button:has(.mdi-history)').first()
+    if (await historyBtn.isVisible().catch(() => false)) {
+      await historyBtn.click()
+      await window.waitForTimeout(800)
+      await screenshot(window, '12a-history-drawer', 'Search history drawer open')
 
-  test('14 - Column Management', async ({ window }) => {
-    // Look for column management button
-    const colMgmtBtn = window.locator('button:has-text("Columns"), button:has(.mdi-table-cog)')
-
-    if (await colMgmtBtn.isVisible().catch(() => false)) {
-      await colMgmtBtn.click()
-      await waitAndScreenshot(window, '14-column-management', 'Column management dialog', 1000)
-
+      // Close drawer
       await window.keyboard.press('Escape')
       await window.waitForTimeout(500)
     }
   })
 
-  test('15 - Empty State', async ({ window }) => {
-    // Set up table and columns first
+  // --------------------------------------------------------------------------
+  // 9. SPECIAL STATES
+  // --------------------------------------------------------------------------
+
+  test('13 - No Results State', async ({ window }) => {
+    await setupForSearch(window)
+    await performSearch(window, 'xyznonexistent12345')
+    await screenshot(window, '13a-no-results', 'No results found state')
+  })
+
+  test('14 - Error State', async ({ window }) => {
     await setupForSearch(window)
 
-    // Make sure results are cleared and show empty state
     const searchInput = window.locator('[data-testid="search-input"] input')
-
     if (await searchInput.isVisible().catch(() => false)) {
-      await searchInput.fill('xyznonexistent123456')
+      await searchInput.fill('((invalid syntax')
       await window.locator('[data-testid="search-button"]').click()
-      await waitAndScreenshot(window, '15-no-results', 'No results found state', 2000)
+      await window.waitForTimeout(2000)
+      await screenshot(window, '14a-error-state', 'FTS5 syntax error state')
     }
   })
 
+  // --------------------------------------------------------------------------
+  // 10. RESET APPLICATION STATE
+  // --------------------------------------------------------------------------
+
+  test('15 - Reset Application State', async ({ window }) => {
+    await setupForSearch(window)
+    await performSearch(window, 'BRCA')
+    await screenshot(window, '15a-before-reset', 'State before reset (with results)')
+
+    const resetBtn = window.locator('button:has(.mdi-refresh)').first()
+    if (await resetBtn.isVisible().catch(() => false)) {
+      await resetBtn.click()
+      await window.waitForTimeout(1500)
+      await screenshot(window, '15b-after-reset', 'State after reset (cleared)')
+    }
+  })
+
+  // --------------------------------------------------------------------------
+  // 11. FINAL OVERVIEW
+  // --------------------------------------------------------------------------
+
   test('16 - Final Overview', async ({ window }) => {
-    // Reset to clean state and take final overview
-    await window.reload()
-    await window.waitForTimeout(3000)
-    await screenshot(window, '16-final-overview', 'Final application overview')
+    await setupForSearch(window)
+    await performSearch(window, 'DNA repair')
+    await screenshot(window, '16-final-overview', 'Final application overview with search results')
   })
 })
 
