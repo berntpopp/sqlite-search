@@ -12,8 +12,6 @@
     density="compact"
     multiple
     clearable
-    chips
-    closable-chips
     :hint="columnHint"
     persistent-hint
     @update:model-value="handleColumnSelect"
@@ -70,16 +68,14 @@
       </v-list-item>
     </template>
 
-    <!-- Compact chip display for selected columns -->
-    <template #selection="{ item, index }">
-      <v-chip v-if="index < SEARCH_CONFIG.MAX_CHIP_PREVIEW" size="small" closable>
-        <span>{{ item.title }}</span>
-      </v-chip>
-      <span
-        v-if="index === SEARCH_CONFIG.MAX_CHIP_PREVIEW"
-        class="text-medium-emphasis text-caption align-self-center ml-1"
-      >
-        (+{{ selectedColumns.length - SEARCH_CONFIG.MAX_CHIP_PREVIEW }} more)
+    <!-- Compact selection display - counter only for clean UI -->
+    <template #selection="{ index }">
+      <!-- Only render once (index 0) to avoid duplicate content -->
+      <span v-if="index === 0" class="text-body-2">
+        <strong>{{ selectedColumns.length }}</strong>
+        <span class="text-medium-emphasis">
+          of {{ databaseStore.columns.length }} columns
+        </span>
       </span>
     </template>
   </v-autocomplete>

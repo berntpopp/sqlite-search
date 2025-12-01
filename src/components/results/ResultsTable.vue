@@ -1,6 +1,6 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and column management -->
-  <v-card v-if="searchStore.hasResults || searchStore.hasSearched" elevation="1" class="results-card" data-testid="results-card">
+  <v-card v-if="searchStore.hasSearched" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -182,33 +182,38 @@
         </div>
       </template>
 
-      <!-- Empty state - using EmptyState component -->
+      <!-- Empty slot - hidden when using external empty state -->
       <template #no-data>
-        <EmptyState
-          v-if="searchStore.hasActiveFilters"
-          variant="no-results"
-          icon="mdi-filter-off-outline"
-          title="No results match your filters"
-          subtitle="Try adjusting or clearing your column filters"
-          :compact="true"
-          primary-action="Clear Filters"
-          primary-action-icon="mdi-filter-remove"
-          @primary-action="clearAllFilters"
-        />
-        <EmptyState
-          v-else
-          variant="no-results"
-          icon="mdi-magnify-close"
-          :title="`No results for &quot;${searchStore.searchTerm}&quot;`"
-          :suggestions="noResultsSuggestions"
-          suggestions-title="Try these:"
-          :compact="true"
-          primary-action="Clear Search"
-          primary-action-icon="mdi-close"
-          @primary-action="clearSearch"
-        />
+        <span></span>
       </template>
     </v-data-table>
+
+    <!-- Empty state - OUTSIDE table to avoid horizontal scroll issues -->
+    <div v-if="!searchStore.hasResults && !searchStore.loading" class="empty-state-container">
+      <EmptyState
+        v-if="searchStore.hasActiveFilters"
+        variant="no-results"
+        icon="mdi-filter-off-outline"
+        title="No results match your filters"
+        subtitle="Try adjusting or clearing your column filters"
+        :compact="true"
+        primary-action="Clear Filters"
+        primary-action-icon="mdi-filter-remove"
+        @primary-action="clearAllFilters"
+      />
+      <EmptyState
+        v-else
+        variant="no-results"
+        icon="mdi-magnify-close"
+        :title="`No results for &quot;${searchStore.searchTerm}&quot;`"
+        :suggestions="noResultsSuggestions"
+        suggestions-title="Try these:"
+        :compact="true"
+        primary-action="Clear Search"
+        primary-action-icon="mdi-close"
+        @primary-action="clearSearch"
+      />
+    </div>
 
     <!-- Column Management Dialog -->
     <ColumnManagementDialog v-model="showColumnManagement" />
@@ -415,5 +420,11 @@ function copyRow(item) {
 /* Loading overlay */
 :deep(.v-data-table__progress) {
   background-color: rgba(var(--v-theme-surface), 0.8);
+}
+
+/* Empty state container - outside table to avoid scroll issues */
+.empty-state-container {
+  padding: 32px 16px;
+  border-top: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 </style>
