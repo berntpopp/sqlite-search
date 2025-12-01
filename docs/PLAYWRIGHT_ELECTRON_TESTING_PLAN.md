@@ -2,6 +2,33 @@
 
 This document outlines the strategy for implementing end-to-end UI testing for the sqlite-search Electron application using Playwright, with CI integration and visual debugging capabilities.
 
+## Important: WSL2 Limitations
+
+**Playwright + Electron does NOT work reliably on WSL2.**
+
+Electron requires a display server (X11/Wayland) and WSL2 has known issues:
+- No native headless mode for Electron (unlike browser-based Playwright)
+- WSLg support is inconsistent across systems
+- Known Chromium/Playwright bugs on WSL ([#21813](https://github.com/microsoft/playwright/issues/21813), [#18255](https://github.com/microsoft/playwright/issues/18255))
+- Missing GUI dependencies (`libgtk-3-0`, `libnss3`, `libgbm-dev`)
+
+### Recommended Workflow
+
+| Task | Environment |
+|------|-------------|
+| Code editing, Git | WSL2 (Linux) |
+| Unit tests (vitest) | WSL2 or PowerShell |
+| Build app | **PowerShell (Windows)** |
+| E2E Playwright tests | **PowerShell (Windows)** |
+| CI/CD | GitHub Actions (Windows/macOS runners) |
+
+```powershell
+# Run E2E tests in PowerShell, not WSL2
+pnpm run build
+pnpm run build:dist
+pnpm exec playwright test
+```
+
 ## Overview
 
 Playwright has **experimental Electron support** via Chrome DevTools Protocol (CDP), enabling automated testing of Electron apps including:
