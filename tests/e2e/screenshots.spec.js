@@ -87,8 +87,16 @@ const test = base.extend({
     console.log('⏳ Waiting for window...')
     const window = await electronApp.firstWindow()
 
-    // Set viewport size (larger for better screenshots)
-    await window.setViewportSize({ width: 1400, height: 900 })
+    // Resize the actual Electron window (not just viewport)
+    // This ensures screenshots match what users see
+    await electronApp.evaluate(async ({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0]
+      if (win) {
+        win.setSize(1400, 900)
+        win.center()
+      }
+    })
+    await window.waitForTimeout(500) // Wait for resize
 
     // Wait for various load states
     console.log('⏳ Waiting for DOM content...')
@@ -157,6 +165,46 @@ async function screenshot(window, name, description = '') {
 async function waitAndScreenshot(window, name, description, waitMs = 500) {
   await window.waitForTimeout(waitMs)
   return screenshot(window, name, description)
+}
+
+/**
+ * Helper to set up table and columns for search tests
+ * Each test launches a fresh app, so we need to select table/columns before searching
+ */
+async function setupForSearch(window) {
+  // Select table
+  const tableSelector = window.locator('[data-testid="table-selector"]')
+  if (await tableSelector.isVisible().catch(() => false)) {
+    await tableSelector.click()
+    await window.waitForTimeout(500)
+
+    // Select first table (genes_fts)
+    const firstTable = window.locator('.v-list-item').first()
+    if (await firstTable.isVisible().catch(() => false)) {
+      await firstTable.click()
+      await window.waitForTimeout(1000) // Wait for columns to load
+    }
+  }
+
+  // Columns are auto-selected, wait for search input to be enabled
+  await window.waitForTimeout(500)
+}
+
+/**
+ * Helper to set up AND perform a search that returns results
+ */
+async function setupWithResults(window) {
+  await setupForSearch(window)
+
+  // Perform a search that returns results
+  const searchInput = window.locator('[data-testid="search-input"] input')
+  const searchButton = window.locator('[data-testid="search-button"]')
+
+  if (await searchInput.isVisible().catch(() => false)) {
+    await searchInput.fill('BRCA')
+    await searchButton.click()
+    await window.waitForTimeout(2000) // Wait for results
+  }
 }
 
 // ============================================================================
@@ -312,7 +360,11 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('07 - Search Input States', async ({ window }) => {
-    const searchInput = window.locator('[data-testid="search-input"]')
+    // Set up table and columns first (each test gets fresh app)
+    await setupForSearch(window)
+
+    // Use the actual input element inside Vuetify's v-text-field wrapper
+    const searchInput = window.locator('[data-testid="search-input"] input')
 
     if (await searchInput.isVisible().catch(() => false)) {
       await screenshot(window, '07-search-input-empty', 'Empty search input with hint')
@@ -337,7 +389,10 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('08 - Search Execution and Results', async ({ window }) => {
-    const searchInput = window.locator('[data-testid="search-input"]')
+    // Set up table and columns first
+    await setupForSearch(window)
+
+    const searchInput = window.locator('[data-testid="search-input"] input')
     const searchButton = window.locator('[data-testid="search-button"]')
 
     if (await searchInput.isVisible().catch(() => false)) {
@@ -365,6 +420,9 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('09 - Results Table Interactions', async ({ window }) => {
+    // Set up with search results first
+    await setupWithResults(window)
+
     const resultsCard = window.locator('[data-testid="results-card"]')
 
     if (await resultsCard.isVisible().catch(() => false)) {
@@ -400,6 +458,9 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('10 - Row Detail Dialog', async ({ window }) => {
+    // Set up with search results first
+    await setupWithResults(window)
+
     // Click view details button on first row
     const viewDetailsBtn = window.locator('[data-testid="results-table"] .mdi-eye, button:has(.mdi-eye)').first()
 
@@ -414,6 +475,9 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('11 - Copy Row Action', async ({ window }) => {
+    // Set up with search results first
+    await setupWithResults(window)
+
     // Click copy button on first row
     const copyBtn = window.locator('[data-testid="results-table"] .mdi-content-copy, button:has(.mdi-content-copy)').first()
 
@@ -424,6 +488,9 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('12 - Clear Results', async ({ window }) => {
+    // Set up with search results first
+    await setupWithResults(window)
+
     const clearBtn = window.locator('[data-testid="results-card"] button:has-text("Clear")')
 
     if (await clearBtn.isVisible().catch(() => false)) {
@@ -434,7 +501,10 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('13 - Error States', async ({ window }) => {
-    const searchInput = window.locator('[data-testid="search-input"]')
+    // Set up table and columns first
+    await setupForSearch(window)
+
+    const searchInput = window.locator('[data-testid="search-input"] input')
 
     if (await searchInput.isVisible().catch(() => false)) {
       // Try to trigger an error with invalid syntax (if possible)
@@ -458,8 +528,11 @@ test.describe('UI Screenshots - Complete Application Tour', () => {
   })
 
   test('15 - Empty State', async ({ window }) => {
+    // Set up table and columns first
+    await setupForSearch(window)
+
     // Make sure results are cleared and show empty state
-    const searchInput = window.locator('[data-testid="search-input"]')
+    const searchInput = window.locator('[data-testid="search-input"] input')
 
     if (await searchInput.isVisible().catch(() => false)) {
       await searchInput.fill('xyznonexistent123456')
