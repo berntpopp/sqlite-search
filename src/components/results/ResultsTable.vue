@@ -72,17 +72,96 @@
     <!-- Enhanced data table with sorting, filtering, and custom column headers -->
     <v-data-table
       v-model:sort-by="searchStore.sortBy"
+      v-model:page="currentPage"
+      v-model:items-per-page="itemsPerPage"
       :headers="tableHeaders"
       :items="searchStore.filteredResults"
       :loading="searchStore.loading"
       density="compact"
-      :items-per-page="25"
-      :items-per-page-options="[10, 25, 50, 100]"
+      :items-per-page-options="itemsPerPageOptions"
       :multi-sort="true"
       hover
       class="results-table"
       data-testid="results-table"
     >
+      <!-- Top pagination controls for better UX on long tables -->
+      <template #top>
+        <div class="table-controls-top d-flex align-center justify-space-between px-4 py-2">
+          <!-- Left: Page info -->
+          <div class="d-flex align-center text-body-2 text-medium-emphasis">
+            <span>
+              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }}
+            </span>
+          </div>
+
+          <!-- Right: Pagination controls -->
+          <div class="d-flex align-center ga-3">
+            <!-- Items per page -->
+            <div class="d-flex align-center ga-2">
+              <span class="text-body-2 text-medium-emphasis">Rows:</span>
+              <v-select
+                v-model="itemsPerPage"
+                :items="itemsPerPageOptions"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="items-per-page-select"
+              />
+            </div>
+
+            <!-- Page navigation -->
+            <div class="d-flex align-center">
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage <= 1"
+                @click="currentPage = 1"
+              >
+                <v-icon size="small">mdi-page-first</v-icon>
+                <v-tooltip activator="parent" location="top">First page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage <= 1"
+                @click="currentPage--"
+              >
+                <v-icon size="small">mdi-chevron-left</v-icon>
+                <v-tooltip activator="parent" location="top">Previous page</v-tooltip>
+              </v-btn>
+
+              <span class="text-body-2 mx-2">
+                <strong>{{ currentPage }}</strong>
+                <span class="text-medium-emphasis"> / {{ totalPages }}</span>
+              </span>
+
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage++"
+              >
+                <v-icon size="small">mdi-chevron-right</v-icon>
+                <v-tooltip activator="parent" location="top">Next page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="currentPage >= totalPages"
+                @click="currentPage = totalPages"
+              >
+                <v-icon size="small">mdi-page-last</v-icon>
+                <v-tooltip activator="parent" location="top">Last page</v-tooltip>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+        <v-divider />
+      </template>
       <!-- Custom header slots with sort indicators and filtering -->
       <template
         v-for="column in databaseStore.visibleColumns"
@@ -235,6 +314,30 @@ const { viewDetails, truncateText, copyToClipboard } = useSearch()
 
 // Component state
 const showColumnManagement = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = ref(25)
+const itemsPerPageOptions = [10, 25, 50, 100]
+
+/**
+ * Calculate total pages based on filtered results
+ */
+const totalPages = computed(() => {
+  const total = searchStore.filteredResults.length
+  return Math.max(1, Math.ceil(total / itemsPerPage.value))
+})
+
+/**
+ * Pagination info for display (start-end of total)
+ */
+const paginationInfo = computed(() => {
+  const total = searchStore.filteredResults.length
+  if (total === 0) {
+    return { start: 0, end: 0, total: 0 }
+  }
+  const start = (currentPage.value - 1) * itemsPerPage.value + 1
+  const end = Math.min(currentPage.value * itemsPerPage.value, total)
+  return { start, end, total }
+})
 
 // No results suggestions
 const noResultsSuggestions = [
@@ -260,6 +363,14 @@ watch(
     searchStore.cleanupSortByColumns(newVisibleColumns)
   },
   { immediate: true }
+)
+
+// Reset to page 1 when search results change (new search or filters applied)
+watch(
+  () => searchStore.filteredResults.length,
+  () => {
+    currentPage.value = 1
+  }
 )
 
 /**
@@ -339,6 +450,28 @@ function copyRow(item) {
 
 .results-table {
   font-size: 0.875rem;
+}
+
+/* Top pagination controls styling */
+.table-controls-top {
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  min-height: 44px;
+}
+
+/* Compact items-per-page select */
+.items-per-page-select {
+  width: 80px;
+  flex: 0 0 auto;
+}
+
+.items-per-page-select :deep(.v-field) {
+  font-size: 0.875rem;
+}
+
+.items-per-page-select :deep(.v-field__input) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  min-height: 32px;
 }
 
 /* Header styling with filter button */
