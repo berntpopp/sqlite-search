@@ -57,7 +57,7 @@ test.describe('Window Controls', () => {
     expect(size.height).toBe(800)
   })
 
-  test('should be resizable', async ({ window, electronApp }) => {
+  test('should be resizable', async ({ window, electronApp: _electronApp }) => {
     // Resize window
     await window.setViewportSize({ width: 1024, height: 768 })
 

@@ -14,6 +14,8 @@ export default [
       '**/coverage/**',
       '**/.auto-imports.d.ts',
       '**/.components.d.ts',
+      '**/playwright-report/**',
+      '**/e2e-results/**',
     ],
   },
   js.configs.recommended,
@@ -55,6 +57,18 @@ export default [
     },
     rules: {
       'no-console': 'off', // Allow console in electron main process
+    },
+  },
+  {
+    files: ['tests/e2e/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      'no-console': 'off', // Allow console in e2e tests
+      'no-empty-pattern': 'off', // Allow empty pattern in Playwright fixtures
     },
   },
   configPrettier, // Must be last to override formatting rules

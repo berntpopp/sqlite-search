@@ -57,11 +57,16 @@ pnpm run test:e2e
 ## Test Structure
 
 ```
-e2e/
+tests/e2e/
 ├── fixtures/
 │   └── electron.js      # Electron test fixtures (app launch, window)
+├── test-data/
+│   ├── create-test-db.sql    # SQL schema for test database
+│   ├── generate-test-db.js   # Script to generate test.db
+│   └── test.db               # Generated test database
 ├── app-launch.spec.js   # Application launch tests
 ├── search.spec.js       # Search functionality tests
+├── screenshots.spec.js  # Comprehensive screenshot generator
 └── README.md            # This file
 ```
 
@@ -249,7 +254,7 @@ The screenshot generator (`screenshots.spec.js`) captures comprehensive UI scree
 
 ### Test Database
 
-The test database (`e2e/test-data/test.db`) contains:
+The test database (`tests/e2e/test-data/test.db`) contains:
 
 - **genes_fts** - 10 genes (BRCA1, BRCA2, TP53, EGFR, KRAS, etc.)
 - **variants_fts** - 15 variants with clinical data

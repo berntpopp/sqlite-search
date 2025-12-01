@@ -16,7 +16,7 @@ import { defineConfig } from '@playwright/test'
 
 export default defineConfig({
   // Test directory
-  testDir: './e2e',
+  testDir: './tests/e2e',
 
   // Test file pattern
   testMatch: '**/*.spec.js',
@@ -67,7 +67,7 @@ export default defineConfig({
   projects: [
     {
       name: 'electron',
-      testDir: './e2e',
+      testDir: './tests/e2e',
     },
   ],
 })

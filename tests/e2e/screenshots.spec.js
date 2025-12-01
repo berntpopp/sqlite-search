@@ -15,14 +15,14 @@
  *
  * @module e2e/screenshots.spec
  */
-import { test as base, _electron, expect } from '@playwright/test'
+import { test as base, _electron } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
-const ROOT_DIR = path.resolve(__dirname, '..')
+const ROOT_DIR = path.resolve(__dirname, '../..')
 const SCREENSHOTS_DIR = path.join(ROOT_DIR, 'e2e-results', 'screenshots')
 const TEST_DB_PATH = path.join(__dirname, 'test-data', 'test.db')
 
@@ -32,20 +32,48 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
 }
 
 /**
+ * Check if renderer build exists
+ */
+function checkBuildExists() {
+  const rendererHtml = path.join(ROOT_DIR, 'dist-electron', 'renderer', 'index.html')
+  const mainJs = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
+
+  console.log('🔍 Checking build files...')
+  console.log(`   Main JS: ${mainJs} - ${fs.existsSync(mainJs) ? '✅' : '❌'}`)
+  console.log(`   Renderer: ${rendererHtml} - ${fs.existsSync(rendererHtml) ? '✅' : '❌'}`)
+
+  if (!fs.existsSync(mainJs) || !fs.existsSync(rendererHtml)) {
+    console.error('')
+    console.error('❌ Build files not found!')
+    console.error('   Run: pnpm run build')
+    console.error('')
+    return false
+  }
+  return true
+}
+
+/**
  * Custom test fixture for screenshot generation
  */
 const test = base.extend({
   electronApp: async ({}, use) => {
+    // Check build exists
+    if (!checkBuildExists()) {
+      throw new Error('Build files not found. Run: pnpm run build')
+    }
+
     const mainPath = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
 
     console.log('🚀 Launching Electron app...')
     console.log(`   Main: ${mainPath}`)
     console.log(`   Test DB: ${TEST_DB_PATH}`)
 
+    // Important: Set NODE_ENV to production so the app loads built files correctly
     const electronApp = await _electron.launch({
       args: [mainPath],
       env: {
         ...process.env,
+        NODE_ENV: 'production',
         // Set test database path
         SQLITE_SEARCH_TEST_DB: TEST_DB_PATH,
       },
