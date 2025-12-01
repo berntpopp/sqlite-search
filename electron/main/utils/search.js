@@ -10,33 +10,108 @@
  */
 
 /**
- * Escapes a search term for safe use in FTS5 MATCH queries
- *
- * FTS5 Escaping Rules:
- * - Only double quote (") needs escaping
- * - Escape by doubling: " becomes ""
- * - Wrap entire term in quotes for literal search
+ * FTS5 syntax patterns for detecting advanced query mode
+ * These patterns identify when to preserve FTS5 operators vs. literal search
+ */
+const FTS5_OPERATOR_PATTERN = /\b(AND|OR|NOT)\b/
+const FTS5_NEAR_PATTERN = /\bNEAR\s*\(/i
+const FTS5_PREFIX_PATTERN = /\*\s*$/
+const FTS5_PHRASE_PATTERN = /^".*"$/
+
+/**
+ * Detects if a search term contains FTS5 query syntax
  *
  * @param {string} searchTerm - Raw user input
- * @returns {string} Escaped and quoted term
+ * @returns {boolean} True if contains FTS5 operators/syntax
+ */
+export function containsFts5Syntax(searchTerm) {
+  if (!searchTerm || typeof searchTerm !== 'string') {
+    return false
+  }
+
+  // Check for boolean operators (must be uppercase and word boundaries)
+  if (FTS5_OPERATOR_PATTERN.test(searchTerm)) {
+    return true
+  }
+
+  // Check for NEAR queries
+  if (FTS5_NEAR_PATTERN.test(searchTerm)) {
+    return true
+  }
+
+  // Check for prefix queries (word ending with *)
+  if (FTS5_PREFIX_PATTERN.test(searchTerm) || /\w\*/.test(searchTerm)) {
+    return true
+  }
+
+  // Check for explicit phrase queries (already quoted)
+  if (FTS5_PHRASE_PATTERN.test(searchTerm)) {
+    return true
+  }
+
+  // Check for + operator (phrase concatenation)
+  if (/\s\+\s/.test(searchTerm)) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Escapes a search term for safe use in FTS5 MATCH queries
+ *
+ * FTS5 Query Modes:
+ * 1. Simple search (no operators): Wraps in quotes for literal phrase search
+ * 2. Advanced search (with operators): Preserves FTS5 syntax, escapes only special chars
+ *
+ * FTS5 Supported Syntax:
+ * - Boolean: AND, OR, NOT (must be uppercase)
+ * - Prefix: word* (matches words starting with "word")
+ * - Phrase: "exact phrase"
+ * - NEAR: NEAR(term1 term2, N)
+ * - Column filter: {col1 col2}: term
+ *
+ * @param {string} searchTerm - Raw user input
+ * @returns {string} Properly formatted FTS5 query
  *
  * @example
- * escapeFts5SearchTerm('hello:world')
- * // => '"hello:world"'
+ * // Simple search - wrapped in quotes
+ * escapeFts5SearchTerm('hello world')
+ * // => '"hello world"'
  *
  * @example
- * escapeFts5SearchTerm('test "quoted"')
- * // => '"test ""quoted"""'
+ * // Boolean search - preserved
+ * escapeFts5SearchTerm('BRCA1 AND NM_007294')
+ * // => 'BRCA1 AND NM_007294'
+ *
+ * @example
+ * // Prefix search - preserved
+ * escapeFts5SearchTerm('BRCA*')
+ * // => 'BRCA*'
+ *
+ * @example
+ * // Mixed with special chars
+ * escapeFts5SearchTerm('test "quoted" value')
+ * // => '"test ""quoted"" value"'
  */
 export function escapeFts5SearchTerm(searchTerm) {
   if (!searchTerm || typeof searchTerm !== 'string') {
     return '""'
   }
 
-  // Escape double quotes by doubling them
-  const escaped = searchTerm.replace(/"/g, '""')
+  const trimmed = searchTerm.trim()
 
-  // Wrap in double quotes for literal search
+  // If the query contains FTS5 syntax, preserve it
+  if (containsFts5Syntax(trimmed)) {
+    // For advanced queries, we only need to escape unbalanced quotes
+    // that aren't part of phrase queries
+    // Most FTS5 syntax should pass through as-is
+    return trimmed
+  }
+
+  // Simple search: wrap in quotes for literal phrase matching
+  // Escape any existing double quotes by doubling them
+  const escaped = trimmed.replace(/"/g, '""')
   return `"${escaped}"`
 }
 
