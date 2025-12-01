@@ -38,6 +38,10 @@ const test = base.extend({
   electronApp: async ({}, use) => {
     const mainPath = path.join(ROOT_DIR, 'dist-electron', 'main', 'index.js')
 
+    console.log('🚀 Launching Electron app...')
+    console.log(`   Main: ${mainPath}`)
+    console.log(`   Test DB: ${TEST_DB_PATH}`)
+
     const electronApp = await _electron.launch({
       args: [mainPath],
       env: {
@@ -52,10 +56,35 @@ const test = base.extend({
   },
 
   window: async ({ electronApp }, use) => {
+    console.log('⏳ Waiting for window...')
     const window = await electronApp.firstWindow()
+
+    // Set viewport size
     await window.setViewportSize({ width: 1400, height: 900 })
+
+    // Wait for various load states
+    console.log('⏳ Waiting for DOM content...')
     await window.waitForLoadState('domcontentloaded')
-    await window.waitForTimeout(2000) // Wait for Vue/Vuetify to hydrate
+
+    console.log('⏳ Waiting for network idle...')
+    await window.waitForLoadState('networkidle').catch(() => {
+      console.log('   Network idle timeout (continuing anyway)')
+    })
+
+    // Wait for Vuetify to render - look for the app container
+    console.log('⏳ Waiting for Vuetify app...')
+    await window.waitForSelector('.v-application', { timeout: 30000 }).catch(() => {
+      console.log('   Warning: .v-application not found')
+    })
+
+    // Additional wait for Vue hydration
+    console.log('⏳ Waiting for Vue hydration...')
+    await window.waitForTimeout(3000)
+
+    // Log page content for debugging
+    const title = await window.title()
+    console.log(`✅ Window ready - Title: "${title}"`)
+
     await use(window)
   },
 })
@@ -64,10 +93,16 @@ const test = base.extend({
  * Helper to save screenshot with consistent naming
  */
 async function screenshot(window, name, description = '') {
+  // Small wait to ensure rendering is complete
+  await window.waitForTimeout(500)
+
   const filename = `${name}.png`
   const filepath = path.join(SCREENSHOTS_DIR, filename)
+
+  // Take screenshot
   await window.screenshot({ path: filepath, fullPage: false })
   console.log(`📸 ${name}: ${description || filename}`)
+
   return filepath
 }
 
@@ -85,6 +120,30 @@ async function waitAndScreenshot(window, name, description, waitMs = 500) {
 
 test.describe('UI Screenshots - Complete Application Tour', () => {
   test.describe.configure({ mode: 'serial' })
+
+  test('00 - Debug Window State', async ({ window }) => {
+    // Debug: check what's actually rendered
+    const html = await window.content()
+    console.log('📄 Page HTML length:', html.length)
+    console.log('📄 First 500 chars:', html.substring(0, 500))
+
+    // Check if body has content
+    const bodyContent = await window.locator('body').innerHTML()
+    console.log('📄 Body content length:', bodyContent.length)
+
+    // Check for common elements
+    const hasVApp = await window.locator('.v-application').count()
+    console.log('🔍 .v-application count:', hasVApp)
+
+    const hasVAppBar = await window.locator('.v-app-bar').count()
+    console.log('🔍 .v-app-bar count:', hasVAppBar)
+
+    // Wait more if needed
+    if (hasVApp === 0) {
+      console.log('⏳ Waiting additional 5 seconds for app to load...')
+      await window.waitForTimeout(5000)
+    }
+  })
 
   test('01 - Initial Launch State', async ({ window }) => {
     await screenshot(window, '01-initial-launch', 'Application just launched')
