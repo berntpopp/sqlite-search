@@ -4,6 +4,7 @@
     v-if="databaseStore.isConnected"
     v-model="selectedTable"
     :items="databaseStore.tables"
+    data-testid="table-selector"
     label="Select Table"
     variant="outlined"
     density="compact"

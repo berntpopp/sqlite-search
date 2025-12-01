@@ -18,7 +18,11 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -50,7 +54,9 @@
     "vite": "^6.0.5",
     "vite-plugin-vuetify": "^2.1.2",
     "vitest": "^2.1.8",
-    "vue-tsc": "^3.1.4"
+    "vue-tsc": "^3.1.4",
+    "@playwright/test": "^1.49.1",
+    "electron-playwright-helpers": "^1.8.2"
   },
   "engines": {
     "node": ">=20.16.0",

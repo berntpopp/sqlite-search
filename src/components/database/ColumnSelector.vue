@@ -6,6 +6,7 @@
     :items="columnItems"
     item-title="display"
     item-value="name"
+    data-testid="column-selector"
     label="Select Columns to Search"
     variant="outlined"
     density="compact"
