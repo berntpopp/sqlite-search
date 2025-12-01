@@ -92,8 +92,8 @@ const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
 const { copyToClipboard } = useSearch()
 
-// Threshold for showing textarea vs plain text
-const LONG_VALUE_THRESHOLD = 80
+// Threshold for showing textarea vs plain text (lower = more textareas)
+const LONG_VALUE_THRESHOLD = 60
 
 /**
  * Get only visible fields (respecting selected columns)
@@ -163,29 +163,36 @@ function copyAll() {
 }
 
 .field-cell {
-  width: 140px;
-  min-width: 140px;
-  max-width: 180px;
-  padding: 6px 12px !important;
+  width: 120px;
+  min-width: 100px;
+  max-width: 150px;
+  padding: 8px 12px !important;
   vertical-align: top;
   background-color: rgba(var(--v-theme-on-surface), 0.02);
   border-right: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .value-cell {
-  padding: 6px 12px !important;
+  padding: 8px 12px !important;
   vertical-align: top;
+  word-break: break-word;
+  line-height: 1.5;
+}
+
+.value-cell .text-body-2 {
+  white-space: pre-wrap;
   word-break: break-word;
 }
 
 .value-content {
   max-width: 100%;
-  overflow: hidden;
 }
 
 .action-cell {
-  width: 40px;
-  padding: 4px 8px !important;
+  width: 36px;
+  padding: 6px 4px !important;
   vertical-align: top;
   text-align: center;
 }
@@ -193,6 +200,7 @@ function copyAll() {
 /* Dense textarea for long values */
 .dense-textarea {
   font-size: 0.875rem;
+  width: 100%;
 }
 
 :deep(.dense-textarea .v-field__input) {
@@ -205,6 +213,13 @@ function copyAll() {
 }
 
 :deep(.dense-textarea textarea) {
-  line-height: 1.4;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Handle table width */
+:deep(.v-table > .v-table__wrapper > table) {
+  table-layout: fixed;
+  width: 100%;
 }
 </style>
