@@ -19,10 +19,13 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --ignore-snapshots",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:debug": "playwright test --debug"
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:setup": "node e2e/test-data/generate-test-db.js",
+    "test:e2e:screenshots": "playwright test screenshots.spec.js --headed --timeout=120000",
+    "test:e2e:screenshots:headless": "playwright test screenshots.spec.js --timeout=120000"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",

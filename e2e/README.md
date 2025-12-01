@@ -2,6 +2,23 @@
 
 End-to-end testing for the sqlite-search Electron application using Playwright.
 
+## Quick Start - Screenshot Generator
+
+Generate comprehensive UI screenshots for review and debugging:
+
+```powershell
+# 1. Build the app first
+pnpm run build
+
+# 2. Generate test database with sample data
+pnpm run test:e2e:setup
+
+# 3. Generate screenshots (with visible window)
+pnpm run test:e2e:screenshots
+
+# Screenshots saved to: e2e-results/screenshots/
+```
+
 ## Prerequisites
 
 - **Windows 10/11** (PowerShell)
@@ -196,6 +213,65 @@ E2E tests run automatically on:
 Results are uploaded as artifacts and retained for 30 days.
 
 See `.github/workflows/e2e-tests.yml` for configuration.
+
+## Screenshot Generator Tool
+
+The screenshot generator (`screenshots.spec.js`) captures comprehensive UI screenshots for:
+
+- **Visual debugging** - Review UI states without running the app
+- **Documentation** - Generate images for docs and README
+- **UI review** - Share screenshots with designers/stakeholders
+- **Regression testing** - Compare screenshots across versions
+
+### What It Captures
+
+| Screenshot | Description |
+|------------|-------------|
+| `01-initial-launch` | Application just launched |
+| `02-app-header` | Header with title and controls |
+| `02b-theme-dark` | Dark theme enabled |
+| `02c-theme-light` | Light theme restored |
+| `03-help-dialog-open` | Help/FAQ dialog |
+| `03-faq-item-*` | Each FAQ section expanded |
+| `04-database-selector` | Database selection UI |
+| `05-table-selector-*` | Table selector states |
+| `06-column-selector-*` | Column selector states |
+| `07-search-*` | Search input with various queries |
+| `08-search-results` | Search results displayed |
+| `09-results-*` | Results table interactions |
+| `10-row-detail-dialog` | Row detail view |
+| `11-copy-action` | Copy row action |
+| `12-*-clear` | Before/after clearing results |
+| `13-error-state` | Error handling |
+| `14-column-management` | Column visibility dialog |
+| `15-no-results` | Empty results state |
+| `16-final-overview` | Final app overview |
+
+### Test Database
+
+The test database (`e2e/test-data/test.db`) contains:
+
+- **genes_fts** - 10 genes (BRCA1, BRCA2, TP53, EGFR, KRAS, etc.)
+- **variants_fts** - 15 variants with clinical data
+
+Sample data includes realistic genomic data for testing FTS5 queries.
+
+### Commands
+
+```powershell
+# Generate test database
+pnpm run test:e2e:setup
+
+# Run screenshots with visible window (recommended)
+pnpm run test:e2e:screenshots
+
+# Run screenshots headless (faster, for CI)
+pnpm run test:e2e:screenshots:headless
+```
+
+### Output Location
+
+Screenshots are saved to: `e2e-results/screenshots/`
 
 ## Resources
 
