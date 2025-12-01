@@ -236,6 +236,40 @@ test.describe('Complete UI Screenshot Tour', () => {
       await window.keyboard.press('Escape')
       await window.waitForTimeout(500)
 
+      // Setup search to capture modals in dark mode
+      await setupForSearch(window)
+      await performSearch(window, 'BRCA')
+
+      // Row Detail Dialog in dark mode
+      const viewBtn = window.locator('[data-testid="results-table"] button:has(.mdi-eye)').first()
+      if (await viewBtn.isVisible().catch(() => false)) {
+        await viewBtn.click()
+        await window.waitForTimeout(800)
+        await screenshot(window, '04c-dark-mode-detail-dialog', 'Row detail dialog in dark mode')
+        await window.keyboard.press('Escape')
+        await window.waitForTimeout(500)
+      }
+
+      // Column Management Dialog in dark mode
+      const columnsBtn = window.locator('[data-testid="results-card"] button:has-text("Columns")')
+      if (await columnsBtn.isVisible().catch(() => false)) {
+        await columnsBtn.click()
+        await window.waitForTimeout(800)
+        await screenshot(window, '04d-dark-mode-column-mgmt', 'Column management dialog in dark mode')
+        await window.keyboard.press('Escape')
+        await window.waitForTimeout(500)
+      }
+
+      // History drawer in dark mode
+      const historyBtn = window.locator('button:has(.mdi-history)').first()
+      if (await historyBtn.isVisible().catch(() => false)) {
+        await historyBtn.click()
+        await window.waitForTimeout(800)
+        await screenshot(window, '04e-dark-mode-history', 'History drawer in dark mode')
+        await window.keyboard.press('Escape')
+        await window.waitForTimeout(500)
+      }
+
       // Toggle back to light mode
       await themeBtn.click()
       await window.waitForTimeout(500)
@@ -363,7 +397,7 @@ test.describe('Complete UI Screenshot Tour', () => {
   })
 
   // --------------------------------------------------------------------------
-  // 7. ROW INTERACTIONS
+  // 7. ROW INTERACTIONS & MODALS
   // --------------------------------------------------------------------------
 
   test('10 - Row Detail Dialog', async ({ window }) => {
@@ -376,6 +410,31 @@ test.describe('Complete UI Screenshot Tour', () => {
       await viewBtn.click()
       await window.waitForTimeout(800)
       await screenshot(window, '10a-row-detail-dialog', 'Row detail dialog showing full record')
+
+      // Scroll down to show more fields if available
+      const dialogContent = window.locator('.v-dialog .v-card-text')
+      if (await dialogContent.isVisible().catch(() => false)) {
+        await dialogContent.evaluate(el => el.scrollTop = 200)
+        await window.waitForTimeout(300)
+        await screenshot(window, '10b-row-detail-scrolled', 'Row detail dialog scrolled to show more fields')
+      }
+
+      // Hover copy field button
+      const copyFieldBtn = window.locator('.v-dialog button:has(.mdi-content-copy)').first()
+      if (await copyFieldBtn.isVisible().catch(() => false)) {
+        await copyFieldBtn.hover()
+        await window.waitForTimeout(500)
+        await screenshot(window, '10c-row-detail-copy-hover', 'Row detail dialog with copy field tooltip')
+      }
+
+      // Show Copy All button
+      const copyAllBtn = window.locator('.v-dialog button:has-text("Copy All")')
+      if (await copyAllBtn.isVisible().catch(() => false)) {
+        await copyAllBtn.hover()
+        await window.waitForTimeout(500)
+        await screenshot(window, '10d-row-detail-copy-all', 'Row detail dialog Copy All as JSON button')
+      }
+
       await window.keyboard.press('Escape')
       await window.waitForTimeout(500)
     }
@@ -391,6 +450,107 @@ test.describe('Complete UI Screenshot Tour', () => {
       await copyBtn.click()
       await window.waitForTimeout(800)
       await screenshot(window, '11a-copy-action', 'Copy action with snackbar notification')
+    }
+  })
+
+  // --------------------------------------------------------------------------
+  // 7b. COLUMN MANAGEMENT DIALOG
+  // --------------------------------------------------------------------------
+
+  test('11b - Column Management Dialog', async ({ window }) => {
+    await setupForSearch(window)
+    await performSearch(window, 'BRCA')
+
+    // Click Columns button in results table header
+    const columnsBtn = window.locator('[data-testid="results-card"] button:has-text("Columns")')
+    if (await columnsBtn.isVisible().catch(() => false)) {
+      await columnsBtn.click()
+      await window.waitForTimeout(800)
+      await screenshot(window, '11b-column-management-dialog', 'Column management dialog showing all columns')
+
+      // Hover Show All button
+      const showAllBtn = window.locator('.v-dialog button:has-text("Show All")')
+      if (await showAllBtn.isVisible().catch(() => false)) {
+        await showAllBtn.hover()
+        await window.waitForTimeout(300)
+        await screenshot(window, '11c-column-mgmt-show-all', 'Column management Show All button')
+      }
+
+      // Toggle a column visibility (uncheck first column)
+      const firstCheckbox = window.locator('.v-dialog .v-checkbox').first()
+      if (await firstCheckbox.isVisible().catch(() => false)) {
+        await firstCheckbox.click()
+        await window.waitForTimeout(500)
+        await screenshot(window, '11d-column-mgmt-hidden', 'Column management with one column hidden')
+
+        // Re-enable it
+        await firstCheckbox.click()
+        await window.waitForTimeout(300)
+      }
+
+      // Test reorder buttons
+      const moveDownBtn = window.locator('.v-dialog button:has(.mdi-chevron-down)').first()
+      if (await moveDownBtn.isVisible().catch(() => false)) {
+        await moveDownBtn.hover()
+        await window.waitForTimeout(500)
+        await screenshot(window, '11e-column-mgmt-reorder', 'Column management reorder buttons with tooltip')
+      }
+
+      // Scroll column list if many columns
+      const columnList = window.locator('.v-dialog .column-list')
+      if (await columnList.isVisible().catch(() => false)) {
+        await columnList.evaluate(el => el.scrollTop = 100)
+        await window.waitForTimeout(300)
+        await screenshot(window, '11f-column-mgmt-scrolled', 'Column management dialog scrolled')
+      }
+
+      // Close dialog
+      const doneBtn = window.locator('.v-dialog button:has-text("Done")')
+      if (await doneBtn.isVisible().catch(() => false)) {
+        await doneBtn.click()
+        await window.waitForTimeout(500)
+      } else {
+        await window.keyboard.press('Escape')
+        await window.waitForTimeout(500)
+      }
+    }
+  })
+
+  // --------------------------------------------------------------------------
+  // 7c. COLUMN FILTER POPUP
+  // --------------------------------------------------------------------------
+
+  test('11c - Column Filter Popup', async ({ window }) => {
+    await setupForSearch(window)
+    await performSearch(window, 'BRCA')
+
+    // Click filter icon on first column header
+    const filterBtn = window.locator('[data-testid="results-table"] .v-data-table__th button:has(.mdi-filter-outline)').first()
+    if (await filterBtn.isVisible().catch(() => false)) {
+      await filterBtn.click()
+      await window.waitForTimeout(500)
+      await screenshot(window, '11g-column-filter-popup', 'Column filter popup menu')
+
+      // Type in filter input
+      const filterInput = window.locator('.v-menu .v-text-field input')
+      if (await filterInput.isVisible().catch(() => false)) {
+        await filterInput.fill('BRCA1')
+        await window.waitForTimeout(500)
+        await screenshot(window, '11h-column-filter-active', 'Column filter with active filter value')
+      }
+
+      // Close filter popup
+      await window.keyboard.press('Escape')
+      await window.waitForTimeout(500)
+
+      // Show filtered results
+      await screenshot(window, '11i-column-filter-results', 'Results table with active column filter')
+
+      // Clear filter button if visible
+      const clearFilterBtn = window.locator('[data-testid="results-card"] button:has-text("Clear Filters")')
+      if (await clearFilterBtn.isVisible().catch(() => false)) {
+        await screenshot(window, '11j-clear-filter-btn', 'Clear Filters button visible in header')
+      }
     }
   })
 
@@ -411,7 +571,38 @@ test.describe('Complete UI Screenshot Tour', () => {
     if (await historyBtn.isVisible().catch(() => false)) {
       await historyBtn.click()
       await window.waitForTimeout(800)
-      await screenshot(window, '12a-history-drawer', 'Search history drawer open')
+      await screenshot(window, '12a-history-drawer', 'Search history drawer - All tab')
+
+      // Star/favorite a search entry
+      const starBtn = window.locator('.v-navigation-drawer button:has(.mdi-star-outline)').first()
+      if (await starBtn.isVisible().catch(() => false)) {
+        await starBtn.click()
+        await window.waitForTimeout(500)
+        await screenshot(window, '12b-history-starred', 'History entry starred as favorite')
+      }
+
+      // Click Favorites tab
+      const favoritesTab = window.locator('.v-navigation-drawer .v-tab:has-text("Favorites")')
+      if (await favoritesTab.isVisible().catch(() => false)) {
+        await favoritesTab.click()
+        await window.waitForTimeout(500)
+        await screenshot(window, '12c-history-favorites-tab', 'History drawer - Favorites tab')
+      }
+
+      // Back to All tab
+      const allTab = window.locator('.v-navigation-drawer .v-tab:has-text("All")')
+      if (await allTab.isVisible().catch(() => false)) {
+        await allTab.click()
+        await window.waitForTimeout(500)
+      }
+
+      // Hover restore button
+      const restoreBtn = window.locator('.v-navigation-drawer button:has-text("Restore")').first()
+      if (await restoreBtn.isVisible().catch(() => false)) {
+        await restoreBtn.hover()
+        await window.waitForTimeout(500)
+        await screenshot(window, '12d-history-restore-hover', 'History entry with Restore button hover')
+      }
 
       // Close drawer
       await window.keyboard.press('Escape')
