@@ -3,6 +3,7 @@
   <v-text-field
     v-if="databaseStore.hasSelectedTable"
     v-model="searchTerm"
+    data-testid="search-input"
     label="Search..."
     variant="outlined"
     density="compact"
@@ -23,6 +24,7 @@
         icon
         variant="text"
         size="small"
+        data-testid="search-button"
         :disabled="!canSearch"
         :loading="searchStore.loading"
         @click="handleSearch"

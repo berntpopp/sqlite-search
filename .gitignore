@@ -37,6 +37,11 @@ pnpm-debug.log*
 # Test coverage
 coverage
 
+# E2E test artifacts
+e2e-results/
+playwright-report/
+test-videos/
+
 # ESLint cache
 .eslintcache
 

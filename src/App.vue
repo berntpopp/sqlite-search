@@ -201,12 +201,21 @@ function setupIPCListeners() {
     uiStore.showError(`Database error: ${errorMessage}`)
   }
   window.electronAPI.onDatabaseError(onDatabaseErrorHandler)
+
+  // Listener for pre-loaded database (e.g., via SQLITE_SEARCH_TEST_DB env var)
+  const onDatabaseLoadedHandler = (event, dbPath) => {
+    console.log('Database pre-loaded by main process:', dbPath)
+    databaseStore.setPath(dbPath)
+    // Trigger loading tables
+    window.electronAPI.getTableList()
+  }
+  window.electronAPI.onDatabaseLoaded(onDatabaseLoadedHandler)
 }
 
 /**
  * Initialize application on mount
  */
-onMounted(() => {
+onMounted(async () => {
   // Apply saved theme
   applyTheme()
 
@@ -216,6 +225,21 @@ onMounted(() => {
   // Load tables if database path exists in localStorage
   if (databaseStore.isConnected) {
     window.electronAPI.getTableList()
+  } else {
+    // Check if main process has a pre-loaded database (e.g., from SQLITE_SEARCH_TEST_DB)
+    // This handles the race condition where the database-loaded event fires before
+    // the listener is set up (common in E2E tests)
+    try {
+      const currentDb = await window.electronAPI.getCurrentDatabase()
+      if (currentDb) {
+        console.log('Found pre-loaded database from main process:', currentDb)
+        databaseStore.setPath(currentDb)
+        window.electronAPI.getTableList()
+      }
+    } catch (err) {
+      // getCurrentDatabase not available (older builds), ignore
+      console.log('getCurrentDatabase not available:', err)
+    }
   }
 })
 

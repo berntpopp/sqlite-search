@@ -1,13 +1,13 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and column management -->
-  <v-card v-if="searchStore.hasResults" elevation="1" class="results-card">
+  <v-card v-if="searchStore.hasResults" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
         <v-icon size="small" class="mr-2">mdi-table-search</v-icon>
         <span class="text-subtitle-1">
           Search Results
-          <span class="text-caption text-medium-emphasis ml-1">
+          <span class="text-caption text-medium-emphasis ml-1" data-testid="results-count">
             <template v-if="searchStore.hasActiveFilters">
               ({{ searchStore.filteredResultCount }} of {{ searchStore.resultCount }} shown)
             </template>
@@ -79,6 +79,7 @@
       :items-per-page-options="[10, 25, 50, 100]"
       :multi-sort="true"
       class="results-table"
+      data-testid="results-table"
     >
       <!-- Custom header slots with sort indicators and filtering -->
       <template

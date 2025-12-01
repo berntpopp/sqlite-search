@@ -49,8 +49,13 @@ log.info('Environment:', isDevelopment ? 'development' : 'production')
 log.info('NODE_ENV:', process.env.NODE_ENV)
 
 // Set the default database path
-const defaultDbPath = path.join(app.getPath('userData'), 'db/db.sqlite')
+// Support SQLITE_SEARCH_TEST_DB env var for E2E testing
+const testDbPath = process.env.SQLITE_SEARCH_TEST_DB
+const defaultDbPath = testDbPath || path.join(app.getPath('userData'), 'db/db.sqlite')
 log.info('Default database path:', defaultDbPath)
+if (testDbPath) {
+  log.info('Using test database from SQLITE_SEARCH_TEST_DB env var')
+}
 
 /**
  * Application menu configuration
@@ -87,6 +92,8 @@ async function createWindow() {
       },
     })
 
+    // Store reference for async callbacks
+    mainWindow = win
     log.info('BrowserWindow created successfully')
 
     // Load the appropriate URL based on packaging state
@@ -129,6 +136,11 @@ async function createWindow() {
     // Log when the window is ready to show
     win.once('ready-to-show', () => {
       log.info('Window ready-to-show event fired')
+      // If a database is pre-loaded (e.g., via SQLITE_SEARCH_TEST_DB), notify renderer
+      if (currentDatabasePath && db) {
+        log.info('Notifying renderer of pre-loaded database:', currentDatabasePath)
+        win.webContents.send('database-loaded', currentDatabasePath)
+      }
     })
 
     // Log renderer process console messages
@@ -240,6 +252,24 @@ let validTables = []
 
 // Cache for valid column names per table (security: whitelist validation)
 const validColumnsCache = new Map()
+
+// Track current database path for IPC queries and E2E testing
+let currentDatabasePath = null
+
+// Store reference to main window for sending events from async callbacks
+let mainWindow = null
+
+/**
+ * Send database-loaded event to renderer if window is available
+ */
+function notifyDatabaseLoaded(dbPath) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    log.info('Sending database-loaded event to renderer:', dbPath)
+    mainWindow.webContents.send('database-loaded', dbPath)
+  } else {
+    log.info('Window not ready yet, database-loaded event will be sent on ready-to-show')
+  }
+}
 
 /**
  * Fetches and caches valid FTS5 table names for whitelist validation
@@ -371,24 +401,35 @@ async function areValidColumns(database, tableName, columnNames) {
 // Function to initialize database connection
 function initDbConnection(dbPath) {
   // Check if the database file exists
+  log.info('initDbConnection called with path:', dbPath)
+  log.info('File exists:', fs.existsSync(dbPath))
+
   if (!fs.existsSync(dbPath)) {
-    console.log('Default database file not found. Awaiting user selection.')
+    log.info('Database file not found. Awaiting user selection.')
+    currentDatabasePath = null
     return null
   }
 
-  const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
+  const newDb = new sqlite3.Database(dbPath, sqlite3.OPEN_READONLY, err => {
     if (err) {
-      console.error(err.message)
+      log.error('Database connection error:', err.message)
+      currentDatabasePath = null
     } else {
-      console.log('Connected to the sqlite database at:', dbPath)
+      log.info('Connected to sqlite database at:', dbPath)
+      currentDatabasePath = dbPath
       // Initialize table whitelist on connection
-      refreshValidTables(db).catch(err => {
-        console.error('Failed to initialize table whitelist:', err)
+      refreshValidTables(newDb).then(() => {
+        // Notify renderer that database is loaded (for E2E testing)
+        notifyDatabaseLoaded(dbPath)
+      }).catch(err => {
+        log.error('Failed to initialize table whitelist:', err)
+        // Still notify even if whitelist fails
+        notifyDatabaseLoaded(dbPath)
       })
     }
   })
 
-  return db
+  return newDb
 }
 
 // Initialize database with default path or await user selection
@@ -530,9 +571,16 @@ ipcMain.on('change-database', (event, newPath) => {
 
       // Connect to the new database (will auto-refresh whitelist)
       db = initDbConnection(newPath)
+      currentDatabasePath = newPath
     })
   } else {
     // No existing database, just connect to new one
     db = initDbConnection(newPath)
+    currentDatabasePath = newPath
   }
+})
+
+// Handler to get current database path (useful for E2E testing)
+ipcMain.handle('get-current-database', () => {
+  return currentDatabasePath
 })
