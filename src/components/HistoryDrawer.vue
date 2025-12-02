@@ -304,21 +304,25 @@ function reactivateSearch(entry) {
   // (not databaseStore.selectTable which only updates store state)
   selectTableWithIPC(entry.table)
 
+  // Flag to track if restore completed
+  let restoreCompleted = false
+
   // Watch for columns to be loaded via IPC, then restore selection
   const stopWatch = watch(
     () => databaseStore.columnNames,
     (columnNames) => {
       // Wait until columns are actually loaded
-      if (columnNames.length === 0) return
+      if (columnNames.length === 0 || restoreCompleted) return
 
-      // Stop watching once we process
-      stopWatch()
+      // Mark as completed to prevent duplicate processing
+      restoreCompleted = true
 
       // Validate columns exist
       const validColumns = entry.columns.filter(col => columnNames.includes(col))
 
       if (validColumns.length === 0) {
         uiStore.showError('Cannot restore: No matching columns found')
+        stopWatch()
         return
       }
 
@@ -329,15 +333,15 @@ function reactivateSearch(entry) {
       searchStore.setSearchTerm(entry.searchTerm)
 
       uiStore.showSuccess('Search restored from history')
+      stopWatch()
       close()
-    },
-    { immediate: true }
+    }
   )
 
   // Timeout fallback in case columns never load
   setTimeout(() => {
-    stopWatch()
-    if (databaseStore.columnNames.length === 0) {
+    if (!restoreCompleted) {
+      stopWatch()
       uiStore.showError('Cannot restore: Failed to load columns')
     }
   }, 5000)
