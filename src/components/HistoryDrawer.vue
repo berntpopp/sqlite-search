@@ -232,17 +232,21 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useHistoryStore } from '@/stores/history.store'
 import { useUIStore } from '@/stores/ui.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
+import { useDatabase } from '@/composables/useDatabase'
 
 // Stores
 const historyStore = useHistoryStore()
 const uiStore = useUIStore()
 const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
+
+// Composables (for proper IPC triggering)
+const { selectTable: selectTableWithIPC } = useDatabase()
 
 // Component state
 const isOpen = defineModel('modelValue', { type: Boolean, default: false })
@@ -281,6 +285,7 @@ function formatTime(timestamp) {
 
 /**
  * Reactivate a search from history
+ * Uses watch pattern to properly wait for async column loading via IPC
  */
 function reactivateSearch(entry) {
   // Check if database path matches current database
@@ -295,28 +300,47 @@ function reactivateSearch(entry) {
     return
   }
 
-  // Restore table selection
-  databaseStore.selectTable(entry.table)
+  // Use the composable's selectTable which triggers IPC to load columns
+  // (not databaseStore.selectTable which only updates store state)
+  selectTableWithIPC(entry.table)
 
-  // Wait a moment for columns to load, then restore column selection
+  // Watch for columns to be loaded via IPC, then restore selection
+  const stopWatch = watch(
+    () => databaseStore.columnNames,
+    (columnNames) => {
+      // Wait until columns are actually loaded
+      if (columnNames.length === 0) return
+
+      // Stop watching once we process
+      stopWatch()
+
+      // Validate columns exist
+      const validColumns = entry.columns.filter(col => columnNames.includes(col))
+
+      if (validColumns.length === 0) {
+        uiStore.showError('Cannot restore: No matching columns found')
+        return
+      }
+
+      // Restore column selection
+      databaseStore.selectColumns(validColumns)
+
+      // Restore search term
+      searchStore.setSearchTerm(entry.searchTerm)
+
+      uiStore.showSuccess('Search restored from history')
+      close()
+    },
+    { immediate: true }
+  )
+
+  // Timeout fallback in case columns never load
   setTimeout(() => {
-    // Validate columns exist (use columnNames which is array of strings, not columns which is array of objects)
-    const validColumns = entry.columns.filter(col => databaseStore.columnNames.includes(col))
-
-    if (validColumns.length === 0) {
-      uiStore.showError('Cannot restore: No matching columns found')
-      return
+    stopWatch()
+    if (databaseStore.columnNames.length === 0) {
+      uiStore.showError('Cannot restore: Failed to load columns')
     }
-
-    // Restore column selection
-    databaseStore.selectColumns(validColumns)
-
-    // Restore search term
-    searchStore.setSearchTerm(entry.searchTerm)
-
-    uiStore.showSuccess('Search restored from history')
-    close()
-  }, 100)
+  }, 5000)
 }
 
 /**
