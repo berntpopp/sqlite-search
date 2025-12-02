@@ -11,6 +11,7 @@
         "intro": "SQLite Search is a desktop application for performing full-text searches on SQLite databases using FTS5.",
         "features": [
           "Fast full-text search powered by SQLite FTS5",
+          "Browse mode for viewing entire tables with server-side pagination",
           "Support for boolean operators (AND, OR, NOT)",
           "Wildcard and phrase search capabilities",
           "Dark/light theme with persistent preferences",
@@ -29,8 +30,8 @@
         "steps": [
           "Click the database button in the header to select your SQLite file",
           "Choose an FTS5 table from the dropdown (only FTS5 tables are shown)",
-          "Select which columns to search (TEXT columns auto-selected by default)",
-          "Enter your search term and press Enter or click the search button",
+          "Select which columns to include (TEXT columns auto-selected by default)",
+          "Choose Search mode to find specific terms, or Browse mode to view all data",
           "View results in the table below - click rows for details"
         ]
       }
@@ -70,20 +71,39 @@
       }
     },
     {
+      "id": "browse-mode",
+      "header": "Browse Mode",
+      "icon": "mdi-table-eye",
+      "color": "teal",
+      "content": {
+        "intro": "Browse mode allows you to view entire tables without searching:",
+        "features": [
+          "Toggle between Search and Browse using the mode buttons above the search field",
+          "Browse mode uses server-side pagination for efficient handling of large tables",
+          "Navigate through pages using the pagination controls at top and bottom",
+          "Sort by any column - sorting is performed server-side for performance",
+          "View row details and copy data just like in search mode"
+        ],
+        "performance": "Browse mode efficiently handles tables with hundreds of thousands of rows by fetching only the current page from the database.",
+        "tip": "Use Browse mode when you want to explore your data without a specific search term in mind."
+      }
+    },
+    {
       "id": "results",
       "header": "Working with Results",
-      "icon": "mdi-table-eye",
+      "icon": "mdi-table-search",
       "color": "secondary",
       "content": {
-        "intro": "Search results are displayed in an interactive table:",
+        "intro": "Results are displayed in an interactive table (both Search and Browse modes):",
         "features": [
-          "Click column headers to sort results",
-          "Use the eye icon to view full record details",
-          "Use the copy icon to copy field values to clipboard",
+          "Click column headers to sort results (multi-sort supported in Search mode)",
+          "Use the filter icon on column headers to filter results (Search mode)",
+          "Use the eye icon to view full record details in a dialog",
+          "Use the copy icon to copy field values or entire rows to clipboard",
           "Adjust visible columns with the COLUMNS button",
-          "Clear results with the CLEAR button"
+          "Clear results with the CLEAR button (Search mode)"
         ],
-        "pagination": "Large result sets are paginated - use the controls at the bottom to navigate."
+        "pagination": "Both modes include pagination controls at the top and bottom of the table for easy navigation."
       }
     },
     {
