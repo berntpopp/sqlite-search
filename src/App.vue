@@ -139,7 +139,14 @@ let cleanupFunctions = []
 function setupIPCListeners() {
   // Listener for table list updates
   const onTableListHandler = (event, tables) => {
-    databaseStore.setTables(tables.map(t => (typeof t === 'string' ? t : t.name)))
+    const tableNames = tables.map(t => (typeof t === 'string' ? t : t.name))
+    databaseStore.setTables(tableNames)
+
+    // If there's a previously selected table (from localStorage), load its columns
+    // This handles app restart where table selection is persisted but columns need to be fetched
+    if (databaseStore.selectedTable && tableNames.includes(databaseStore.selectedTable)) {
+      window.electronAPI.getColumns(databaseStore.selectedTable)
+    }
   }
   window.electronAPI.onTableList(onTableListHandler)
   cleanupFunctions.push(() => {
