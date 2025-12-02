@@ -66,6 +66,11 @@
     "node": ">=20.16.0",
     "pnpm": ">=9.0.0"
   },
+  "pnpm": {
+    "overrides": {
+      "glob@>=10.2.0 <10.5.0": "10.5.0"
+    }
+  },
   "build": {
     "appId": "com.berntpopp.sqlite-search",
     "productName": "sqlite-search",
