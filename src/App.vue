@@ -63,8 +63,8 @@
           </v-col>
         </v-row>
 
-        <!-- Results table or empty state -->
-        <ResultsTable v-if="searchStore.hasResults || searchStore.hasSearched" />
+        <!-- Results table or empty state (search mode or browse mode) -->
+        <ResultsTable v-if="searchStore.hasResults || searchStore.hasSearched || searchStore.isBrowseMode" />
 
         <!-- Ready to search empty state -->
         <EmptyState
@@ -239,6 +239,39 @@ function setupIPCListeners() {
     window.electronAPI.getTableList()
   }
   window.electronAPI.onDatabaseLoaded(onDatabaseLoadedHandler)
+
+  // ========================================
+  // BROWSE MODE IPC LISTENERS
+  // ========================================
+
+  // Listener for browse results (server-side pagination)
+  const onBrowseResultsHandler = (event, data) => {
+    searchStore.setBrowseResults(data)
+    if (data.rows.length === 0 && data.totalCount === 0) {
+      uiStore.showInfo('Table is empty')
+    }
+  }
+  window.electronAPI.onBrowseResults(onBrowseResultsHandler)
+
+  // Listener for browse errors
+  const onBrowseErrorHandler = (event, errorMessage) => {
+    searchStore.setBrowseError(errorMessage)
+    uiStore.showError(`Browse failed: ${errorMessage}`)
+  }
+  window.electronAPI.onBrowseError(onBrowseErrorHandler)
+
+  // Listener for table row count (optional, for quick count display)
+  const onTableRowCountHandler = (event, data) => {
+    // This can be used for displaying row count in UI without fetching data
+    console.log(`Row count for ${data.table}: ${data.count}`)
+  }
+  window.electronAPI.onTableRowCount(onTableRowCountHandler)
+
+  // Listener for table row count errors
+  const onTableRowCountErrorHandler = (event, errorMessage) => {
+    console.error('Row count error:', errorMessage)
+  }
+  window.electronAPI.onTableRowCountError(onTableRowCountErrorHandler)
 }
 
 /**

@@ -1,15 +1,25 @@
 /**
  * Search Store
  * Manages FTS5 search state including search term, results, loading states, and errors
- * Enhanced with sorting, filtering, and column management capabilities
+ * Enhanced with sorting, filtering, column management, and browse mode capabilities
  * Uses Pinia Composition API pattern
  */
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { SEARCH_CONFIG } from '@/config/search.config'
 
+/**
+ * View mode constants
+ */
+export const VIEW_MODES = {
+  SEARCH: 'search',
+  BROWSE: 'browse'
+}
+
 export const useSearchStore = defineStore('search', () => {
-  // State
+  // ===========================================
+  // SEARCH MODE STATE
+  // ===========================================
   const searchTerm = ref('')
   const searchResults = ref([])
   const loading = ref(false)
@@ -23,6 +33,24 @@ export const useSearchStore = defineStore('search', () => {
 
   // Track if a search has been performed (for empty state handling)
   const hasSearched = ref(false)
+
+  // ===========================================
+  // VIEW MODE STATE (Search vs Browse)
+  // ===========================================
+  const viewMode = ref(VIEW_MODES.SEARCH)
+
+  // ===========================================
+  // BROWSE MODE STATE
+  // ===========================================
+  const browseData = ref({
+    rows: [],
+    totalCount: 0,
+    page: 1,
+    itemsPerPage: 25
+  })
+  const browseLoading = ref(false)
+  const browseError = ref(null)
+  const browseSort = ref({ column: null, direction: 'asc' })
 
   // Getters
   const hasResults = computed(() => searchResults.value.length > 0)
@@ -73,6 +101,46 @@ export const useSearchStore = defineStore('search', () => {
    * Get count of filtered results
    */
   const filteredResultCount = computed(() => filteredResults.value.length)
+
+  // ===========================================
+  // BROWSE MODE GETTERS
+  // ===========================================
+
+  /**
+   * Check if currently in browse mode
+   */
+  const isBrowseMode = computed(() => viewMode.value === VIEW_MODES.BROWSE)
+
+  /**
+   * Check if currently in search mode
+   */
+  const isSearchMode = computed(() => viewMode.value === VIEW_MODES.SEARCH)
+
+  /**
+   * Check if browse mode has data
+   */
+  const hasBrowseData = computed(() => browseData.value.rows.length > 0)
+
+  /**
+   * Get total pages for browse pagination
+   */
+  const browseTotalPages = computed(() => {
+    const { totalCount, itemsPerPage } = browseData.value
+    return Math.max(1, Math.ceil(totalCount / itemsPerPage))
+  })
+
+  /**
+   * Get pagination info for browse mode display
+   */
+  const browsePaginationInfo = computed(() => {
+    const { rows, totalCount, page, itemsPerPage } = browseData.value
+    if (totalCount === 0) {
+      return { start: 0, end: 0, total: 0 }
+    }
+    const start = (page - 1) * itemsPerPage + 1
+    const end = Math.min(page * itemsPerPage, totalCount)
+    return { start, end, total: totalCount, currentPageCount: rows.length }
+  })
 
   // Persistence helpers
   /**
@@ -310,11 +378,97 @@ export const useSearchStore = defineStore('search', () => {
     columnFilters.value = {}
   }
 
+  // ===========================================
+  // BROWSE MODE ACTIONS
+  // ===========================================
+
+  /**
+   * Set the view mode (search or browse)
+   * Clears opposite mode's data when switching
+   * @param {string} mode - VIEW_MODES.SEARCH or VIEW_MODES.BROWSE
+   */
+  function setViewMode(mode) {
+    if (mode === viewMode.value) return
+
+    viewMode.value = mode
+
+    // Clear data from the mode we're leaving
+    if (mode === VIEW_MODES.SEARCH) {
+      // Entering search mode - clear browse data
+      browseData.value = { rows: [], totalCount: 0, page: 1, itemsPerPage: 25 }
+      browseError.value = null
+    } else {
+      // Entering browse mode - don't clear search results (user might want to go back)
+      // Just reset the hasSearched flag so the search results aren't shown
+    }
+  }
+
+  /**
+   * Set browse results from IPC response
+   * @param {Object} data - { rows, totalCount, page, itemsPerPage }
+   */
+  function setBrowseResults(data) {
+    browseData.value = {
+      rows: data.rows || [],
+      totalCount: data.totalCount || 0,
+      page: data.page || 1,
+      itemsPerPage: data.itemsPerPage || 25
+    }
+    browseLoading.value = false
+    browseError.value = null
+  }
+
+  /**
+   * Set browse loading state
+   * @param {boolean} isLoading - Loading state
+   */
+  function setBrowseLoading(isLoading) {
+    browseLoading.value = isLoading
+  }
+
+  /**
+   * Set browse error
+   * @param {string} errorMessage - Error message
+   */
+  function setBrowseError(errorMessage) {
+    browseError.value = errorMessage
+    browseLoading.value = false
+  }
+
+  /**
+   * Update browse pagination settings
+   * @param {number} page - Page number (1-indexed)
+   * @param {number} itemsPerPage - Items per page
+   */
+  function setBrowsePagination(page, itemsPerPage) {
+    browseData.value.page = page
+    browseData.value.itemsPerPage = itemsPerPage
+  }
+
+  /**
+   * Set browse sort configuration
+   * @param {string} column - Column to sort by
+   * @param {string} direction - 'asc' or 'desc'
+   */
+  function setBrowseSort(column, direction) {
+    browseSort.value = { column, direction: direction || 'asc' }
+  }
+
+  /**
+   * Clear browse data
+   */
+  function clearBrowseData() {
+    browseData.value = { rows: [], totalCount: 0, page: 1, itemsPerPage: 25 }
+    browseError.value = null
+    browseSort.value = { column: null, direction: 'asc' }
+  }
+
   /**
    * Reset all search state to initial values
    * Called when changing database or table
    */
   function reset() {
+    // Search state
     searchTerm.value = ''
     searchResults.value = []
     loading.value = false
@@ -324,10 +478,17 @@ export const useSearchStore = defineStore('search', () => {
     columnFilters.value = {}
     currentTableName.value = ''
     hasSearched.value = false
+
+    // Browse state
+    viewMode.value = VIEW_MODES.SEARCH
+    browseData.value = { rows: [], totalCount: 0, page: 1, itemsPerPage: 25 }
+    browseLoading.value = false
+    browseError.value = null
+    browseSort.value = { column: null, direction: 'asc' }
   }
 
   return {
-    // State
+    // Search State
     searchTerm,
     searchResults,
     loading,
@@ -337,7 +498,17 @@ export const useSearchStore = defineStore('search', () => {
     columnFilters,
     currentTableName,
     hasSearched,
-    // Getters
+
+    // View Mode State
+    viewMode,
+
+    // Browse State
+    browseData,
+    browseLoading,
+    browseError,
+    browseSort,
+
+    // Search Getters
     hasResults,
     resultCount,
     hasError,
@@ -346,7 +517,17 @@ export const useSearchStore = defineStore('search', () => {
     activeFilterCount,
     filteredResults,
     filteredResultCount,
-    // Actions
+
+    // View Mode Getters
+    isBrowseMode,
+    isSearchMode,
+
+    // Browse Getters
+    hasBrowseData,
+    browseTotalPages,
+    browsePaginationInfo,
+
+    // Search Actions
     setSearchTerm,
     setResults,
     setLoading,
@@ -362,6 +543,19 @@ export const useSearchStore = defineStore('search', () => {
     setColumnFilter,
     clearColumnFilter,
     clearAllFilters,
+
+    // View Mode Actions
+    setViewMode,
+
+    // Browse Actions
+    setBrowseResults,
+    setBrowseLoading,
+    setBrowseError,
+    setBrowsePagination,
+    setBrowseSort,
+    clearBrowseData,
+
+    // Global Actions
     reset,
   }
 })
