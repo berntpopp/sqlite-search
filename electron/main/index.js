@@ -170,6 +170,8 @@ function cleanupApp() {
   ipcMain.removeAllListeners('get-table-list')
   ipcMain.removeAllListeners('get-columns')
   ipcMain.removeAllListeners('change-database')
+  ipcMain.removeAllListeners('browse-table')
+  ipcMain.removeAllListeners('get-table-row-count')
 
   // Close database connection
   if (db) {
@@ -583,4 +585,115 @@ ipcMain.on('change-database', (event, newPath) => {
 // Handler to get current database path (useful for E2E testing)
 ipcMain.handle('get-current-database', () => {
   return currentDatabasePath
+})
+
+/**
+ * Browse table with server-side pagination
+ * Returns paginated rows and total count for efficient large table browsing
+ * @param {string} tableName - Table to browse (validated against whitelist)
+ * @param {string[]} columns - Columns to select
+ * @param {number} page - Page number (1-indexed)
+ * @param {number} itemsPerPage - Items per page (max 100)
+ * @param {Object|null} sort - Optional sort config { column: string, direction: 'asc'|'desc' }
+ */
+ipcMain.on('browse-table', async (event, tableName, columns, page, itemsPerPage, sort) => {
+  if (!db) {
+    log.error('Browse: Database connection not established')
+    event.reply('browse-error', 'Database connection not established.')
+    return
+  }
+
+  // Security: Validate table name against whitelist
+  if (!isValidTable(tableName)) {
+    log.error('Security: Invalid table name in browse:', tableName)
+    event.reply('browse-error', `Invalid table: ${tableName}`)
+    return
+  }
+
+  // Security: Validate columns against whitelist
+  const columnsValid = await areValidColumns(db, tableName, columns)
+  if (!columnsValid) {
+    log.error('Security: Invalid column names in browse:', columns)
+    event.reply('browse-error', 'Invalid column names')
+    return
+  }
+
+  // Sanitize pagination params
+  const safePage = Math.max(1, parseInt(page, 10) || 1)
+  const safeItemsPerPage = Math.min(100, Math.max(1, parseInt(itemsPerPage, 10) || 25))
+  const offset = (safePage - 1) * safeItemsPerPage
+
+  try {
+    // Build safe column list (all validated above)
+    const columnList = columns.map(c => `"${c}"`).join(', ')
+
+    // Build ORDER BY clause if sort specified and column is valid
+    let orderByClause = ''
+    if (sort && sort.column && columns.includes(sort.column)) {
+      const direction = sort.direction === 'desc' ? 'DESC' : 'ASC'
+      orderByClause = `ORDER BY "${sort.column}" ${direction}`
+    }
+
+    // Execute paginated query and count query in parallel
+    const dataQuery = `SELECT ${columnList} FROM "${tableName}" ${orderByClause} LIMIT ? OFFSET ?`
+    const countQuery = `SELECT COUNT(*) as count FROM "${tableName}"`
+
+    log.info('Browse query:', { table: tableName, page: safePage, itemsPerPage: safeItemsPerPage, sort })
+
+    const [rows, countResult] = await Promise.all([
+      new Promise((resolve, reject) => {
+        db.all(dataQuery, [safeItemsPerPage, offset], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows || [])
+        })
+      }),
+      new Promise((resolve, reject) => {
+        db.get(countQuery, [], (err, row) => {
+          if (err) reject(err)
+          else resolve(row)
+        })
+      })
+    ])
+
+    log.info(`Browse completed: ${rows.length} rows returned, ${countResult.count} total`)
+
+    event.reply('browse-results', {
+      rows,
+      totalCount: countResult.count,
+      page: safePage,
+      itemsPerPage: safeItemsPerPage
+    })
+  } catch (error) {
+    log.error('Browse error:', error.message)
+    event.reply('browse-error', error.message)
+  }
+})
+
+/**
+ * Get row count for a table (quick count for UI display)
+ * @param {string} tableName - Table name (validated against whitelist)
+ */
+ipcMain.on('get-table-row-count', async (event, tableName) => {
+  if (!db) {
+    event.reply('table-row-count-error', 'Database connection not established.')
+    return
+  }
+
+  // Security: Validate table name
+  if (!isValidTable(tableName)) {
+    log.error('Security: Invalid table name in row count:', tableName)
+    event.reply('table-row-count-error', `Invalid table: ${tableName}`)
+    return
+  }
+
+  const query = `SELECT COUNT(*) as count FROM "${tableName}"`
+  db.get(query, [], (err, row) => {
+    if (err) {
+      log.error('Row count error:', err.message)
+      event.reply('table-row-count-error', err.message)
+    } else {
+      log.info(`Row count for ${tableName}: ${row.count}`)
+      event.reply('table-row-count', { table: tableName, count: row.count })
+    }
+  })
 })

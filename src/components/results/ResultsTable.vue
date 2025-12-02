@@ -1,26 +1,43 @@
 <template>
-  <!-- Enhanced results table with sorting, filtering, and column management -->
-  <v-card v-if="searchStore.hasSearched" elevation="1" class="results-card" data-testid="results-card">
+  <!-- Enhanced results table with sorting, filtering, and browse mode support -->
+  <v-card
+    v-if="shouldShowTable"
+    elevation="1"
+    class="results-card"
+    data-testid="results-card"
+  >
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
-        <v-icon size="small" class="mr-2">mdi-table-search</v-icon>
+        <v-icon size="small" class="mr-2">
+          {{ searchStore.isBrowseMode ? 'mdi-table-eye' : 'mdi-table-search' }}
+        </v-icon>
         <span class="text-subtitle-1">
-          Search Results
-          <span class="text-caption text-medium-emphasis ml-1" data-testid="results-count">
-            <template v-if="searchStore.hasActiveFilters">
-              ({{ searchStore.filteredResultCount }} of {{ searchStore.resultCount }} shown)
-            </template>
-            <template v-else>
-              ({{ searchStore.resultCount }} found)
-            </template>
-          </span>
+          <!-- Browse mode header -->
+          <template v-if="searchStore.isBrowseMode">
+            Browse: {{ databaseStore.selectedTable }}
+            <span class="text-caption text-medium-emphasis ml-1" data-testid="browse-count">
+              ({{ formatNumber(searchStore.browseData.totalCount) }} rows)
+            </span>
+          </template>
+          <!-- Search mode header -->
+          <template v-else>
+            Search Results
+            <span class="text-caption text-medium-emphasis ml-1" data-testid="results-count">
+              <template v-if="searchStore.hasActiveFilters">
+                ({{ searchStore.filteredResultCount }} of {{ searchStore.resultCount }} shown)
+              </template>
+              <template v-else>
+                ({{ searchStore.resultCount }} found)
+              </template>
+            </span>
+          </template>
         </span>
       </div>
       <div class="d-flex ga-2">
-        <!-- Clear filters button (if filters active) -->
+        <!-- Clear filters button (search mode only) -->
         <v-btn
-          v-if="searchStore.hasActiveFilters"
+          v-if="searchStore.isSearchMode && searchStore.hasActiveFilters"
           variant="text"
           size="small"
           color="warning"
@@ -30,13 +47,25 @@
           Clear Filters ({{ searchStore.activeFilterCount }})
         </v-btn>
 
-        <!-- Clear sort button (if sorting active) -->
+        <!-- Clear sort button (search mode only) -->
         <v-btn
-          v-if="searchStore.sortBy.length > 0"
+          v-if="searchStore.isSearchMode && searchStore.sortBy.length > 0"
           variant="text"
           size="small"
           color="info"
           @click="clearSort"
+        >
+          <v-icon start size="small">mdi-sort-variant-remove</v-icon>
+          Clear Sort
+        </v-btn>
+
+        <!-- Clear browse sort button (browse mode only) -->
+        <v-btn
+          v-if="searchStore.isBrowseMode && searchStore.browseSort.column"
+          variant="text"
+          size="small"
+          color="info"
+          @click="clearBrowseSort"
         >
           <v-icon start size="small">mdi-sort-variant-remove</v-icon>
           Clear Sort
@@ -59,8 +88,13 @@
           />
         </v-btn>
 
-        <!-- Clear results button -->
-        <v-btn variant="text" size="small" @click="searchStore.clearResults">
+        <!-- Clear results button (search mode only) -->
+        <v-btn
+          v-if="searchStore.isSearchMode"
+          variant="text"
+          size="small"
+          @click="searchStore.clearResults"
+        >
           <v-icon start size="small">mdi-close</v-icon>
           Clear
         </v-btn>
@@ -69,8 +103,140 @@
 
     <v-divider></v-divider>
 
-    <!-- Enhanced data table with sorting, filtering, and custom column headers -->
+    <!-- ====================================== -->
+    <!-- BROWSE MODE: Server-side data table -->
+    <!-- ====================================== -->
+    <v-data-table-server
+      v-if="searchStore.isBrowseMode"
+      v-model:items-per-page="browseItemsPerPage"
+      :headers="browseTableHeaders"
+      :items="searchStore.browseData.rows"
+      :items-length="searchStore.browseData.totalCount"
+      :loading="searchStore.browseLoading"
+      :page="searchStore.browseData.page"
+      :items-per-page-options="itemsPerPageOptions"
+      density="compact"
+      hover
+      class="results-table"
+      data-testid="browse-table"
+      @update:options="onBrowseOptionsUpdate"
+    >
+      <!-- Top pagination controls -->
+      <template #top>
+        <div class="table-controls-top d-flex align-center justify-space-between px-4 py-2">
+          <!-- Left: Page info -->
+          <div class="d-flex align-center text-body-2 text-medium-emphasis">
+            <span>
+              Showing {{ searchStore.browsePaginationInfo.start }}-{{ searchStore.browsePaginationInfo.end }}
+              of {{ formatNumber(searchStore.browsePaginationInfo.total) }}
+            </span>
+          </div>
+
+          <!-- Right: Pagination controls -->
+          <div class="d-flex align-center ga-3">
+            <!-- Items per page -->
+            <div class="d-flex align-center ga-2">
+              <span class="text-body-2 text-medium-emphasis">Rows:</span>
+              <v-select
+                v-model="browseItemsPerPage"
+                :items="itemsPerPageOptions"
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="items-per-page-select"
+              />
+            </div>
+
+            <!-- Page navigation -->
+            <div class="d-flex align-center">
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="searchStore.browseData.page <= 1"
+                @click="goToBrowsePage(1)"
+              >
+                <v-icon size="small">mdi-page-first</v-icon>
+                <v-tooltip activator="parent" location="top">First page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="searchStore.browseData.page <= 1"
+                @click="goToBrowsePage(searchStore.browseData.page - 1)"
+              >
+                <v-icon size="small">mdi-chevron-left</v-icon>
+                <v-tooltip activator="parent" location="top">Previous page</v-tooltip>
+              </v-btn>
+
+              <span class="text-body-2 mx-2">
+                <strong>{{ searchStore.browseData.page }}</strong>
+                <span class="text-medium-emphasis"> / {{ searchStore.browseTotalPages }}</span>
+              </span>
+
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="searchStore.browseData.page >= searchStore.browseTotalPages"
+                @click="goToBrowsePage(searchStore.browseData.page + 1)"
+              >
+                <v-icon size="small">mdi-chevron-right</v-icon>
+                <v-tooltip activator="parent" location="top">Next page</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                variant="text"
+                size="small"
+                :disabled="searchStore.browseData.page >= searchStore.browseTotalPages"
+                @click="goToBrowsePage(searchStore.browseTotalPages)"
+              >
+                <v-icon size="small">mdi-page-last</v-icon>
+                <v-tooltip activator="parent" location="top">Last page</v-tooltip>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+        <v-divider />
+      </template>
+
+      <!-- Custom cell rendering with truncation -->
+      <template
+        v-for="column in databaseStore.selectedColumns"
+        :key="`browse-cell-${column}`"
+        #[`item.${column}`]="{ value }"
+      >
+        <span class="text-truncate-cell" :title="value">
+          {{ truncateText(value, 60) }}
+        </span>
+      </template>
+
+      <!-- Actions column -->
+      <template #[`item.actions`]="{ item }">
+        <div class="d-flex ga-1">
+          <v-btn icon variant="text" size="x-small" @click="viewDetails(item)">
+            <v-icon size="small">mdi-eye</v-icon>
+            <v-tooltip activator="parent" location="top"> View full details </v-tooltip>
+          </v-btn>
+          <v-btn icon variant="text" size="x-small" @click="copyRow(item)">
+            <v-icon size="small">mdi-content-copy</v-icon>
+            <v-tooltip activator="parent" location="top"> Copy entire row </v-tooltip>
+          </v-btn>
+        </div>
+      </template>
+
+      <!-- Empty slot -->
+      <template #no-data>
+        <span></span>
+      </template>
+    </v-data-table-server>
+
+    <!-- ====================================== -->
+    <!-- SEARCH MODE: Client-side data table -->
+    <!-- ====================================== -->
     <v-data-table
+      v-else
       v-model:sort-by="searchStore.sortBy"
       v-model:page="currentPage"
       v-model:items-per-page="itemsPerPage"
@@ -268,9 +434,19 @@
     </v-data-table>
 
     <!-- Empty state - OUTSIDE table to avoid horizontal scroll issues -->
-    <div v-if="!searchStore.hasResults && !searchStore.loading" class="empty-state-container">
+    <div v-if="showEmptyState" class="empty-state-container">
+      <!-- Browse mode empty state -->
       <EmptyState
-        v-if="searchStore.hasActiveFilters"
+        v-if="searchStore.isBrowseMode && !searchStore.hasBrowseData && !searchStore.browseLoading"
+        variant="no-results"
+        icon="mdi-table-eye-off"
+        title="No data to display"
+        subtitle="The table appears to be empty"
+        :compact="true"
+      />
+      <!-- Search mode with filters empty state -->
+      <EmptyState
+        v-else-if="searchStore.isSearchMode && searchStore.hasActiveFilters && !searchStore.hasResults"
         variant="no-results"
         icon="mdi-filter-off-outline"
         title="No results match your filters"
@@ -280,8 +456,9 @@
         primary-action-icon="mdi-filter-remove"
         @primary-action="clearAllFilters"
       />
+      <!-- Search mode no results empty state -->
       <EmptyState
-        v-else
+        v-else-if="searchStore.isSearchMode && !searchStore.hasResults && !searchStore.loading"
         variant="no-results"
         icon="mdi-magnify-close"
         :title="`No results for &quot;${searchStore.searchTerm}&quot;`"
@@ -304,6 +481,7 @@ import { ref, computed, watch } from 'vue'
 import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
+import { useBrowse } from '@/composables/useBrowse'
 import { SEARCH_CONFIG } from '@/config/search.config'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -311,6 +489,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
 const { viewDetails, truncateText, copyToClipboard } = useSearch()
+const { goToPage, setItemsPerPage, sortBy: browseSortBy, clearSort: browseClearSort } = useBrowse()
 
 // Component state
 const showColumnManagement = ref(false)
@@ -318,8 +497,31 @@ const currentPage = ref(1)
 const itemsPerPage = ref(25)
 const itemsPerPageOptions = [10, 25, 50, 100]
 
+// Browse mode items per page (separate from search mode)
+const browseItemsPerPage = ref(25)
+
 /**
- * Calculate total pages based on filtered results
+ * Determine if the table card should be shown
+ */
+const shouldShowTable = computed(() => {
+  if (searchStore.isBrowseMode) {
+    return searchStore.hasBrowseData || searchStore.browseLoading
+  }
+  return searchStore.hasSearched
+})
+
+/**
+ * Determine if empty state should be shown
+ */
+const showEmptyState = computed(() => {
+  if (searchStore.isBrowseMode) {
+    return !searchStore.hasBrowseData && !searchStore.browseLoading
+  }
+  return !searchStore.hasResults && !searchStore.loading
+})
+
+/**
+ * Calculate total pages based on filtered results (search mode)
  */
 const totalPages = computed(() => {
   const total = searchStore.filteredResults.length
@@ -327,7 +529,7 @@ const totalPages = computed(() => {
 })
 
 /**
- * Pagination info for display (start-end of total)
+ * Pagination info for display (search mode)
  */
 const paginationInfo = computed(() => {
   const total = searchStore.filteredResults.length
@@ -348,6 +550,13 @@ const noResultsSuggestions = [
 ]
 
 /**
+ * Format large numbers with locale separators
+ */
+function formatNumber(num) {
+  return num.toLocaleString()
+}
+
+/**
  * Clear search and reset state
  */
 function clearSearch() {
@@ -355,17 +564,16 @@ function clearSearch() {
   searchStore.clearResults()
 }
 
-// Watch visible columns and cleanup sortBy when columns are hidden
+// Watch visible columns and cleanup sortBy when columns are hidden (search mode)
 watch(
   () => databaseStore.visibleColumns,
   (newVisibleColumns) => {
-    // Clean up sort descriptors to only include visible columns
     searchStore.cleanupSortByColumns(newVisibleColumns)
   },
   { immediate: true }
 )
 
-// Reset to page 1 when search results change (new search or filters applied)
+// Reset to page 1 when search results change (search mode)
 watch(
   () => searchStore.filteredResults.length,
   () => {
@@ -373,9 +581,15 @@ watch(
   }
 )
 
+// Sync browse items per page with store
+watch(browseItemsPerPage, (newValue) => {
+  if (searchStore.isBrowseMode && newValue !== searchStore.browseData.itemsPerPage) {
+    setItemsPerPage(newValue)
+  }
+})
+
 /**
- * Generate table headers from visible columns (respecting order and visibility)
- * Headers include sorting configuration and keys for filtering
+ * Generate table headers for search mode (with sorting and filtering)
  */
 const tableHeaders = computed(() => {
   const headers = databaseStore.visibleColumns.map(column => ({
@@ -400,9 +614,74 @@ const tableHeaders = computed(() => {
 })
 
 /**
- * Check if a column has an active filter
- * @param {string} columnName - Name of the column
- * @returns {boolean} - True if column has a filter
+ * Generate table headers for browse mode (server-side sorting)
+ */
+const browseTableHeaders = computed(() => {
+  const headers = databaseStore.visibleColumns.map(column => ({
+    title: column,
+    value: column,
+    key: column,
+    sortable: true,
+    align: 'start',
+  }))
+
+  // Add actions column at the beginning
+  headers.unshift({
+    title: 'Actions',
+    value: 'actions',
+    key: 'actions',
+    sortable: false,
+    width: '100px',
+    align: 'center',
+  })
+
+  return headers
+})
+
+/**
+ * Handle browse mode options update (pagination, sorting)
+ */
+function onBrowseOptionsUpdate(options) {
+  const { page, itemsPerPage: newItemsPerPage, sortBy } = options
+
+  // Handle sorting
+  if (sortBy && sortBy.length > 0) {
+    const sortOption = sortBy[0]
+    if (sortOption.key !== 'actions') {
+      browseSortBy(sortOption.key, sortOption.order)
+    }
+  } else if (searchStore.browseSort.column) {
+    // Clear sort if no sort specified
+    browseClearSort()
+  }
+
+  // Handle pagination (if not triggered by sort)
+  const currentData = searchStore.browseData
+  if (page !== currentData.page || newItemsPerPage !== currentData.itemsPerPage) {
+    if (newItemsPerPage !== currentData.itemsPerPage) {
+      setItemsPerPage(newItemsPerPage)
+    } else {
+      goToPage(page)
+    }
+  }
+}
+
+/**
+ * Go to a specific browse page
+ */
+function goToBrowsePage(page) {
+  goToPage(page)
+}
+
+/**
+ * Clear browse mode sort
+ */
+function clearBrowseSort() {
+  browseClearSort()
+}
+
+/**
+ * Check if a column has an active filter (search mode)
  */
 function hasFilter(columnName) {
   const filterValue = searchStore.columnFilters[columnName]
@@ -410,23 +689,21 @@ function hasFilter(columnName) {
 }
 
 /**
- * Set filter for a specific column
- * @param {string} columnName - Name of the column
- * @param {string} filterValue - Filter value
+ * Set filter for a specific column (search mode)
  */
 function setColumnFilter(columnName, filterValue) {
   searchStore.setColumnFilter(columnName, filterValue)
 }
 
 /**
- * Clear all active filters
+ * Clear all active filters (search mode)
  */
 function clearAllFilters() {
   searchStore.clearAllFilters()
 }
 
 /**
- * Clear all sorting
+ * Clear all sorting (search mode)
  */
 function clearSort() {
   searchStore.clearSort()
@@ -434,7 +711,6 @@ function clearSort() {
 
 /**
  * Copy entire row as JSON
- * @param {Object} item - Row data object
  */
 function copyRow(item) {
   const rowData = JSON.stringify(item, null, 2)
