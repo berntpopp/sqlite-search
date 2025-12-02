@@ -300,8 +300,8 @@ function reactivateSearch(entry) {
 
   // Wait a moment for columns to load, then restore column selection
   setTimeout(() => {
-    // Validate columns exist
-    const validColumns = entry.columns.filter(col => databaseStore.columns.includes(col))
+    // Validate columns exist (use columnNames which is array of strings, not columns which is array of objects)
+    const validColumns = entry.columns.filter(col => databaseStore.columnNames.includes(col))
 
     if (validColumns.length === 0) {
       uiStore.showError('Cannot restore: No matching columns found')

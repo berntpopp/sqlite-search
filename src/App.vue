@@ -244,8 +244,12 @@ onMounted(async () => {
   // Set up IPC event listeners
   setupIPCListeners()
 
-  // Load tables if database path exists in localStorage
+  // Reconnect to database if path exists in localStorage
+  // This is needed because main process loses the connection on app restart
   if (databaseStore.isConnected) {
+    // First reconnect main process to the database
+    window.electronAPI.changeDatabase(databaseStore.path)
+    // Then load the tables
     window.electronAPI.getTableList()
   } else {
     // Check if main process has a pre-loaded database (e.g., from SQLITE_SEARCH_TEST_DB)
