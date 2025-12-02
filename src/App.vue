@@ -233,7 +233,6 @@ function setupIPCListeners() {
 
   // Listener for pre-loaded database (e.g., via SQLITE_SEARCH_TEST_DB env var)
   const onDatabaseLoadedHandler = (event, dbPath) => {
-    console.log('Database pre-loaded by main process:', dbPath)
     databaseStore.setPath(dbPath)
     // Trigger loading tables
     window.electronAPI.getTableList()
@@ -261,15 +260,14 @@ function setupIPCListeners() {
   window.electronAPI.onBrowseError(onBrowseErrorHandler)
 
   // Listener for table row count (optional, for quick count display)
-  const onTableRowCountHandler = (event, data) => {
-    // This can be used for displaying row count in UI without fetching data
-    console.log(`Row count for ${data.table}: ${data.count}`)
+  const onTableRowCountHandler = (_event, _data) => {
+    // Reserved for future use: displaying row count in UI without fetching data
   }
   window.electronAPI.onTableRowCount(onTableRowCountHandler)
 
   // Listener for table row count errors
-  const onTableRowCountErrorHandler = (event, errorMessage) => {
-    console.error('Row count error:', errorMessage)
+  const onTableRowCountErrorHandler = (_event, _errorMessage) => {
+    // Silently ignore row count errors - non-critical functionality
   }
   window.electronAPI.onTableRowCountError(onTableRowCountErrorHandler)
 }
@@ -298,13 +296,11 @@ onMounted(async () => {
     try {
       const currentDb = await window.electronAPI.getCurrentDatabase()
       if (currentDb) {
-        console.log('Found pre-loaded database from main process:', currentDb)
         databaseStore.setPath(currentDb)
         window.electronAPI.getTableList()
       }
-    } catch (err) {
-      // getCurrentDatabase not available (older builds), ignore
-      console.log('getCurrentDatabase not available:', err)
+    } catch {
+      // getCurrentDatabase not available (older builds), ignore silently
     }
   }
 })

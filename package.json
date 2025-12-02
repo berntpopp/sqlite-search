@@ -36,15 +36,18 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.2",
     "@vitejs/plugin-vue": "^6.0.2",
     "@vitest/coverage-v8": "^2.1.8",
     "@vue/test-utils": "^2.4.6",
     "electron": "^39.2.1",
     "electron-builder": "^26.0.12",
+    "electron-playwright-helpers": "^1.8.2",
     "electron-vite": "^4.0.1",
     "eslint": "^9.17.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-security": "^3.0.1",
     "eslint-plugin-vue": "^10.5.1",
     "eslint-plugin-vuetify": "^2.4.1",
     "globals": "^16.5.0",
@@ -57,13 +60,16 @@
     "vite": "^6.0.5",
     "vite-plugin-vuetify": "^2.1.2",
     "vitest": "^2.1.8",
-    "vue-tsc": "^3.1.4",
-    "@playwright/test": "^1.49.1",
-    "electron-playwright-helpers": "^1.8.2"
+    "vue-tsc": "^3.1.4"
   },
   "engines": {
     "node": ">=20.16.0",
     "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "glob@>=10.2.0 <10.5.0": "10.5.0"
+    }
   },
   "build": {
     "appId": "com.berntpopp.sqlite-search",

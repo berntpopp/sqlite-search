@@ -1,5 +1,6 @@
 import js from '@eslint/js'
 import pluginVue from 'eslint-plugin-vue'
+import pluginSecurity from 'eslint-plugin-security'
 import globals from 'globals'
 import configPrettier from 'eslint-config-prettier'
 
@@ -20,6 +21,7 @@ export default [
   },
   js.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
+  pluginSecurity.configs.recommended,
   {
     files: ['**/*.{js,mjs,cjs,vue}'],
     languageOptions: {
@@ -46,6 +48,12 @@ export default [
       'object-shorthand': ['error', 'always'],
       'prefer-template': 'error',
       'prefer-arrow-callback': 'error',
+
+      // Security plugin adjustments
+      // detect-object-injection disabled: original author recommends disabling for CI
+      // as it was designed for manual code review assistance and is too noisy
+      // See: https://github.com/eslint-community/eslint-plugin-security/issues/21
+      'security/detect-object-injection': 'off',
     },
   },
   {
@@ -57,6 +65,9 @@ export default [
     },
     rules: {
       'no-console': 'off', // Allow console in electron main process
+      // File paths in Electron main come from trusted file dialogs, not untrusted user input
+      // See: https://github.com/eslint-community/eslint-plugin-security/blob/main/docs/rules/detect-non-literal-fs-filename.md
+      'security/detect-non-literal-fs-filename': 'off',
     },
   },
   {
