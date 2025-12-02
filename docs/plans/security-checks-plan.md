@@ -6,14 +6,14 @@
 - **Dependabot** (`.github/dependabot.yml`): Weekly npm and GitHub Actions updates with grouping
 
 ### Missing
-- No `npm audit` in CI pipeline
+- No `pnpm audit` in CI pipeline
 - No GitHub CodeQL scanning
 - No ESLint security plugin
 - No Electron-specific security checks
 
 ## Implementation Plan
 
-### Phase 1: Add npm audit to CI (High Priority)
+### Phase 1: Add pnpm audit to CI (High Priority)
 
 Add vulnerability scanning to the existing build workflow:
 
@@ -81,7 +81,7 @@ npx electronegativity -i ./electron
 
 ## Implementation Order
 
-1. **Phase 1**: npm audit in build.yml - immediate value, minimal effort
+1. **Phase 1**: pnpm audit in build.yml - immediate value, minimal effort
 2. **Phase 2**: CodeQL workflow - comprehensive SAST, GitHub-native
 3. **Phase 3**: ESLint security plugin - catches issues at development time
 4. **Phase 4**: Electronegativity - optional, Electron-specific (project already secure)
@@ -90,14 +90,14 @@ npx electronegativity -i ./electron
 
 | File | Action | Description |
 |------|--------|-------------|
-| `.github/workflows/build.yml` | Modify | Add npm audit step |
+| `.github/workflows/build.yml` | Modify | Add pnpm audit step |
 | `.github/workflows/codeql.yml` | Create | CodeQL security scanning |
 | `eslint.config.js` | Modify | Add security plugin |
 | `package.json` | Modify | Add eslint-plugin-security |
 
 ## Success Criteria
 
-- [ ] npm audit runs on every PR
+- [ ] pnpm audit runs on every PR
 - [ ] CodeQL scans on push/PR to main
 - [ ] ESLint security rules enabled
 - [ ] No high/critical vulnerabilities in dependencies
