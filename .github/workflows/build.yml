@@ -46,6 +46,10 @@ jobs:
       - name: Rebuild native modules
         run: pnpm rebuild
 
+      - name: Security audit
+        run: pnpm audit --audit-level=high
+        continue-on-error: true  # Don't fail build on audit issues, report only
+
       - name: Run linter
         run: pnpm run lint
 
