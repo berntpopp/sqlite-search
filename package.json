@@ -1,6 +1,6 @@
 {
   "name": "sqlite-search",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Electron-based desktop application for searching SQLite databases using FTS5",
   "main": "./dist-electron/main/index.js",
   "author": "Bernt Popp",
