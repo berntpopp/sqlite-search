@@ -793,8 +793,8 @@ ipcMain.handle('export-to-excel', async (event, data, columns, defaultFilename) 
   }
 
   try {
-    // Generate Excel buffer
-    const buffer = generateExcel(data, columns)
+    // Generate Excel buffer (async with exceljs)
+    const buffer = await generateExcel(data, columns)
 
     // Write to file (async)
     await fs.promises.writeFile(filePath, buffer)

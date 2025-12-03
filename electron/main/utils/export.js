@@ -7,7 +7,7 @@
  * @module electron/main/utils/export
  */
 
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 
 /**
  * Export configuration constants (duplicated from renderer config for main process)
@@ -102,7 +102,7 @@ export function generateCSV(data, columns, options = {}) {
 /**
  * Generate Excel workbook buffer from data array
  *
- * Uses SheetJS to create a proper XLSX file with:
+ * Uses ExcelJS to create a proper XLSX file with:
  * - Auto-calculated column widths
  * - Proper data types
  * - Single worksheet
@@ -110,27 +110,27 @@ export function generateCSV(data, columns, options = {}) {
  * @param {Object[]} data - Array of row objects
  * @param {string[]} columns - Column names in desired order
  * @param {string} [sheetName='Export'] - Worksheet name
- * @returns {Buffer} XLSX file buffer ready for writing to disk
+ * @returns {Promise<Buffer>} XLSX file buffer ready for writing to disk
  *
  * @example
- * const buffer = generateExcel(
+ * const buffer = await generateExcel(
  *   [{ name: 'John', age: 30 }],
  *   ['name', 'age'],
  *   'Users'
  * )
  * fs.writeFileSync('export.xlsx', buffer)
  */
-export function generateExcel(data, columns, sheetName = EXPORT_CONFIG.EXCEL.SHEET_NAME) {
-  // Create worksheet from JSON data
-  // json_to_sheet handles data type conversion automatically
-  const worksheet = XLSX.utils.json_to_sheet(data, {
-    header: columns,
-    skipHeader: false,
-  })
+export async function generateExcel(data, columns, sheetName = EXPORT_CONFIG.EXCEL.SHEET_NAME) {
+  // Create new workbook
+  const workbook = new ExcelJS.Workbook()
+  workbook.creator = 'sqlite-search'
+  workbook.created = new Date()
+
+  // Add worksheet
+  const worksheet = workbook.addWorksheet(sheetName)
 
   // Calculate optimal column widths based on content
-  const colWidths = columns.map(col => {
-    // Start with header length
+  const columnWidths = columns.map(col => {
     let maxLen = col.length
 
     // Sample first N rows for width calculation (performance optimization)
@@ -146,21 +146,35 @@ export function generateExcel(data, columns, sheetName = EXPORT_CONFIG.EXCEL.SHE
     }
 
     // Add padding and cap at max width
-    return { wch: Math.min(maxLen + 2, EXPORT_CONFIG.EXCEL.MAX_COL_WIDTH) }
+    return Math.min(maxLen + 2, EXPORT_CONFIG.EXCEL.MAX_COL_WIDTH)
   })
 
-  // Apply column widths to worksheet
-  worksheet['!cols'] = colWidths
+  // Define columns with headers and widths
+  worksheet.columns = columns.map((col, index) => ({
+    header: col,
+    key: col,
+    width: columnWidths[index],
+  }))
 
-  // Create new workbook and add worksheet
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName)
+  // Style header row
+  worksheet.getRow(1).font = { bold: true }
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' },
+  }
 
-  // Generate buffer (binary format for file writing)
-  return XLSX.write(workbook, {
-    type: 'buffer',
-    bookType: 'xlsx',
-  })
+  // Add data rows
+  for (const row of data) {
+    const rowData = {}
+    for (const col of columns) {
+      rowData[col] = row[col] ?? ''
+    }
+    worksheet.addRow(rowData)
+  }
+
+  // Generate buffer
+  return workbook.xlsx.writeBuffer()
 }
 
 /**
