@@ -33,7 +33,7 @@
     "sqlite3": "^5.1.7",
     "vue": "^3.5.25",
     "vuetify": "^3.9.8",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
