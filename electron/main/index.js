@@ -7,6 +7,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import sqlite3 from 'sqlite3'
 import { escapeFts5SearchTerm, buildFts5MatchQuery, isValidSearchTerm } from './utils/search.js'
+import { generateCSV, generateExcel, validateExportParams } from './utils/export.js'
 
 // Enhanced logging for production debugging with file output
 const logFile = path.join(app.getPath('temp'), 'sqlite-search-debug.log')
@@ -696,4 +697,112 @@ ipcMain.on('get-table-row-count', async (event, tableName) => {
       event.reply('table-row-count', { table: tableName, count: row.count })
     }
   })
+})
+
+// ============================================================================
+// Export Handlers
+// ============================================================================
+
+/**
+ * Maximum rows allowed for export (prevents memory exhaustion)
+ * @constant {number}
+ */
+const MAX_EXPORT_ROWS = 100000
+
+/**
+ * Export data to CSV file
+ * Opens save dialog and writes CSV file to user-selected location
+ *
+ * @param {Object[]} data - Array of row objects to export
+ * @param {string[]} columns - Column names in desired order
+ * @param {string} defaultFilename - Suggested filename for save dialog
+ * @returns {Promise<{success: boolean, filePath?: string, rowCount?: number, reason?: string}>}
+ */
+ipcMain.handle('export-to-csv', async (event, data, columns, defaultFilename) => {
+  log.info('Export to CSV requested:', { rows: data?.length, columns: columns?.length })
+
+  // Validate export parameters
+  const validation = validateExportParams(data, columns, MAX_EXPORT_ROWS)
+  if (!validation.valid) {
+    log.error('CSV export validation failed:', validation.error)
+    return { success: false, reason: validation.error }
+  }
+
+  // Show save dialog
+  const { filePath, canceled } = await dialog.showSaveDialog({
+    title: 'Export as CSV',
+    defaultPath: defaultFilename || 'export.csv',
+    filters: [
+      { name: 'CSV Files', extensions: ['csv'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  })
+
+  if (canceled || !filePath) {
+    log.info('CSV export canceled by user')
+    return { success: false, reason: 'canceled' }
+  }
+
+  try {
+    // Generate CSV content
+    const csvContent = generateCSV(data, columns)
+
+    // Write to file (async)
+    await fs.promises.writeFile(filePath, csvContent, 'utf8')
+
+    log.info(`CSV exported successfully: ${filePath} (${data.length} rows)`)
+    return { success: true, filePath, rowCount: data.length }
+  } catch (error) {
+    log.error('CSV export error:', error.message)
+    return { success: false, reason: error.message }
+  }
+})
+
+/**
+ * Export data to Excel file
+ * Opens save dialog and writes XLSX file to user-selected location
+ *
+ * @param {Object[]} data - Array of row objects to export
+ * @param {string[]} columns - Column names in desired order
+ * @param {string} defaultFilename - Suggested filename for save dialog
+ * @returns {Promise<{success: boolean, filePath?: string, rowCount?: number, reason?: string}>}
+ */
+ipcMain.handle('export-to-excel', async (event, data, columns, defaultFilename) => {
+  log.info('Export to Excel requested:', { rows: data?.length, columns: columns?.length })
+
+  // Validate export parameters
+  const validation = validateExportParams(data, columns, MAX_EXPORT_ROWS)
+  if (!validation.valid) {
+    log.error('Excel export validation failed:', validation.error)
+    return { success: false, reason: validation.error }
+  }
+
+  // Show save dialog
+  const { filePath, canceled } = await dialog.showSaveDialog({
+    title: 'Export as Excel',
+    defaultPath: defaultFilename || 'export.xlsx',
+    filters: [
+      { name: 'Excel Files', extensions: ['xlsx'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  })
+
+  if (canceled || !filePath) {
+    log.info('Excel export canceled by user')
+    return { success: false, reason: 'canceled' }
+  }
+
+  try {
+    // Generate Excel buffer (async with exceljs)
+    const buffer = await generateExcel(data, columns)
+
+    // Write to file (async)
+    await fs.promises.writeFile(filePath, buffer)
+
+    log.info(`Excel exported successfully: ${filePath} (${data.length} rows)`)
+    return { success: true, filePath, rowCount: data.length }
+  } catch (error) {
+    log.error('Excel export error:', error.message)
+    return { success: false, reason: error.message }
+  }
 })

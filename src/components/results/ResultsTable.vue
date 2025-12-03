@@ -88,6 +88,84 @@
           />
         </v-btn>
 
+        <!-- Export menu button -->
+        <v-menu :close-on-content-click="true" location="bottom">
+          <template #activator="{ props }">
+            <v-btn
+              variant="text"
+              size="small"
+              v-bind="props"
+              :disabled="!exportComposable.canExport.value"
+            >
+              <v-icon start size="small">mdi-download</v-icon>
+              Export
+              <v-badge
+                v-if="exportComposable.exportBlocked.value"
+                color="error"
+                icon="mdi-alert"
+                inline
+              />
+              <v-badge
+                v-else-if="exportComposable.showWarning.value"
+                color="warning"
+                icon="mdi-alert"
+                inline
+              />
+            </v-btn>
+          </template>
+
+          <v-card min-width="280">
+            <v-card-title class="text-subtitle-2 py-2 d-flex align-center">
+              <v-icon size="small" class="mr-2">mdi-download</v-icon>
+              Export Data
+            </v-card-title>
+            <v-divider />
+
+            <!-- Row count info -->
+            <v-card-text class="py-2">
+              <div class="text-body-2 text-medium-emphasis">
+                {{ exportComposable.exportRowCount.value.toLocaleString() }} rows
+                <span v-if="exportComposable.exportBlocked.value" class="text-error">
+                  (exceeds {{ exportComposable.MAX_EXPORT_ROWS.toLocaleString() }} limit)
+                </span>
+                <span v-else-if="exportComposable.showWarning.value" class="text-warning">
+                  (large export)
+                </span>
+              </div>
+              <div v-if="exportComposable.exportBlocked.value" class="text-caption text-error mt-1">
+                Apply filters to reduce row count before exporting
+              </div>
+            </v-card-text>
+
+            <v-divider />
+
+            <!-- Export options -->
+            <v-list density="compact">
+              <v-list-item
+                :disabled="exportComposable.exportBlocked.value"
+                @click="exportComposable.exportToCSV"
+              >
+                <template #prepend>
+                  <v-icon size="small">mdi-file-delimited</v-icon>
+                </template>
+                <v-list-item-title>CSV (Comma Separated)</v-list-item-title>
+                <v-list-item-subtitle>Universal spreadsheet format</v-list-item-subtitle>
+              </v-list-item>
+
+              <v-list-item
+                :disabled="exportComposable.exportBlocked.value"
+                @click="exportComposable.exportToExcel"
+              >
+                <template #prepend>
+                  <v-icon size="small">mdi-microsoft-excel</v-icon>
+                </template>
+                <v-list-item-title>Excel Workbook (.xlsx)</v-list-item-title>
+                <v-list-item-subtitle>Microsoft Excel format</v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-menu>
+
         <!-- Clear results button (search mode only) -->
         <v-btn
           v-if="searchStore.isSearchMode"
@@ -482,6 +560,7 @@ import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
 import { useBrowse } from '@/composables/useBrowse'
+import { useExport } from '@/composables/useExport'
 import { SEARCH_CONFIG } from '@/config/search.config'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -490,6 +569,7 @@ const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
 const { viewDetails, truncateText, copyToClipboard } = useSearch()
 const { goToPage, setItemsPerPage, sortBy: browseSortBy, clearSort: browseClearSort } = useBrowse()
+const exportComposable = useExport()
 
 // Component state
 const showColumnManagement = ref(false)
