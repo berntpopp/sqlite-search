@@ -40,4 +40,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Get current database path (useful for E2E testing with pre-loaded database)
   getCurrentDatabase: () => ipcRenderer.invoke('get-current-database'),
   onDatabaseLoaded: callback => ipcRenderer.on('database-loaded', callback),
+
+  // Export operations
+  exportToCSV: (data, columns, filename) =>
+    ipcRenderer.invoke('export-to-csv', data, columns, filename),
+  exportToExcel: (data, columns, filename) =>
+    ipcRenderer.invoke('export-to-excel', data, columns, filename),
 })
