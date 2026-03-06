@@ -99,6 +99,12 @@
       "dist-electron/**/*",
       "package.json"
     ],
+    "extraFiles": [
+      {
+        "from": "dist-electron",
+        "to": "dist-electron"
+      }
+    ],
     "publish": {
       "provider": "github",
       "owner": "berntpopp",
