@@ -42,9 +42,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Rebuild native modules
-        run: pnpm rebuild
-
       - name: Build and publish
         run: pnpm run dist
         env:
