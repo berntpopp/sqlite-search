@@ -94,11 +94,19 @@
       "buildResources": "build",
       "output": "release"
     },
-    "asar": false,
     "files": [
-      "dist-electron/**/*",
-      "node_modules/**/*",
-      "package.json"
+      "!**/.vscode/*",
+      "!src/*",
+      "!electron/**/*",
+      "!tests/**/*",
+      "!public/*",
+      "!electron.vite.config.{js,mjs}",
+      "!{.eslintignore,.prettierrc.json,eslint.config.js}",
+      "!{.env,.env.*,.npmrc,pnpm-lock.yaml}",
+      "!{tsconfig.json,CLAUDE.md,README.md,LICENSE}"
+    ],
+    "asarUnpack": [
+      "node_modules/sqlite3/**/*"
     ],
     "publish": {
       "provider": "github",

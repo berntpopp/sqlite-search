@@ -53,11 +53,7 @@ jobs:
         run: pnpm run typecheck
 
       - name: Build Electron app (test build)
-        run: |
-          pnpm run build
-          mv pnpm-lock.yaml pnpm-lock.yaml.bak
-          node_modules/.bin/electron-builder
-          mv pnpm-lock.yaml.bak pnpm-lock.yaml
+        run: pnpm run dist
         env:
           # Disable code signing for test builds
           CSC_IDENTITY_AUTO_DISCOVERY: false
