@@ -94,12 +94,10 @@
       "buildResources": "build",
       "output": "release"
     },
+    "asar": false,
     "files": [
       "dist-electron/**/*",
       "package.json"
-    ],
-    "asarUnpack": [
-      "node_modules/sqlite3/**/*"
     ],
     "publish": {
       "provider": "github",
