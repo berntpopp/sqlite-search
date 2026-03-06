@@ -43,7 +43,11 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Build and publish
-        run: pnpm run dist
+        run: |
+          pnpm run build
+          mv pnpm-lock.yaml pnpm-lock.yaml.bak
+          node_modules/.bin/electron-builder
+          mv pnpm-lock.yaml.bak pnpm-lock.yaml
         env:
           # GitHub token for publishing releases
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

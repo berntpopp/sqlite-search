@@ -97,13 +97,8 @@
     "asar": false,
     "files": [
       "dist-electron/**/*",
+      "node_modules/**/*",
       "package.json"
-    ],
-    "extraFiles": [
-      {
-        "from": "dist-electron",
-        "to": "dist-electron"
-      }
     ],
     "publish": {
       "provider": "github",
