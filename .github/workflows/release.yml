@@ -42,9 +42,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Rebuild native modules
-        run: pnpm rebuild
-
       - name: Build and publish
         run: pnpm run dist
         env:
@@ -54,7 +51,7 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.os }}-artifacts
           path: |
