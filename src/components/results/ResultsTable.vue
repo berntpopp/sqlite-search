@@ -567,7 +567,7 @@ import { useSearch } from '@/composables/useSearch'
 import { useBrowse } from '@/composables/useBrowse'
 import { useExport } from '@/composables/useExport'
 import { SEARCH_CONFIG } from '@/config/search.config'
-import { highlightSearchTerms } from '@/utils/highlight.utils'
+import { highlightSearchTerms, sanitizeForHighlight } from '@/utils/highlight.utils'
 import { extractSearchWords, stripMarkupTags } from '@/utils/text.utils'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -586,6 +586,9 @@ function highlightedCell(value, maxLength = 60) {
   if (!value && value !== 0) return ''
   const cleaned = stripMarkupTags(String(value))
   const truncated = cleaned.length > maxLength ? `${cleaned.substring(0, maxLength)}...` : cleaned
+  if (!searchStore.hasSearched || searchStore.isBrowseMode) {
+    return sanitizeForHighlight(truncated)
+  }
   return highlightSearchTerms(truncated, searchWords.value)
 }
 const { goToPage, setItemsPerPage, sortBy: browseSortBy, clearSort: browseClearSort } = useBrowse()

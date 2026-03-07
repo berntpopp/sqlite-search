@@ -5,6 +5,7 @@ const mockAutoUpdater = {
   autoDownload: true,
   autoInstallOnAppQuit: false,
   on: vi.fn(),
+  removeAllListeners: vi.fn(),
   checkForUpdates: vi.fn().mockResolvedValue({}),
   downloadUpdate: vi.fn().mockResolvedValue(undefined),
   quitAndInstall: vi.fn(),
@@ -35,7 +36,11 @@ describe('updater', () => {
     vi.clearAllMocks()
     vi.useFakeTimers()
 
+    // Reset module-level initialized flag between tests
+    cleanupAutoUpdater()
+
     mockMainWindow = {
+      isDestroyed: vi.fn().mockReturnValue(false),
       webContents: {
         send: vi.fn(),
       },
@@ -187,13 +192,57 @@ describe('updater', () => {
     })
   })
 
+  describe('idempotency', () => {
+    it('should not register duplicate listeners on second call', () => {
+      setupAutoUpdater(mockMainWindow, mockLog)
+      const firstCallCount = mockAutoUpdater.on.mock.calls.length
+
+      setupAutoUpdater(mockMainWindow, mockLog)
+      expect(mockAutoUpdater.on.mock.calls.length).toBe(firstCallCount)
+    })
+
+    it('should update window reference on second call', () => {
+      setupAutoUpdater(mockMainWindow, mockLog)
+
+      const newWindow = {
+        isDestroyed: vi.fn().mockReturnValue(false),
+        webContents: { send: vi.fn() },
+      }
+      setupAutoUpdater(newWindow, mockLog)
+
+      // Trigger an event and verify it goes to the new window
+      const handler = mockAutoUpdater.on.mock.calls.find(
+        call => call[0] === 'update-not-available'
+      )[1]
+      handler()
+
+      expect(newWindow.webContents.send).toHaveBeenCalled()
+      expect(newWindow.webContents.send.mock.calls[0][0]).toBe('update-not-available')
+      expect(mockMainWindow.webContents.send).not.toHaveBeenCalled()
+    })
+  })
+
   describe('cleanupAutoUpdater', () => {
-    it('should remove all IPC handlers', () => {
+    it('should remove all IPC handlers and listeners', () => {
+      setupAutoUpdater(mockMainWindow, mockLog)
+      vi.clearAllMocks()
+
       cleanupAutoUpdater()
 
       expect(mockIpcMain.removeHandler).toHaveBeenCalledWith('check-for-updates')
       expect(mockIpcMain.removeHandler).toHaveBeenCalledWith('download-update')
       expect(mockIpcMain.removeHandler).toHaveBeenCalledWith('install-update')
+      expect(mockAutoUpdater.removeAllListeners).toHaveBeenCalled()
+    })
+
+    it('should allow re-initialization after cleanup', () => {
+      setupAutoUpdater(mockMainWindow, mockLog)
+      cleanupAutoUpdater()
+      vi.clearAllMocks()
+
+      setupAutoUpdater(mockMainWindow, mockLog)
+      expect(mockAutoUpdater.on).toHaveBeenCalled()
+      expect(mockIpcMain.handle).toHaveBeenCalled()
     })
   })
 })

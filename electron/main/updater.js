@@ -5,8 +5,13 @@ import { app, ipcMain } from 'electron'
 import pkg from 'electron-updater'
 const { autoUpdater } = pkg
 
+// Module-level state to prevent duplicate setup
+let initialized = false
+let currentWindow = null
+
 /**
- * Set up auto-updater with IPC bridge to renderer process
+ * Set up auto-updater with IPC bridge to renderer process.
+ * Idempotent: safe to call multiple times (e.g., macOS window re-creation).
  * @param {import('electron').BrowserWindow} mainWindow - Main application window
  * @param {object} log - Logger instance
  */
@@ -16,17 +21,33 @@ export function setupAutoUpdater(mainWindow, log) {
     return
   }
 
+  // Update the window reference (may change on macOS re-activate)
+  currentWindow = mainWindow
+
+  // Only register listeners and handlers once
+  if (initialized) {
+    log.info('Auto-updater already initialized, updated window reference')
+    return
+  }
+  initialized = true
+
   autoUpdater.autoDownload = false
   autoUpdater.autoInstallOnAppQuit = true
 
+  function sendToRenderer(channel, data) {
+    if (currentWindow && !currentWindow.isDestroyed()) {
+      currentWindow.webContents.send(channel, data)
+    }
+  }
+
   autoUpdater.on('checking-for-update', () => {
     log.info('Checking for update...')
-    mainWindow.webContents.send('update-checking')
+    sendToRenderer('update-checking')
   })
 
   autoUpdater.on('update-available', info => {
     log.info('Update available:', info.version)
-    mainWindow.webContents.send('update-available', {
+    sendToRenderer('update-available', {
       version: info.version,
       releaseDate: info.releaseDate,
       releaseNotes: info.releaseNotes,
@@ -35,12 +56,12 @@ export function setupAutoUpdater(mainWindow, log) {
 
   autoUpdater.on('update-not-available', () => {
     log.info('No update available')
-    mainWindow.webContents.send('update-not-available')
+    sendToRenderer('update-not-available')
   })
 
   autoUpdater.on('download-progress', progress => {
     log.info(`Download progress: ${progress.percent.toFixed(1)}%`)
-    mainWindow.webContents.send('update-download-progress', {
+    sendToRenderer('update-download-progress', {
       percent: progress.percent,
       transferred: progress.transferred,
       total: progress.total,
@@ -49,14 +70,14 @@ export function setupAutoUpdater(mainWindow, log) {
 
   autoUpdater.on('update-downloaded', info => {
     log.info('Update downloaded:', info.version)
-    mainWindow.webContents.send('update-downloaded', {
+    sendToRenderer('update-downloaded', {
       version: info.version,
     })
   })
 
   autoUpdater.on('error', err => {
     log.error('Auto-updater error:', err.message)
-    mainWindow.webContents.send('update-error', err.message)
+    sendToRenderer('update-error', err.message)
   })
 
   ipcMain.handle('check-for-updates', async () => {
@@ -91,10 +112,13 @@ export function setupAutoUpdater(mainWindow, log) {
 }
 
 /**
- * Clean up auto-updater IPC handlers
+ * Clean up auto-updater IPC handlers and listeners
  */
 export function cleanupAutoUpdater() {
   ipcMain.removeHandler('check-for-updates')
   ipcMain.removeHandler('download-update')
   ipcMain.removeHandler('install-update')
+  autoUpdater.removeAllListeners()
+  initialized = false
+  currentWindow = null
 }

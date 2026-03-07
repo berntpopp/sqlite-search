@@ -174,6 +174,7 @@ async function handleUpdateAction() {
     try {
       await window.electronAPI.downloadUpdate()
     } catch {
+      updateStore.setError('Failed to download update')
       uiStore.showError('Failed to download update')
     }
   }
