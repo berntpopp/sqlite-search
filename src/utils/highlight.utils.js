@@ -48,6 +48,7 @@ export function highlightSearchTerms(text, searchWords) {
   const sorted = [...searchWords].sort((a, b) => b.length - a.length)
   const pattern = sorted.map(w => escapeRegex(w)).join('|')
 
+  // eslint-disable-next-line security/detect-non-literal-regexp -- pattern is escaped via escapeRegex()
   const regex = new RegExp(`(${pattern})`, 'gi')
   return sanitized.replace(regex, '<mark>$1</mark>')
 }

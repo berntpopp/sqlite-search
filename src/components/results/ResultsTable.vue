@@ -286,6 +286,7 @@
         :key="`browse-cell-${column}`"
         #[`item.${column}`]="{ value }"
       >
+        <!-- eslint-disable-next-line vue/no-v-html -- sanitized highlight output -->
         <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 
@@ -486,6 +487,7 @@
         :key="column"
         #[`item.${column}`]="{ value }"
       >
+        <!-- eslint-disable-next-line vue/no-v-html -- sanitized highlight output -->
         <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 

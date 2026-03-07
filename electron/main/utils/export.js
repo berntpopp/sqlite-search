@@ -79,6 +79,7 @@ export function generateCSV(data, columns, options = {}) {
 
     if (needsQuoting) {
       // Escape internal quotes by doubling them
+      // eslint-disable-next-line security/detect-non-literal-regexp -- quoteChar is from trusted config, not user input
       const escaped = str.replace(new RegExp(quoteChar, 'g'), escapeChar + quoteChar)
       return quoteChar + escaped + quoteChar
     }

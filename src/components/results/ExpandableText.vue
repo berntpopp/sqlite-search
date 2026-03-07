@@ -1,5 +1,6 @@
 <template>
   <div class="expandable-text">
+    <!-- eslint-disable vue/no-v-html -->
     <div
       ref="textRef"
       class="text-body-2 value-text"
@@ -7,6 +8,7 @@
       :style="collapsedStyle"
       v-html="displayHtml"
     ></div>
+    <!-- eslint-enable vue/no-v-html -->
     <v-btn
       v-if="shouldTruncate"
       variant="text"

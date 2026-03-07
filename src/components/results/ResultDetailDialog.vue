@@ -86,11 +86,13 @@
                     :html="highlightedValue(column.value)"
                     :raw-length="String(column.value || '').length"
                   />
+                  <!-- eslint-disable vue/no-v-html -->
                   <div
                     v-else
                     class="text-body-2 value-text"
                     v-html="highlightedValue(column.value)"
                   ></div>
+                  <!-- eslint-enable vue/no-v-html -->
                 </div>
               </td>
               <!-- Copy button -->
