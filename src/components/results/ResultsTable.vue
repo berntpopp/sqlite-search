@@ -1,6 +1,6 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and browse mode support -->
-  <v-card v-if="shouldShowTable" elevation="1" class="results-card" data-testid="results-card">
+  <v-card v-if="shouldShowTable" ref="resultsCardRef" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -552,7 +552,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
@@ -585,6 +585,46 @@ const exportComposable = useExport()
 
 // Component state
 const showColumnManagement = ref(false)
+
+// Horizontal scroll detection for fade hint
+const resultsCardRef = ref(null)
+
+function checkHorizontalScroll() {
+  const card = resultsCardRef.value?.$el || resultsCardRef.value
+  if (!card) return
+  const wrapper = card.querySelector('.v-table__wrapper')
+  if (!wrapper) return
+  const hasScroll = wrapper.scrollWidth > wrapper.clientWidth
+  card.classList.toggle('has-horizontal-scroll', hasScroll)
+}
+
+let resizeObserver = null
+
+watch(
+  () => [
+    searchStore.filteredResults.length,
+    searchStore.browseData.rows.length,
+    databaseStore.visibleColumns.length,
+  ],
+  async () => {
+    await nextTick()
+    checkHorizontalScroll()
+  },
+)
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(() => checkHorizontalScroll())
+  const card = resultsCardRef.value?.$el || resultsCardRef.value
+  if (card) {
+    const wrapper = card.querySelector('.v-table__wrapper')
+    if (wrapper) resizeObserver.observe(wrapper)
+  }
+})
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect()
+})
+
 const currentPage = ref(1)
 const itemsPerPage = ref(25)
 const itemsPerPageOptions = [10, 25, 50, 100]
@@ -813,11 +853,39 @@ function copyRow(item) {
 <style scoped>
 /* Compact table styling */
 .results-card {
+  position: relative;
   margin-top: 16px;
+}
+
+.results-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, rgba(var(--v-theme-surface), 0.8));
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.results-card.has-horizontal-scroll::after {
+  opacity: 1;
 }
 
 .results-table {
   font-size: 0.875rem;
+}
+
+/* Move horizontal scrollbar to top using double-flip technique */
+.results-table :deep(.v-table__wrapper) {
+  transform: scaleY(-1);
+}
+
+.results-table :deep(.v-table__wrapper > table) {
+  transform: scaleY(-1);
 }
 
 /* Top pagination controls styling */
