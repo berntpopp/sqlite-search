@@ -1,5 +1,6 @@
 // src/composables/useDatabase.js
 import { useDatabaseStore } from '@/stores/database.store'
+import { useSearchStore } from '@/stores/search.store'
 import { useUIStore } from '@/stores/ui.store'
 
 /**
@@ -9,6 +10,7 @@ import { useUIStore } from '@/stores/ui.store'
  */
 export function useDatabase() {
   const databaseStore = useDatabaseStore()
+  const searchStore = useSearchStore()
   const uiStore = useUIStore()
 
   /**
@@ -23,8 +25,9 @@ export function useDatabase() {
         // Update store
         databaseStore.setPath(filePath)
 
-        // Reset table/column selections
+        // Reset table/column selections and search state
         databaseStore.clearTableSelection()
+        searchStore.reset()
 
         // Change database in backend (no response expected)
         window.electronAPI.changeDatabase(filePath)
@@ -58,6 +61,7 @@ export function useDatabase() {
   function selectTable(tableName) {
     try {
       databaseStore.selectTable(tableName)
+      searchStore.reset()
       window.electronAPI.getColumns(tableName)
     } catch {
       uiStore.showError('Failed to select table')
