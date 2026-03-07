@@ -301,6 +301,9 @@
       <template #no-data>
         <span></span>
       </template>
+
+      <!-- Hide default footer - using custom top pagination only -->
+      <template #bottom></template>
     </v-data-table-server>
 
     <!-- ====================================== -->
@@ -498,6 +501,9 @@
       <template #no-data>
         <span></span>
       </template>
+
+      <!-- Hide default footer - using custom top pagination only -->
+      <template #bottom></template>
     </v-data-table>
 
     <!-- Empty state - OUTSIDE table to avoid horizontal scroll issues -->
@@ -896,11 +902,6 @@ function copyRow(item) {
 :deep(.v-data-table__th) {
   font-size: 0.875rem !important;
   font-weight: 600;
-}
-
-/* Compact pagination */
-:deep(.v-data-table-footer) {
-  padding: 8px 16px;
 }
 
 /* Filter menu card styling */
