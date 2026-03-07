@@ -153,6 +153,16 @@ function initSortable() {
     chosenClass: 'sortable-chosen',
     dragClass: 'sortable-drag',
     onEnd(evt) {
+      // Revert Sortable's DOM manipulation — let Vue re-render from data
+      const { from, item, oldIndex } = evt
+      from.removeChild(item)
+      if (oldIndex < from.children.length) {
+        from.insertBefore(item, from.children[oldIndex])
+      } else {
+        from.appendChild(item)
+      }
+
+      // Now update the data — Vue handles DOM reconciliation
       const newOrder = [...effectiveColumnOrder.value]
       const [moved] = newOrder.splice(evt.oldIndex, 1)
       newOrder.splice(evt.newIndex, 0, moved)

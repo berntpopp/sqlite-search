@@ -596,6 +596,7 @@ const showColumnManagement = ref(false)
 const resultsCardRef = ref(null)
 
 let resizeObserver = null
+let scrollTarget = null
 
 function checkHorizontalScroll() {
   const card = resultsCardRef.value?.$el || resultsCardRef.value
@@ -614,10 +615,15 @@ function setupResizeObserver() {
   if (!card) return
   const wrapper = card.querySelector('.v-table__wrapper')
   if (!wrapper) return
+
+  // Clean up previous listeners
   if (resizeObserver) resizeObserver.disconnect()
+  if (scrollTarget) scrollTarget.removeEventListener('scroll', checkHorizontalScroll)
+
   resizeObserver = new ResizeObserver(() => checkHorizontalScroll())
   resizeObserver.observe(wrapper)
   wrapper.addEventListener('scroll', checkHorizontalScroll, { passive: true })
+  scrollTarget = wrapper
 }
 
 watch(
@@ -640,6 +646,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect()
+  if (scrollTarget) scrollTarget.removeEventListener('scroll', checkHorizontalScroll)
 })
 
 const currentPage = ref(1)
