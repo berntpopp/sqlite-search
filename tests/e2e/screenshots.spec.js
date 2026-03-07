@@ -143,7 +143,11 @@ test.describe('Complete UI Screenshot Tour', () => {
 
   test('02 - Header Controls', async ({ window }) => {
     // Database button
-    await screenshot(window, '02a-header-database-btn', 'Database selection button showing filename')
+    await screenshot(
+      window,
+      '02a-header-database-btn',
+      'Database selection button showing filename'
+    )
 
     // History button (hover)
     const historyBtn = window.locator('button:has(.mdi-history)').first()
@@ -162,7 +166,9 @@ test.describe('Complete UI Screenshot Tour', () => {
     }
 
     // Theme toggle
-    const themeBtn = window.locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)').first()
+    const themeBtn = window
+      .locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)')
+      .first()
     if (await themeBtn.isVisible().catch(() => false)) {
       await themeBtn.hover()
       await window.waitForTimeout(500)
@@ -207,7 +213,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await item.isVisible().catch(() => false)) {
         await item.click()
         await window.waitForTimeout(500)
-        await screenshot(window, `03-faq-${i + 1}-${itemTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}`, `FAQ: ${itemTitle}`)
+        await screenshot(
+          window,
+          `03-faq-${i + 1}-${itemTitle.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+          `FAQ: ${itemTitle}`
+        )
       }
     }
 
@@ -222,7 +232,9 @@ test.describe('Complete UI Screenshot Tour', () => {
 
   test('04 - Dark Mode Theme', async ({ window }) => {
     // Toggle to dark mode
-    const themeBtn = window.locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)').first()
+    const themeBtn = window
+      .locator('button:has(.mdi-weather-sunny), button:has(.mdi-weather-night)')
+      .first()
     if (await themeBtn.isVisible().catch(() => false)) {
       await themeBtn.click()
       await window.waitForTimeout(800)
@@ -255,7 +267,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await columnsBtn.isVisible().catch(() => false)) {
         await columnsBtn.click()
         await window.waitForTimeout(800)
-        await screenshot(window, '04d-dark-mode-column-mgmt', 'Column management dialog in dark mode')
+        await screenshot(
+          window,
+          '04d-dark-mode-column-mgmt',
+          'Column management dialog in dark mode'
+        )
         await window.keyboard.press('Escape')
         await window.waitForTimeout(500)
       }
@@ -287,7 +303,11 @@ test.describe('Complete UI Screenshot Tour', () => {
     if (await tableSelector.isVisible().catch(() => false)) {
       await tableSelector.click()
       await window.waitForTimeout(500)
-      await screenshot(window, '05b-table-selector-open', 'Table selector dropdown open (genes_fts, variants_fts)')
+      await screenshot(
+        window,
+        '05b-table-selector-open',
+        'Table selector dropdown open (genes_fts, variants_fts)'
+      )
 
       // Select genes_fts
       const genesTable = window.locator('.v-list-item:has-text("genes_fts")')
@@ -304,7 +324,11 @@ test.describe('Complete UI Screenshot Tour', () => {
 
     const columnSelector = window.locator('[data-testid="column-selector"]')
     if (await columnSelector.isVisible().catch(() => false)) {
-      await screenshot(window, '06a-column-selector-filled', 'Column selector with columns auto-selected')
+      await screenshot(
+        window,
+        '06a-column-selector-filled',
+        'Column selector with columns auto-selected'
+      )
 
       await columnSelector.click()
       await window.waitForTimeout(500)
@@ -414,9 +438,13 @@ test.describe('Complete UI Screenshot Tour', () => {
       // Scroll down to show more fields if available
       const dialogContent = window.locator('.v-dialog .v-card-text')
       if (await dialogContent.isVisible().catch(() => false)) {
-        await dialogContent.evaluate(el => el.scrollTop = 200)
+        await dialogContent.evaluate(el => (el.scrollTop = 200))
         await window.waitForTimeout(300)
-        await screenshot(window, '10b-row-detail-scrolled', 'Row detail dialog scrolled to show more fields')
+        await screenshot(
+          window,
+          '10b-row-detail-scrolled',
+          'Row detail dialog scrolled to show more fields'
+        )
       }
 
       // Hover copy field button
@@ -424,7 +452,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await copyFieldBtn.isVisible().catch(() => false)) {
         await copyFieldBtn.hover()
         await window.waitForTimeout(500)
-        await screenshot(window, '10c-row-detail-copy-hover', 'Row detail dialog with copy field tooltip')
+        await screenshot(
+          window,
+          '10c-row-detail-copy-hover',
+          'Row detail dialog with copy field tooltip'
+        )
       }
 
       // Show Copy All button
@@ -432,7 +464,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await copyAllBtn.isVisible().catch(() => false)) {
         await copyAllBtn.hover()
         await window.waitForTimeout(500)
-        await screenshot(window, '10d-row-detail-copy-all', 'Row detail dialog Copy All as JSON button')
+        await screenshot(
+          window,
+          '10d-row-detail-copy-all',
+          'Row detail dialog Copy All as JSON button'
+        )
       }
 
       await window.keyboard.press('Escape')
@@ -445,7 +481,9 @@ test.describe('Complete UI Screenshot Tour', () => {
     await performSearch(window, 'BRCA1')
 
     // Click copy on first row
-    const copyBtn = window.locator('[data-testid="results-table"] button:has(.mdi-content-copy)').first()
+    const copyBtn = window
+      .locator('[data-testid="results-table"] button:has(.mdi-content-copy)')
+      .first()
     if (await copyBtn.isVisible().catch(() => false)) {
       await copyBtn.click()
       await window.waitForTimeout(800)
@@ -466,7 +504,11 @@ test.describe('Complete UI Screenshot Tour', () => {
     if (await columnsBtn.isVisible().catch(() => false)) {
       await columnsBtn.click()
       await window.waitForTimeout(800)
-      await screenshot(window, '11b-column-management-dialog', 'Column management dialog showing all columns')
+      await screenshot(
+        window,
+        '11b-column-management-dialog',
+        'Column management dialog showing all columns'
+      )
 
       // Hover Show All button
       const showAllBtn = window.locator('.v-dialog button:has-text("Show All")')
@@ -481,7 +523,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await firstCheckbox.isVisible().catch(() => false)) {
         await firstCheckbox.click()
         await window.waitForTimeout(500)
-        await screenshot(window, '11d-column-mgmt-hidden', 'Column management with one column hidden')
+        await screenshot(
+          window,
+          '11d-column-mgmt-hidden',
+          'Column management with one column hidden'
+        )
 
         // Re-enable it
         await firstCheckbox.click()
@@ -493,13 +539,17 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await moveDownBtn.isVisible().catch(() => false)) {
         await moveDownBtn.hover()
         await window.waitForTimeout(500)
-        await screenshot(window, '11e-column-mgmt-reorder', 'Column management reorder buttons with tooltip')
+        await screenshot(
+          window,
+          '11e-column-mgmt-reorder',
+          'Column management reorder buttons with tooltip'
+        )
       }
 
       // Scroll column list if many columns
       const columnList = window.locator('.v-dialog .column-list')
       if (await columnList.isVisible().catch(() => false)) {
-        await columnList.evaluate(el => el.scrollTop = 100)
+        await columnList.evaluate(el => (el.scrollTop = 100))
         await window.waitForTimeout(300)
         await screenshot(window, '11f-column-mgmt-scrolled', 'Column management dialog scrolled')
       }
@@ -525,7 +575,9 @@ test.describe('Complete UI Screenshot Tour', () => {
     await performSearch(window, 'BRCA')
 
     // Click filter icon on first column header
-    const filterBtn = window.locator('[data-testid="results-table"] .v-data-table__th button:has(.mdi-filter-outline)').first()
+    const filterBtn = window
+      .locator('[data-testid="results-table"] .v-data-table__th button:has(.mdi-filter-outline)')
+      .first()
     if (await filterBtn.isVisible().catch(() => false)) {
       await filterBtn.click()
       await window.waitForTimeout(500)
@@ -536,7 +588,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await filterInput.isVisible().catch(() => false)) {
         await filterInput.fill('BRCA1')
         await window.waitForTimeout(500)
-        await screenshot(window, '11h-column-filter-active', 'Column filter with active filter value')
+        await screenshot(
+          window,
+          '11h-column-filter-active',
+          'Column filter with active filter value'
+        )
       }
 
       // Close filter popup
@@ -544,10 +600,16 @@ test.describe('Complete UI Screenshot Tour', () => {
       await window.waitForTimeout(500)
 
       // Show filtered results
-      await screenshot(window, '11i-column-filter-results', 'Results table with active column filter')
+      await screenshot(
+        window,
+        '11i-column-filter-results',
+        'Results table with active column filter'
+      )
 
       // Clear filter button if visible
-      const clearFilterBtn = window.locator('[data-testid="results-card"] button:has-text("Clear Filters")')
+      const clearFilterBtn = window.locator(
+        '[data-testid="results-card"] button:has-text("Clear Filters")'
+      )
       if (await clearFilterBtn.isVisible().catch(() => false)) {
         await screenshot(window, '11j-clear-filter-btn', 'Clear Filters button visible in header')
       }
@@ -601,7 +663,11 @@ test.describe('Complete UI Screenshot Tour', () => {
       if (await restoreBtn.isVisible().catch(() => false)) {
         await restoreBtn.hover()
         await window.waitForTimeout(500)
-        await screenshot(window, '12d-history-restore-hover', 'History entry with Restore button hover')
+        await screenshot(
+          window,
+          '12d-history-restore-hover',
+          'History entry with Restore button hover'
+        )
       }
 
       // Close drawer
@@ -662,8 +728,8 @@ test.describe('Complete UI Screenshot Tour', () => {
 
 test.afterAll(async () => {
   console.log('')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
   console.log('📸 Screenshot generation complete!')
   console.log(`   Location: ${SCREENSHOTS_DIR}`)
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
 })

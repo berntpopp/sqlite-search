@@ -96,11 +96,15 @@
 
                     <!-- Meta: Results + Table -->
                     <div class="d-flex align-center text-caption text-medium-emphasis mb-2">
-                      <span>{{ entry.resultCount }} {{ entry.resultCount === 1 ? 'result' : 'results' }}</span>
+                      <span
+                        >{{ entry.resultCount }}
+                        {{ entry.resultCount === 1 ? 'result' : 'results' }}</span
+                      >
                       <span class="mx-1">&bull;</span>
                       <span>{{ entry.table }}</span>
                       <span v-if="entry.columns.length > 0" class="ml-1">
-                        ({{ entry.columns.length }} {{ entry.columns.length === 1 ? 'col' : 'cols' }})
+                        ({{ entry.columns.length }}
+                        {{ entry.columns.length === 1 ? 'col' : 'cols' }})
                       </span>
                     </div>
 
@@ -175,11 +179,15 @@
 
                     <!-- Meta: Results + Table -->
                     <div class="d-flex align-center text-caption text-medium-emphasis mb-2">
-                      <span>{{ entry.resultCount }} {{ entry.resultCount === 1 ? 'result' : 'results' }}</span>
+                      <span
+                        >{{ entry.resultCount }}
+                        {{ entry.resultCount === 1 ? 'result' : 'results' }}</span
+                      >
                       <span class="mx-1">&bull;</span>
                       <span>{{ entry.table }}</span>
                       <span v-if="entry.columns.length > 0" class="ml-1">
-                        ({{ entry.columns.length }} {{ entry.columns.length === 1 ? 'col' : 'cols' }})
+                        ({{ entry.columns.length }}
+                        {{ entry.columns.length === 1 ? 'col' : 'cols' }})
                       </span>
                     </div>
 
@@ -310,7 +318,7 @@ function reactivateSearch(entry) {
   // Watch for columns to be loaded via IPC, then restore selection
   const stopWatch = watch(
     () => databaseStore.columnNames,
-    (columnNames) => {
+    columnNames => {
       // Wait until columns are actually loaded
       if (columnNames.length === 0 || restoreCompleted) return
 

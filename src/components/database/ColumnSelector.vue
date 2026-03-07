@@ -23,30 +23,13 @@
     <!-- Quick action buttons for column selection -->
     <template #prepend-item>
       <v-list-item class="px-2">
-        <v-btn
-          size="small"
-          variant="text"
-          color="primary"
-          @click="selectTextOnly"
-        >
+        <v-btn size="small" variant="text" color="primary" @click="selectTextOnly">
           TEXT Only
         </v-btn>
-        <v-btn
-          size="small"
-          variant="text"
-          color="primary"
-          class="ml-2"
-          @click="selectFirstFive"
-        >
+        <v-btn size="small" variant="text" color="primary" class="ml-2" @click="selectFirstFive">
           First 5
         </v-btn>
-        <v-btn
-          size="small"
-          variant="text"
-          color="primary"
-          class="ml-2"
-          @click="selectAll"
-        >
+        <v-btn size="small" variant="text" color="primary" class="ml-2" @click="selectAll">
           All
         </v-btn>
       </v-list-item>
@@ -57,11 +40,7 @@
     <template #item="{ props, item }">
       <v-list-item v-bind="props">
         <template #append>
-          <v-chip
-            size="x-small"
-            :color="getTypeColor(item.raw.type)"
-            variant="flat"
-          >
+          <v-chip size="x-small" :color="getTypeColor(item.raw.type)" variant="flat">
             {{ item.raw.type || 'TEXT' }}
           </v-chip>
         </template>
@@ -73,9 +52,7 @@
       <!-- Only render once (index 0) to avoid duplicate content -->
       <span v-if="index === 0" class="text-body-2">
         <strong>{{ selectedColumns.length }}</strong>
-        <span class="text-medium-emphasis">
-          of {{ totalColumnCount }} columns
-        </span>
+        <span class="text-medium-emphasis"> of {{ totalColumnCount }} columns </span>
       </span>
     </template>
   </v-autocomplete>
@@ -127,7 +104,12 @@ const columnItems = computed(() => {
  */
 function getTypeColor(type) {
   const upperType = (type || '').toUpperCase()
-  if (!upperType || upperType === 'TEXT' || upperType.startsWith('VARCHAR') || upperType.startsWith('CHAR')) {
+  if (
+    !upperType ||
+    upperType === 'TEXT' ||
+    upperType.startsWith('VARCHAR') ||
+    upperType.startsWith('CHAR')
+  ) {
     return 'success'
   }
   if (upperType === 'INTEGER' || upperType === 'INT') {
@@ -187,7 +169,10 @@ function selectTextOnly() {
  */
 function selectFirstFive() {
   const limit = SEARCH_CONFIG.DEFAULT_COLUMN_COUNT
-  const firstFive = databaseStore.columnNames.slice(0, Math.min(databaseStore.columnNames.length, limit))
+  const firstFive = databaseStore.columnNames.slice(
+    0,
+    Math.min(databaseStore.columnNames.length, limit)
+  )
   databaseStore.selectColumns(firstFive)
   searchStore.clearResults()
 }

@@ -38,13 +38,7 @@ export function useBrowse() {
       ? { column: searchStore.browseSort.column, direction: searchStore.browseSort.direction }
       : null
 
-    window.electronAPI.browseTable(
-      databaseStore.selectedTable,
-      columns,
-      page,
-      itemsPerPage,
-      sort
-    )
+    window.electronAPI.browseTable(databaseStore.selectedTable, columns, page, itemsPerPage, sort)
   }
 
   /**

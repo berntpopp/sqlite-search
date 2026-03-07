@@ -64,7 +64,9 @@
         </v-row>
 
         <!-- Results table or empty state (search mode or browse mode) -->
-        <ResultsTable v-if="searchStore.hasResults || searchStore.hasSearched || searchStore.isBrowseMode" />
+        <ResultsTable
+          v-if="searchStore.hasResults || searchStore.hasSearched || searchStore.isBrowseMode"
+        />
 
         <!-- Ready to search empty state -->
         <EmptyState
@@ -93,6 +95,7 @@ import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
 import { useUIStore } from '@/stores/ui.store'
 import { useHistoryStore } from '@/stores/history.store'
+import { useUpdateStore } from '@/stores/update.store'
 import { useDatabase } from '@/composables/useDatabase'
 import { useTheme } from '@/composables/useTheme'
 
@@ -113,6 +116,7 @@ const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
 const uiStore = useUIStore()
 const historyStore = useHistoryStore()
+const updateStore = useUpdateStore()
 const { selectDatabase } = useDatabase()
 const { applyTheme } = useTheme()
 
@@ -270,6 +274,38 @@ function setupIPCListeners() {
     // Silently ignore row count errors - non-critical functionality
   }
   window.electronAPI.onTableRowCountError(onTableRowCountErrorHandler)
+
+  // ========================================
+  // AUTO-UPDATE IPC LISTENERS
+  // ========================================
+
+  if (window.electronAPI.onUpdateChecking) {
+    window.electronAPI.onUpdateChecking(() => {
+      updateStore.setChecking()
+    })
+
+    window.electronAPI.onUpdateAvailable((_event, info) => {
+      updateStore.setAvailable(info)
+      uiStore.showInfo(`Update available: v${info.version}`)
+    })
+
+    window.electronAPI.onUpdateNotAvailable(() => {
+      updateStore.setNotAvailable()
+    })
+
+    window.electronAPI.onUpdateDownloadProgress((_event, progress) => {
+      updateStore.setProgress(progress.percent)
+    })
+
+    window.electronAPI.onUpdateDownloaded((_event, info) => {
+      updateStore.setDownloaded(info)
+      uiStore.showSuccess(`Update v${info.version} ready to install`)
+    })
+
+    window.electronAPI.onUpdateError((_event, message) => {
+      updateStore.setError(message)
+    })
+  }
 }
 
 /**

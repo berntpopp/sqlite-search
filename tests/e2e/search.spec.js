@@ -231,7 +231,10 @@ test.describe('FTS5 Boolean Operators', () => {
     expect(hasError).toBe(false)
   })
 
-  test('should handle terms with special characters (periods)', async ({ window, takeScreenshot }) => {
+  test('should handle terms with special characters (periods)', async ({
+    window,
+    takeScreenshot,
+  }) => {
     await window.waitForTimeout(2000)
 
     const searchInput = window.locator('[data-testid="search-input"]')

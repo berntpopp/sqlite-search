@@ -130,9 +130,21 @@
       "content": {
         "intro": "Customize the application to your preferences:",
         "options": [
-          { "icon": "mdi-weather-sunny", "name": "Theme Toggle", "description": "Switch between light and dark mode" },
-          { "icon": "mdi-format-text", "name": "Auto-select TEXT", "description": "Automatically select TEXT columns for searching" },
-          { "icon": "mdi-refresh", "name": "Reset State", "description": "Clear all selections and return to initial state" }
+          {
+            "icon": "mdi-weather-sunny",
+            "name": "Theme Toggle",
+            "description": "Switch between light and dark mode"
+          },
+          {
+            "icon": "mdi-format-text",
+            "name": "Auto-select TEXT",
+            "description": "Automatically select TEXT columns for searching"
+          },
+          {
+            "icon": "mdi-refresh",
+            "name": "Reset State",
+            "description": "Clear all selections and return to initial state"
+          }
         ],
         "persistence": "All preferences are saved automatically and restored on next launch."
       }
@@ -145,10 +157,22 @@
       "content": {
         "intro": "Common issues and solutions:",
         "issues": [
-          { "problem": "No tables appear", "solution": "Ensure your database contains FTS5 virtual tables, not regular tables" },
-          { "problem": "No search results", "solution": "Try simpler terms, use wildcards (*), or check column selection" },
-          { "problem": "Syntax error", "solution": "Check FTS5 syntax - special characters may need quoting" },
-          { "problem": "App is slow", "solution": "Large result sets take time - try narrowing your search" }
+          {
+            "problem": "No tables appear",
+            "solution": "Ensure your database contains FTS5 virtual tables, not regular tables"
+          },
+          {
+            "problem": "No search results",
+            "solution": "Try simpler terms, use wildcards (*), or check column selection"
+          },
+          {
+            "problem": "Syntax error",
+            "solution": "Check FTS5 syntax - special characters may need quoting"
+          },
+          {
+            "problem": "App is slow",
+            "solution": "Large result sets take time - try narrowing your search"
+          }
         ]
       }
     }

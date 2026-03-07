@@ -1,6 +1,14 @@
 <template>
-  <div class="empty-state" :class="[`empty-state--${variant}`, { 'empty-state--compact': compact }]">
-    <v-icon :icon="icon" :size="compact ? 48 : 64" :color="iconColor" class="empty-state__icon"></v-icon>
+  <div
+    class="empty-state"
+    :class="[`empty-state--${variant}`, { 'empty-state--compact': compact }]"
+  >
+    <v-icon
+      :icon="icon"
+      :size="compact ? 48 : 64"
+      :color="iconColor"
+      class="empty-state__icon"
+    ></v-icon>
 
     <h3 class="empty-state__title text-h6">{{ title }}</h3>
 
@@ -69,62 +77,66 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'default',
-    validator: v => ['default', 'no-results', 'error', 'ready'].includes(v)
+    validator: v => ['default', 'no-results', 'error', 'ready'].includes(v),
   },
   icon: {
     type: String,
-    default: 'mdi-magnify'
+    default: 'mdi-magnify',
   },
   title: {
     type: String,
-    required: true
+    required: true,
   },
   subtitle: {
     type: String,
-    default: ''
+    default: '',
   },
   suggestions: {
     type: Array,
-    default: () => []
+    default: () => [],
   },
   suggestionsTitle: {
     type: String,
-    default: 'Suggestions:'
+    default: 'Suggestions:',
   },
   showSyntaxHints: {
     type: Boolean,
-    default: false
+    default: false,
   },
   primaryAction: {
     type: String,
-    default: ''
+    default: '',
   },
   primaryActionIcon: {
     type: String,
-    default: ''
+    default: '',
   },
   primaryActionColor: {
     type: String,
-    default: 'primary'
+    default: 'primary',
   },
   secondaryAction: {
     type: String,
-    default: ''
+    default: '',
   },
   compact: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 })
 
 defineEmits(['primary-action', 'secondary-action', 'hint-click'])
 
 const iconColor = computed(() => {
   switch (props.variant) {
-    case 'no-results': return 'warning'
-    case 'error': return 'error'
-    case 'ready': return 'primary'
-    default: return 'grey'
+    case 'no-results':
+      return 'warning'
+    case 'error':
+      return 'error'
+    case 'ready':
+      return 'primary'
+    default:
+      return 'grey'
   }
 })
 
@@ -133,7 +145,7 @@ const syntaxHints = [
   { syntax: 'OR', label: 'either term' },
   { syntax: 'NOT', label: 'exclude' },
   { syntax: '*', label: 'wildcard' },
-  { syntax: '"..."', label: 'phrase' }
+  { syntax: '"..."', label: 'phrase' },
 ]
 </script>
 

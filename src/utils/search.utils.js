@@ -116,7 +116,5 @@ export function truncateText(text, maxLength = 50) {
   if (!text) return ''
 
   const str = String(text)
-  return str.length > maxLength
-    ? `${str.substring(0, maxLength)}...`
-    : str
+  return str.length > maxLength ? `${str.substring(0, maxLength)}...` : str
 }

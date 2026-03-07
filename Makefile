@@ -1,78 +1,75 @@
 # Makefile for sqlite-search
-# Modern Electron + Vite + Vue 3 application
+# Electron + Vue 3 + Vuetify 3 + electron-vite
 
-.PHONY: help install dev build dist clean lint format typecheck test test-watch
+.PHONY: help install dev build dist clean clean-all \
+        lint format typecheck test test-run test-coverage test-ui \
+        test-e2e test-e2e-headed test-e2e-setup \
+        check ci rebuild
 
-# Default target - show help
 .DEFAULT_GOAL := help
 
-# Colors for output
-CYAN := \033[0;36m
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-NC := \033[0m # No Color
+## ── Help ─────────────────────────────────────────────────
+help: ## Show available commands
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-help: ## Show this help message
-	@echo "$(CYAN)sqlite-search - Available commands:$(NC)"
-	@echo ""
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(GREEN)make %-15s$(NC) %s\n", $$1, $$2}'
-	@echo ""
-
+## ── Development ──────────────────────────────────────────
 install: ## Install dependencies with pnpm
-	@echo "$(CYAN)Installing dependencies...$(NC)"
 	pnpm install
 
-dev: ## Start development server
-	@echo "$(CYAN)Starting development server...$(NC)"
+dev: ## Start dev server with hot-reload
 	pnpm run dev
 
-build: ## Build application for production
-	@echo "$(CYAN)Building application...$(NC)"
+## ── Build ────────────────────────────────────────────────
+build: ## Build electron-vite output
 	pnpm run build
 
-dist: build ## Create distributable executables
-	@echo "$(CYAN)Creating distributable executables...$(NC)"
-	pnpm run build:dist
+dist: ## Build and create distributable installer
+	pnpm run dist
 
-preview: build ## Preview production build
-	@echo "$(CYAN)Previewing production build...$(NC)"
-	pnpm run preview
-
-clean: ## Remove build artifacts and dependencies
-	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
-	rm -rf dist dist-electron node_modules/.vite .eslintcache
-
-clean-all: clean ## Remove everything including node_modules
-	@echo "$(YELLOW)Removing node_modules...$(NC)"
-	rm -rf node_modules pnpm-lock.yaml
-
-lint: ## Run ESLint and auto-fix issues
-	@echo "$(CYAN)Running ESLint...$(NC)"
+## ── Code Quality ─────────────────────────────────────────
+lint: ## Run ESLint with auto-fix
 	pnpm run lint
 
 format: ## Format code with Prettier
-	@echo "$(CYAN)Formatting code with Prettier...$(NC)"
 	pnpm run format
 
 typecheck: ## Run TypeScript type checking
-	@echo "$(CYAN)Running TypeScript type checking...$(NC)"
 	pnpm run typecheck
 
-test: ## Run tests with Vitest
-	@echo "$(CYAN)Running tests...$(NC)"
+check: lint typecheck ## Run lint + typecheck
+
+## ── Unit Tests (Vitest) ──────────────────────────────────
+test: ## Run unit tests (watch mode)
 	pnpm run test
 
-test-watch: ## Run tests in watch mode
-	@echo "$(CYAN)Running tests in watch mode...$(NC)"
-	pnpm run test:watch
+test-run: ## Run unit tests (single run)
+	pnpm run test:run
 
-# Development workflow targets
-check: lint typecheck ## Run linting and type checking
-	@echo "$(GREEN)All checks passed!$(NC)"
+test-coverage: ## Run unit tests with coverage
+	pnpm run test:coverage
 
-ready: check test ## Run all checks and tests before committing
-	@echo "$(GREEN)Ready to commit!$(NC)"
+test-ui: ## Open Vitest UI
+	pnpm run test:ui
 
-# Quick rebuild
-rebuild: clean install build ## Clean, install, and build
-	@echo "$(GREEN)Rebuild complete!$(NC)"
+## ── E2E Tests (Playwright) ──────────────────────────────
+test-e2e: build ## Run E2E tests (headless, requires build)
+	pnpm run test:e2e
+
+test-e2e-headed: build ## Run E2E tests with visible window
+	pnpm run test:e2e:headed
+
+test-e2e-setup: ## Generate test database
+	pnpm run test:e2e:setup
+
+## ── CI Pipeline ──────────────────────────────────────────
+ci: lint typecheck test-run build ## Full CI check (lint → typecheck → test → build)
+
+## ── Maintenance ──────────────────────────────────────────
+clean: ## Remove build artifacts
+	rm -rf dist dist-electron .eslintcache playwright-report e2e-results
+
+clean-all: clean ## Remove build artifacts + node_modules
+	rm -rf node_modules
+
+rebuild: clean install build ## Clean → install → build

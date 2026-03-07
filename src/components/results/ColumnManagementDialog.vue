@@ -1,6 +1,10 @@
 <template>
   <!-- Column Management Dialog for show/hide and reordering columns -->
-  <v-dialog :model-value="modelValue" max-width="600" @update:model-value="$emit('update:modelValue', $event)">
+  <v-dialog
+    :model-value="modelValue"
+    max-width="600"
+    @update:model-value="$emit('update:modelValue', $event)"
+  >
     <v-card>
       <!-- Header - unified style with other dialogs -->
       <v-card-title class="d-flex align-center justify-space-between py-3 px-4">
@@ -8,12 +12,7 @@
           <v-icon size="small" class="mr-2">mdi-table-cog</v-icon>
           <span class="text-h6">Manage Columns</span>
         </div>
-        <v-btn
-          icon
-          variant="text"
-          size="small"
-          @click="$emit('update:modelValue', false)"
-        >
+        <v-btn icon variant="text" size="small" @click="$emit('update:modelValue', false)">
           <v-icon size="small">mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -23,9 +22,7 @@
       <!-- Instructions and quick actions -->
       <v-card-text class="pa-4">
         <div class="d-flex align-center justify-space-between mb-4">
-          <div class="text-body-2 text-medium-emphasis">
-            Toggle visibility and reorder columns
-          </div>
+          <div class="text-body-2 text-medium-emphasis">Toggle visibility or drag to reorder</div>
           <div class="d-flex ga-2">
             <v-btn
               size="small"
@@ -48,14 +45,15 @@
 
         <!-- Column list -->
         <v-card variant="outlined" class="column-list">
-          <v-list density="compact" class="pa-0">
+          <v-list ref="columnListEl" density="compact" class="pa-0">
             <v-list-item
-              v-for="(column, index) in effectiveColumnOrder"
+              v-for="column in effectiveColumnOrder"
               :key="column"
               class="column-item"
               :class="{ 'column-hidden': isColumnHidden(column) }"
+              :data-column="column"
             >
-              <!-- Drag handle visual (decorative only - using buttons for reordering) -->
+              <!-- Drag handle -->
               <template #prepend>
                 <v-icon size="small" class="drag-handle mr-2">mdi-drag-vertical</v-icon>
               </template>
@@ -74,32 +72,6 @@
                   {{ column }}
                 </span>
               </v-list-item-title>
-
-              <!-- Reorder buttons -->
-              <template #append>
-                <div class="d-flex ga-1">
-                  <v-btn
-                    icon
-                    variant="text"
-                    size="x-small"
-                    :disabled="index === 0"
-                    @click="databaseStore.moveColumnUp(column)"
-                  >
-                    <v-icon size="small">mdi-chevron-up</v-icon>
-                    <v-tooltip activator="parent" location="top">Move up</v-tooltip>
-                  </v-btn>
-                  <v-btn
-                    icon
-                    variant="text"
-                    size="x-small"
-                    :disabled="index === effectiveColumnOrder.length - 1"
-                    @click="databaseStore.moveColumnDown(column)"
-                  >
-                    <v-icon size="small">mdi-chevron-down</v-icon>
-                    <v-tooltip activator="parent" location="top">Move down</v-tooltip>
-                  </v-btn>
-                </div>
-              </template>
             </v-list-item>
           </v-list>
         </v-card>
@@ -107,7 +79,8 @@
         <!-- Summary info -->
         <div class="mt-4 d-flex align-center justify-space-between">
           <div class="text-caption text-medium-emphasis">
-            {{ databaseStore.visibleColumns.length }} of {{ effectiveColumnOrder.length }} columns visible
+            {{ databaseStore.visibleColumns.length }} of {{ effectiveColumnOrder.length }} columns
+            visible
           </div>
           <div v-if="databaseStore.hiddenColumnCount > 0" class="text-caption text-warning">
             <v-icon size="small" class="mr-1">mdi-alert-circle-outline</v-icon>
@@ -121,11 +94,7 @@
       <!-- Footer actions - unified style with other dialogs -->
       <v-card-actions class="px-4 py-3">
         <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        >
+        <v-btn color="primary" variant="text" @click="$emit('update:modelValue', false)">
           Close
         </v-btn>
       </v-card-actions>
@@ -134,13 +103,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
 import { SEARCH_CONFIG } from '@/config/search.config'
+import Sortable from 'sortablejs'
 
 // Props and emits
-defineProps({
+const props = defineProps({
   modelValue: {
     type: Boolean,
     required: true,
@@ -151,9 +121,12 @@ defineEmits(['update:modelValue'])
 
 const databaseStore = useDatabaseStore()
 
+// Template ref for the sortable list
+const columnListEl = ref(null)
+let sortableInstance = null
+
 /**
  * Effective column order - uses columnOrder if available, otherwise selectedColumns
- * This handles the case where columnOrder hasn't been initialized yet
  */
 const effectiveColumnOrder = computed(() => {
   return databaseStore.columnOrder.length > 0
@@ -162,41 +135,88 @@ const effectiveColumnOrder = computed(() => {
 })
 
 /**
+ * Initialize SortableJS on the v-list element
+ */
+function initSortable() {
+  if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+
+  const el = columnListEl.value?.$el || columnListEl.value
+  if (!el) return
+
+  sortableInstance = Sortable.create(el, {
+    handle: '.drag-handle',
+    animation: 200,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    onEnd(evt) {
+      // Revert Sortable's DOM manipulation — let Vue re-render from data
+      const { from, item, oldIndex } = evt
+      from.removeChild(item)
+      if (oldIndex < from.children.length) {
+        from.insertBefore(item, from.children[oldIndex])
+      } else {
+        from.appendChild(item)
+      }
+
+      // Now update the data — Vue handles DOM reconciliation
+      const newOrder = [...effectiveColumnOrder.value]
+      const [moved] = newOrder.splice(evt.oldIndex, 1)
+      newOrder.splice(evt.newIndex, 0, moved)
+      databaseStore.setColumnOrder(newOrder)
+    },
+  })
+}
+
+function destroySortable() {
+  if (sortableInstance) {
+    sortableInstance.destroy()
+    sortableInstance = null
+  }
+}
+
+// Initialize sortable when dialog opens
+watch(
+  () => props.modelValue,
+  async isOpen => {
+    if (isOpen) {
+      await nextTick()
+      initSortable()
+    } else {
+      destroySortable()
+    }
+  }
+)
+
+onBeforeUnmount(() => {
+  destroySortable()
+})
+
+/**
  * Reset all preferences with confirmation
- * Clears ALL cache including sort, filters, and column preferences
  */
 function resetWithConfirm() {
-  if (confirm('Reset ALL settings (columns, sort, filters) for this table? This will clear all cached preferences.')) {
+  if (
+    confirm(
+      'Reset ALL settings (columns, sort, filters) for this table? This will clear all cached preferences.'
+    )
+  ) {
     databaseStore.clearAllTableCache()
-
-    // Also clear sort and filters from search store
     const searchStore = useSearchStore()
     searchStore.clearSort()
     searchStore.clearAllFilters()
   }
 }
 
-/**
- * Check if a column is currently hidden
- * @param {string} columnName - Name of the column
- * @returns {boolean} - True if column is hidden
- */
 function isColumnHidden(columnName) {
   return databaseStore.hiddenColumns.includes(columnName)
 }
 
-/**
- * Check if a column can be hidden (must maintain minimum visible columns)
- * @param {string} columnName - Name of the column
- * @returns {boolean} - True if column can be hidden
- */
 function canHideColumn(columnName) {
-  // If column is already hidden, it can be shown
-  if (isColumnHidden(columnName)) {
-    return true
-  }
-
-  // Check if hiding this column would violate minimum visible columns
+  if (isColumnHidden(columnName)) return true
   const wouldBeVisible = databaseStore.visibleColumns.length - 1
   return wouldBeVisible >= SEARCH_CONFIG.COLUMN_MANAGEMENT.MIN_VISIBLE_COLUMNS
 }
@@ -232,8 +252,28 @@ function canHideColumn(columnName) {
   transition: opacity 0.2s;
 }
 
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .column-item:hover .drag-handle {
-  opacity: 0.7;
+  opacity: 0.8;
+}
+
+/* SortableJS drag states */
+.sortable-ghost {
+  opacity: 0.3;
+  background-color: rgba(var(--v-theme-primary), 0.08);
+}
+
+.sortable-chosen {
+  background-color: rgba(var(--v-theme-primary), 0.04);
+}
+
+.sortable-drag {
+  background-color: rgb(var(--v-theme-surface));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
 }
 
 /* Checkbox styling override for compact display */

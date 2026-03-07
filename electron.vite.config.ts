@@ -14,26 +14,26 @@ export default defineConfig({
       outDir: 'dist-electron/main',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/main/index.js')
+          index: resolve(__dirname, 'electron/main/index.js'),
         },
         output: {
-          format: 'es'
-        }
-      }
-    }
+          format: 'es',
+        },
+      },
+    },
   },
   preload: {
     build: {
       outDir: 'dist-electron/preload',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'electron/preload/index.js')
+          index: resolve(__dirname, 'electron/preload/index.js'),
         },
         output: {
-          format: 'es'
-        }
-      }
-    }
+          format: 'es',
+        },
+      },
+    },
   },
   renderer: {
     root: '.',
@@ -42,38 +42,38 @@ export default defineConfig({
       outDir: 'dist-electron/renderer',
       rollupOptions: {
         input: {
-          index: resolve(__dirname, 'index.html')
-        }
-      }
+          index: resolve(__dirname, 'index.html'),
+        },
+      },
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
-      }
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+      },
     },
     plugins: [
       vue(),
       vuetify({
-        autoImport: true
+        autoImport: true,
       }),
       Components({
-        dts: true,
+        dts: 'src/components.d.ts',
         dirs: ['src/components'],
-        resolvers: []
+        resolvers: [],
       }),
       AutoImport({
         imports: [
           'vue',
           'pinia',
           {
-            vuetify: ['useTheme', 'useDisplay']
-          }
+            vuetify: ['useTheme', 'useDisplay'],
+          },
         ],
         dts: 'src/auto-imports.d.ts',
         eslintrc: {
-          enabled: true
-        }
-      })
-    ]
-  }
+          enabled: true,
+        },
+      }),
+    ],
+  },
 })

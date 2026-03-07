@@ -2,6 +2,7 @@
   <!-- Enhanced results table with sorting, filtering, and browse mode support -->
   <v-card
     v-if="shouldShowTable"
+    ref="resultsCardRef"
     elevation="1"
     class="results-card"
     data-testid="results-card"
@@ -27,9 +28,7 @@
               <template v-if="searchStore.hasActiveFilters">
                 ({{ searchStore.filteredResultCount }} of {{ searchStore.resultCount }} shown)
               </template>
-              <template v-else>
-                ({{ searchStore.resultCount }} found)
-              </template>
+              <template v-else> ({{ searchStore.resultCount }} found) </template>
             </span>
           </template>
         </span>
@@ -205,7 +204,9 @@
           <!-- Left: Page info -->
           <div class="d-flex align-center text-body-2 text-medium-emphasis">
             <span>
-              Showing {{ searchStore.browsePaginationInfo.start }}-{{ searchStore.browsePaginationInfo.end }}
+              Showing {{ searchStore.browsePaginationInfo.start }}-{{
+                searchStore.browsePaginationInfo.end
+              }}
               of {{ formatNumber(searchStore.browsePaginationInfo.total) }}
             </span>
           </div>
@@ -285,9 +286,8 @@
         :key="`browse-cell-${column}`"
         #[`item.${column}`]="{ value }"
       >
-        <span class="text-truncate-cell" :title="value">
-          {{ truncateText(value, 60) }}
-        </span>
+        <!-- eslint-disable-next-line vue/no-v-html -- sanitized highlight output -->
+        <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 
       <!-- Actions column -->
@@ -308,6 +308,9 @@
       <template #no-data>
         <span></span>
       </template>
+
+      <!-- Hide default footer - using custom top pagination only -->
+      <template #bottom></template>
     </v-data-table-server>
 
     <!-- ====================================== -->
@@ -334,7 +337,8 @@
           <!-- Left: Page info -->
           <div class="d-flex align-center text-body-2 text-medium-emphasis">
             <span>
-              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }}
+              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of
+              {{ paginationInfo.total }}
             </span>
           </div>
 
@@ -414,14 +418,15 @@
       >
         <div class="d-flex align-center justify-space-between header-wrapper">
           <!-- Clickable header text with sort icon -->
-          <div class="d-flex align-center flex-grow-1 sortable-header" @click="toggleSort(headerColumn)">
+          <div
+            class="d-flex align-center flex-grow-1 sortable-header"
+            @click="toggleSort(headerColumn)"
+          >
             <span class="header-title">{{ headerColumn.title }}</span>
             <v-icon v-if="isSorted(headerColumn)" size="small" class="ml-1">
               {{ getSortIcon(headerColumn) }}
             </v-icon>
-            <v-icon v-else size="small" class="ml-1 sort-icon-inactive">
-              mdi-sort
-            </v-icon>
+            <v-icon v-else size="small" class="ml-1 sort-icon-inactive"> mdi-sort </v-icon>
           </div>
           <!-- Filter menu -->
           <v-menu :close-on-content-click="false" location="bottom">
@@ -466,11 +471,7 @@
               <v-divider></v-divider>
               <v-card-actions class="pa-2">
                 <v-spacer></v-spacer>
-                <v-btn
-                  size="small"
-                  variant="text"
-                  @click="searchStore.clearColumnFilter(column)"
-                >
+                <v-btn size="small" variant="text" @click="searchStore.clearColumnFilter(column)">
                   Clear
                 </v-btn>
               </v-card-actions>
@@ -486,9 +487,8 @@
         :key="column"
         #[`item.${column}`]="{ value }"
       >
-        <span class="text-truncate-cell" :title="value">
-          {{ truncateText(value, 60) }}
-        </span>
+        <!-- eslint-disable-next-line vue/no-v-html -- sanitized highlight output -->
+        <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 
       <!-- Actions column -->
@@ -509,6 +509,9 @@
       <template #no-data>
         <span></span>
       </template>
+
+      <!-- Hide default footer - using custom top pagination only -->
+      <template #bottom></template>
     </v-data-table>
 
     <!-- Empty state - OUTSIDE table to avoid horizontal scroll issues -->
@@ -524,7 +527,9 @@
       />
       <!-- Search mode with filters empty state -->
       <EmptyState
-        v-else-if="searchStore.isSearchMode && searchStore.hasActiveFilters && !searchStore.hasResults"
+        v-else-if="
+          searchStore.isSearchMode && searchStore.hasActiveFilters && !searchStore.hasResults
+        "
         variant="no-results"
         icon="mdi-filter-off-outline"
         title="No results match your filters"
@@ -555,24 +560,97 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useSearchStore } from '@/stores/search.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearch } from '@/composables/useSearch'
 import { useBrowse } from '@/composables/useBrowse'
 import { useExport } from '@/composables/useExport'
 import { SEARCH_CONFIG } from '@/config/search.config'
+import { highlightSearchTerms } from '@/utils/highlight.utils'
+import { extractSearchWords, stripMarkupTags } from '@/utils/text.utils'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
-const { viewDetails, truncateText, copyToClipboard } = useSearch()
+const { viewDetails, copyToClipboard } = useSearch()
+
+const searchWords = computed(() => extractSearchWords(searchStore.searchTerm))
+
+/**
+ * Process cell value: strip tags, truncate, highlight.
+ * Returns HTML string for v-html.
+ */
+function highlightedCell(value, maxLength = 60) {
+  if (!value && value !== 0) return ''
+  const cleaned = stripMarkupTags(String(value))
+  const truncated = cleaned.length > maxLength ? `${cleaned.substring(0, maxLength)}...` : cleaned
+  return highlightSearchTerms(truncated, searchWords.value)
+}
 const { goToPage, setItemsPerPage, sortBy: browseSortBy, clearSort: browseClearSort } = useBrowse()
 const exportComposable = useExport()
 
 // Component state
 const showColumnManagement = ref(false)
+
+// Horizontal scroll detection for fade hint
+const resultsCardRef = ref(null)
+
+let resizeObserver = null
+let scrollTarget = null
+
+function checkHorizontalScroll() {
+  const card = resultsCardRef.value?.$el || resultsCardRef.value
+  if (!card) return
+  const wrapper = card.querySelector('.v-table__wrapper')
+  if (!wrapper) return
+  const hasScroll = wrapper.scrollWidth > wrapper.clientWidth
+  const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 1
+  const atStart = wrapper.scrollLeft <= 1
+  card.classList.toggle('has-horizontal-scroll', hasScroll && !atEnd)
+  card.classList.toggle('has-scroll-left', hasScroll && !atStart)
+}
+
+function setupResizeObserver() {
+  const card = resultsCardRef.value?.$el || resultsCardRef.value
+  if (!card) return
+  const wrapper = card.querySelector('.v-table__wrapper')
+  if (!wrapper) return
+
+  // Clean up previous listeners
+  if (resizeObserver) resizeObserver.disconnect()
+  if (scrollTarget) scrollTarget.removeEventListener('scroll', checkHorizontalScroll)
+
+  resizeObserver = new ResizeObserver(() => checkHorizontalScroll())
+  resizeObserver.observe(wrapper)
+  wrapper.addEventListener('scroll', checkHorizontalScroll, { passive: true })
+  scrollTarget = wrapper
+}
+
+watch(
+  () => [
+    searchStore.filteredResults.length,
+    searchStore.browseData.rows.length,
+    databaseStore.visibleColumns.length,
+  ],
+  async () => {
+    await nextTick()
+    await nextTick()
+    checkHorizontalScroll()
+    setupResizeObserver()
+  }
+)
+
+onMounted(() => {
+  setupResizeObserver()
+})
+
+onUnmounted(() => {
+  if (resizeObserver) resizeObserver.disconnect()
+  if (scrollTarget) scrollTarget.removeEventListener('scroll', checkHorizontalScroll)
+})
+
 const currentPage = ref(1)
 const itemsPerPage = ref(25)
 const itemsPerPageOptions = [10, 25, 50, 100]
@@ -626,7 +704,7 @@ const noResultsSuggestions = [
   'Check spelling of your search terms',
   'Try using wildcards (e.g., gene* instead of gene)',
   'Use broader search terms',
-  'Search fewer columns'
+  'Search fewer columns',
 ]
 
 /**
@@ -647,7 +725,7 @@ function clearSearch() {
 // Watch visible columns and cleanup sortBy when columns are hidden (search mode)
 watch(
   () => databaseStore.visibleColumns,
-  (newVisibleColumns) => {
+  newVisibleColumns => {
     searchStore.cleanupSortByColumns(newVisibleColumns)
   },
   { immediate: true }
@@ -662,7 +740,7 @@ watch(
 )
 
 // Sync browse items per page with store
-watch(browseItemsPerPage, (newValue) => {
+watch(browseItemsPerPage, newValue => {
   if (searchStore.isBrowseMode && newValue !== searchStore.browseData.itemsPerPage) {
     setItemsPerPage(newValue)
   }
@@ -801,11 +879,57 @@ function copyRow(item) {
 <style scoped>
 /* Compact table styling */
 .results-card {
+  position: relative;
   margin-top: 16px;
+}
+
+.results-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to right, transparent, rgba(var(--v-theme-surface), 0.9));
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.results-card.has-horizontal-scroll::after {
+  opacity: 1;
+}
+
+.results-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to left, transparent, rgba(var(--v-theme-surface), 0.9));
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.results-card.has-scroll-left::before {
+  opacity: 1;
 }
 
 .results-table {
   font-size: 0.875rem;
+}
+
+/* Move horizontal scrollbar to top using double-flip technique */
+.results-table :deep(.v-table__wrapper) {
+  transform: scaleY(-1);
+}
+
+.results-table :deep(.v-table__wrapper > table) {
+  transform: scaleY(-1);
 }
 
 /* Top pagination controls styling */
@@ -864,6 +988,12 @@ function copyRow(item) {
   opacity: 0.6;
 }
 
+:deep(mark) {
+  background-color: rgba(255, 213, 0, 0.4);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
 /* Truncate long cell content */
 .text-truncate-cell {
   display: block;
@@ -884,11 +1014,6 @@ function copyRow(item) {
 :deep(.v-data-table__th) {
   font-size: 0.875rem !important;
   font-weight: 600;
-}
-
-/* Compact pagination */
-:deep(.v-data-table-footer) {
-  padding: 8px 16px;
 }
 
 /* Filter menu card styling */

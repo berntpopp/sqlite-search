@@ -7,22 +7,26 @@ Add a "Browse" mode that allows users to view entire table contents without sear
 ## Research Summary
 
 ### UX Best Practices (Sources)
+
 - [Data Table Design UX Patterns - Pencil & Paper](https://www.pencilandpaper.io/articles/ux-pattern-analysis-enterprise-data-tables): Toggle between views should be intuitive; users should be able to switch based on their current task
 - [NN/G Data Tables](https://www.nngroup.com/articles/data-tables/): Users need different interaction patterns for finding (search) vs. scanning (browse)
 - [LogRocket Data Table Best Practices](https://blog.logrocket.com/ux-design/data-table-design-best-practices/): Tables are about finding information; context is key
 
 ### SQLite Pagination Performance (Sources)
+
 - [PingCAP: Limit/Offset vs Cursor Pagination](https://www.pingcap.com/article/limit-offset-pagination-vs-cursor-pagination-in-mysql/): OFFSET pagination degrades with large offsets (O(offset + limit) vs O(limit))
 - [DEV Community: Comparing Pagination Methods](https://dev.to/jacktt/comparing-limit-offset-and-cursor-pagination-1n81): Cursor pagination is more performant but harder to implement
 - [SQLite Help Docs](https://sqlite.work/optimizing-row-number-and-pagination-performance-in-sqlite-queries/): For FTS5 tables, keyset pagination requires a unique identifier
 
 **Decision**: Use LIMIT/OFFSET for simplicity since:
+
 1. FTS5 tables may not have a reliable unique key for cursor pagination
 2. Users typically don't paginate very deep into results
 3. SQLite is local (no network latency), so performance is acceptable
 4. Can add cursor pagination later if needed
 
 ### Vuetify Components
+
 - [Vuetify Data Table Server](https://vuetifyjs.com/en/components/data-tables/server-side-tables/): `v-data-table-server` for server-side pagination
 - Key props: `items-length`, `loading`, `@update:options` for page/sort changes
 
@@ -161,14 +165,14 @@ ipcMain.on('browse-table', async (event, tableName, columns, page, itemsPerPage,
           if (err) reject(err)
           else resolve(row)
         })
-      })
+      }),
     ])
 
     event.reply('browse-results', {
       rows: rows,
       totalCount: countResult.count,
       page: page,
-      itemsPerPage: itemsPerPage
+      itemsPerPage: itemsPerPage,
     })
   } catch (error) {
     log.error('Browse error:', error.message)
@@ -235,7 +239,7 @@ const browseData = ref({
   rows: [],
   totalCount: 0,
   page: 1,
-  itemsPerPage: 25
+  itemsPerPage: 25,
 })
 const browseLoading = ref(false)
 const browseError = ref(null)
@@ -299,13 +303,7 @@ export function useBrowse() {
     const columns = Array.from(databaseStore.selectedColumns)
     const sort = searchStore.browseSort
 
-    window.electronAPI.browseTable(
-      databaseStore.selectedTable,
-      columns,
-      page,
-      itemsPerPage,
-      sort
-    )
+    window.electronAPI.browseTable(databaseStore.selectedTable, columns, page, itemsPerPage, sort)
   }
 
   /**
@@ -347,7 +345,7 @@ export function useBrowse() {
     changePage,
     changeItemsPerPage,
     changeSort,
-    setViewMode
+    setViewMode,
   }
 }
 ```
@@ -391,10 +389,12 @@ export function useBrowse() {
 #### 5.2 Browse Results Display
 
 Option A: **Extend ResultsTable.vue** to handle both modes
+
 - Pros: Single component, consistent styling
 - Cons: More complex conditionals
 
 Option B: **Create BrowseTable.vue** (separate component)
+
 - Pros: Clean separation of concerns
 - Cons: Code duplication for similar table features
 
@@ -470,16 +470,16 @@ window.electronAPI.onTableRowCount(onTableRowCountHandler)
 
 ## File Changes Summary
 
-| File | Changes |
-|------|---------|
-| `electron/main/index.js` | Add `browse-table` and `get-table-row-count` IPC handlers |
-| `electron/preload/index.js` | Add browse API methods to electronAPI |
-| `src/stores/search.store.js` | Add browse mode state, computed, and actions |
-| `src/stores/database.store.js` | Add `tableRowCount` state (optional) |
-| `src/composables/useBrowse.js` | New composable for browse operations |
-| `src/components/search/SearchInput.vue` | Add mode toggle UI |
-| `src/components/results/ResultsTable.vue` | Support both search and browse modes |
-| `src/App.vue` | Add browse IPC event listeners |
+| File                                      | Changes                                                   |
+| ----------------------------------------- | --------------------------------------------------------- |
+| `electron/main/index.js`                  | Add `browse-table` and `get-table-row-count` IPC handlers |
+| `electron/preload/index.js`               | Add browse API methods to electronAPI                     |
+| `src/stores/search.store.js`              | Add browse mode state, computed, and actions              |
+| `src/stores/database.store.js`            | Add `tableRowCount` state (optional)                      |
+| `src/composables/useBrowse.js`            | New composable for browse operations                      |
+| `src/components/search/SearchInput.vue`   | Add mode toggle UI                                        |
+| `src/components/results/ResultsTable.vue` | Support both search and browse modes                      |
+| `src/App.vue`                             | Add browse IPC event listeners                            |
 
 ## Performance Considerations
 

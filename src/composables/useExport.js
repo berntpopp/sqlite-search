@@ -149,6 +149,7 @@ export function useExport() {
       }
       // If canceled, show nothing (user action)
     } catch (error) {
+      // eslint-disable-next-line no-console -- error logging in catch block
       console.error('CSV export error:', error)
       uiStore.showError(`Export failed: ${error.message || 'unexpected error'}`)
     }
@@ -184,6 +185,7 @@ export function useExport() {
       }
       // If canceled, show nothing (user action)
     } catch (error) {
+      // eslint-disable-next-line no-console -- error logging in catch block
       console.error('Excel export error:', error)
       uiStore.showError(`Export failed: ${error.message || 'unexpected error'}`)
     }

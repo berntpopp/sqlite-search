@@ -29,8 +29,10 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "electron-updater": "^6.8.3",
     "exceljs": "^4.4.0",
     "pinia": "^3.0.4",
+    "sortablejs": "^1.15.7",
     "sqlite3": "^5.1.7",
     "vue": "^3.5.25",
     "vuetify": "^3.9.8"
@@ -62,6 +64,18 @@
     "vite-plugin-vuetify": "^2.1.3",
     "vitest": "^2.1.8",
     "vue-tsc": "^3.2.4"
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false,
+    "trailingComma": "es5",
+    "bracketSpacing": true,
+    "arrowParens": "avoid",
+    "endOfLine": "lf",
+    "vueIndentScriptAndStyle": false
   },
   "engines": {
     "node": ">=20.16.0",
@@ -100,8 +114,8 @@
       "!electron/**/*",
       "!tests/**/*",
       "!public/*",
-      "!electron.vite.config.{js,mjs}",
-      "!{.eslintignore,.prettierrc.json,eslint.config.js}",
+      "!electron.vite.config.{js,mjs,ts}",
+      "!{.eslintignore,eslint.config.js}",
       "!{.env,.env.*,.npmrc,pnpm-lock.yaml}",
       "!{tsconfig.json,CLAUDE.md,README.md,LICENSE}"
     ],

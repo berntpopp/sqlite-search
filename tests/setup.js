@@ -15,6 +15,16 @@ global.window.electronAPI = {
   onTableListError: vi.fn(),
   onColumnList: vi.fn(),
   onColumnListError: vi.fn(),
+  // Auto-update operations
+  checkForUpdates: vi.fn(),
+  downloadUpdate: vi.fn(),
+  installUpdate: vi.fn(),
+  onUpdateChecking: vi.fn(),
+  onUpdateAvailable: vi.fn(),
+  onUpdateNotAvailable: vi.fn(),
+  onUpdateDownloadProgress: vi.fn(),
+  onUpdateDownloaded: vi.fn(),
+  onUpdateError: vi.fn(),
 }
 
 // Configure Vue Test Utils

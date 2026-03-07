@@ -13,7 +13,7 @@ import { SEARCH_CONFIG } from '@/config/search.config'
  */
 export const VIEW_MODES = {
   SEARCH: 'search',
-  BROWSE: 'browse'
+  BROWSE: 'browse',
 }
 
 export const useSearchStore = defineStore('search', () => {
@@ -25,6 +25,7 @@ export const useSearchStore = defineStore('search', () => {
   const loading = ref(false)
   const error = ref(null)
   const selectedItem = ref(null)
+  const selectedItemIndex = ref(-1)
 
   // Advanced features state
   const sortBy = ref([]) // Array of { key: string, order: 'asc' | 'desc' }
@@ -46,7 +47,7 @@ export const useSearchStore = defineStore('search', () => {
     rows: [],
     totalCount: 0,
     page: 1,
-    itemsPerPage: 25
+    itemsPerPage: 25,
   })
   const browseLoading = ref(false)
   const browseError = ref(null)
@@ -69,7 +70,8 @@ export const useSearchStore = defineStore('search', () => {
    * Count of active filters
    */
   const activeFilterCount = computed(() => {
-    return Object.values(columnFilters.value).filter(filter => filter && filter.trim() !== '').length
+    return Object.values(columnFilters.value).filter(filter => filter && filter.trim() !== '')
+      .length
   })
 
   /**
@@ -101,6 +103,31 @@ export const useSearchStore = defineStore('search', () => {
    * Get count of filtered results
    */
   const filteredResultCount = computed(() => filteredResults.value.length)
+
+  // Navigation getters
+  const canNavigateNext = computed(
+    () => selectedItemIndex.value >= 0 && selectedItemIndex.value < filteredResults.value.length - 1
+  )
+
+  const canNavigatePrevious = computed(() => selectedItemIndex.value > 0)
+
+  const navigationPosition = computed(() => {
+    if (selectedItemIndex.value < 0) return ''
+    return `${selectedItemIndex.value + 1} of ${filteredResults.value.length}`
+  })
+
+  // Clamp selectedItemIndex when filteredResults changes (e.g., filters applied while detail view is open)
+  watch(filteredResults, results => {
+    if (selectedItemIndex.value >= results.length) {
+      if (results.length > 0) {
+        selectedItemIndex.value = results.length - 1
+        selectedItem.value = results[selectedItemIndex.value]
+      } else {
+        selectedItemIndex.value = -1
+        selectedItem.value = null
+      }
+    }
+  })
 
   // ===========================================
   // BROWSE MODE GETTERS
@@ -222,18 +249,26 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   // Watch for sort changes and persist
-  watch(sortBy, () => {
-    if (currentTableName.value) {
-      saveSortPreferences(currentTableName.value)
-    }
-  }, { deep: true })
+  watch(
+    sortBy,
+    () => {
+      if (currentTableName.value) {
+        saveSortPreferences(currentTableName.value)
+      }
+    },
+    { deep: true }
+  )
 
   // Watch for filter changes and persist (debounced handled in component)
-  watch(columnFilters, () => {
-    if (currentTableName.value) {
-      saveFilterPreferences(currentTableName.value)
-    }
-  }, { deep: true })
+  watch(
+    columnFilters,
+    () => {
+      if (currentTableName.value) {
+        saveFilterPreferences(currentTableName.value)
+      }
+    },
+    { deep: true }
+  )
 
   // Actions
   /**
@@ -291,6 +326,30 @@ export const useSearchStore = defineStore('search', () => {
    */
   function clearSelectedItem() {
     selectedItem.value = null
+    selectedItemIndex.value = -1
+  }
+
+  /**
+   * Set selected item by index in filtered results
+   */
+  function setSelectedItemByIndex(index) {
+    const results = filteredResults.value
+    if (index >= 0 && index < results.length) {
+      selectedItemIndex.value = index
+      selectedItem.value = results[index]
+    }
+  }
+
+  function navigateNext() {
+    if (canNavigateNext.value) {
+      setSelectedItemByIndex(selectedItemIndex.value + 1)
+    }
+  }
+
+  function navigatePrevious() {
+    if (canNavigatePrevious.value) {
+      setSelectedItemByIndex(selectedItemIndex.value - 1)
+    }
   }
 
   /**
@@ -412,7 +471,7 @@ export const useSearchStore = defineStore('search', () => {
       rows: data.rows || [],
       totalCount: data.totalCount || 0,
       page: data.page || 1,
-      itemsPerPage: data.itemsPerPage || 25
+      itemsPerPage: data.itemsPerPage || 25,
     }
     browseLoading.value = false
     browseError.value = null
@@ -474,6 +533,7 @@ export const useSearchStore = defineStore('search', () => {
     loading.value = false
     error.value = null
     selectedItem.value = null
+    selectedItemIndex.value = -1
     sortBy.value = []
     columnFilters.value = {}
     currentTableName.value = ''
@@ -494,6 +554,7 @@ export const useSearchStore = defineStore('search', () => {
     loading,
     error,
     selectedItem,
+    selectedItemIndex,
     sortBy,
     columnFilters,
     currentTableName,
@@ -517,6 +578,9 @@ export const useSearchStore = defineStore('search', () => {
     activeFilterCount,
     filteredResults,
     filteredResultCount,
+    canNavigateNext,
+    canNavigatePrevious,
+    navigationPosition,
 
     // View Mode Getters
     isBrowseMode,
@@ -535,6 +599,9 @@ export const useSearchStore = defineStore('search', () => {
     clearError,
     setSelectedItem,
     clearSelectedItem,
+    setSelectedItemByIndex,
+    navigateNext,
+    navigatePrevious,
     clearResults,
     setCurrentTable,
     setSortBy,
