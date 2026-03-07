@@ -115,8 +115,11 @@
 
       <!-- Footer actions -->
       <v-card-actions class="px-4 py-2">
-        <v-btn variant="text" size="small" prepend-icon="mdi-content-copy" @click="copyAll">
-          Copy All as JSON
+        <v-btn variant="text" size="small" prepend-icon="mdi-code-json" @click="copyAllJson">
+          Copy as JSON
+        </v-btn>
+        <v-btn variant="text" size="small" prepend-icon="mdi-text-long" @click="copyAllText">
+          Copy as Text
         </v-btn>
         <v-spacer></v-spacer>
         <v-btn color="primary" variant="text" @click="uiStore.closeDetailsDialog">Close</v-btn>
@@ -207,7 +210,7 @@ function copyField(fieldName, value) {
 /**
  * Copy entire item as formatted JSON (only visible fields)
  */
-function copyAll() {
+function copyAllJson() {
   if (searchStore.selectedItem && visibleFields.value.length > 0) {
     const filteredItem = {}
     visibleFields.value.forEach(field => {
@@ -215,6 +218,16 @@ function copyAll() {
     })
     const json = JSON.stringify(filteredItem, null, 2)
     copyToClipboard(json)
+  }
+}
+
+/**
+ * Copy entire item as plain text (field: value pairs)
+ */
+function copyAllText() {
+  if (searchStore.selectedItem && visibleFields.value.length > 0) {
+    const text = visibleFields.value.map(field => `${field.key}: ${field.value ?? ''}`).join('\n')
+    copyToClipboard(text)
   }
 }
 
