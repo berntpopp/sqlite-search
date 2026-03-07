@@ -63,6 +63,18 @@
     "vitest": "^2.1.8",
     "vue-tsc": "^3.2.4"
   },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 100,
+    "tabWidth": 2,
+    "useTabs": false,
+    "trailingComma": "es5",
+    "bracketSpacing": true,
+    "arrowParens": "avoid",
+    "endOfLine": "lf",
+    "vueIndentScriptAndStyle": false
+  },
   "engines": {
     "node": ">=20.16.0",
     "pnpm": ">=9.0.0"
@@ -100,8 +112,8 @@
       "!electron/**/*",
       "!tests/**/*",
       "!public/*",
-      "!electron.vite.config.{js,mjs}",
-      "!{.eslintignore,.prettierrc.json,eslint.config.js}",
+      "!electron.vite.config.{js,mjs,ts}",
+      "!{.eslintignore,eslint.config.js}",
       "!{.env,.env.*,.npmrc,pnpm-lock.yaml}",
       "!{tsconfig.json,CLAUDE.md,README.md,LICENSE}"
     ],
