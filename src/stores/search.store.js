@@ -116,6 +116,19 @@ export const useSearchStore = defineStore('search', () => {
     return `${selectedItemIndex.value + 1} of ${filteredResults.value.length}`
   })
 
+  // Clamp selectedItemIndex when filteredResults changes (e.g., filters applied while detail view is open)
+  watch(filteredResults, results => {
+    if (selectedItemIndex.value >= results.length) {
+      if (results.length > 0) {
+        selectedItemIndex.value = results.length - 1
+        selectedItem.value = results[selectedItemIndex.value]
+      } else {
+        selectedItemIndex.value = -1
+        selectedItem.value = null
+      }
+    }
+  })
+
   // ===========================================
   // BROWSE MODE GETTERS
   // ===========================================

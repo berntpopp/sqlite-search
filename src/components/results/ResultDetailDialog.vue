@@ -82,9 +82,10 @@
                 <div class="value-content">
                   <ExpandableText
                     v-if="isLongValue(column.value)"
-                    :key="`${column.key}-${allExpanded}`"
+                    :key="column.key"
                     :html="highlightedValue(column.value)"
-                    :raw-length="String(column.value || '').length"
+                    :raw-length="String(column.value ?? '').length"
+                    :model-value="allExpanded"
                   />
                   <!-- eslint-disable vue/no-v-html -->
                   <div
@@ -176,14 +177,14 @@ const displayFields = computed(() => {
 const emptyFieldCount = computed(() => visibleFields.value.length - displayFields.value.length)
 
 const hasLongFields = computed(() =>
-  visibleFields.value.some(f => String(f.value || '').length > LONG_VALUE_THRESHOLD)
+  visibleFields.value.some(f => String(f.value ?? '').length > LONG_VALUE_THRESHOLD)
 )
 
 /**
  * Check if value is long enough to need expandable text
  */
 function isLongValue(value) {
-  const str = String(value || '')
+  const str = String(value ?? '')
   return str.length > LONG_VALUE_THRESHOLD
 }
 
@@ -206,7 +207,7 @@ function toggleAllExpanded() {
  * Copy specific field value
  */
 function copyField(fieldName, value) {
-  copyToClipboard(String(value || ''))
+  copyToClipboard(String(value ?? ''))
 }
 
 /**

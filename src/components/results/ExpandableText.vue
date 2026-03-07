@@ -2,7 +2,6 @@
   <div class="expandable-text">
     <!-- eslint-disable vue/no-v-html -->
     <div
-      ref="textRef"
       class="text-body-2 value-text"
       :class="{ collapsed: !expanded && shouldTruncate }"
       :style="collapsedStyle"
@@ -15,7 +14,7 @@
       size="x-small"
       density="compact"
       class="expand-btn mt-1"
-      @click="expanded = !expanded"
+      @click="toggleExpanded"
     >
       {{ expanded ? 'Show less' : `Show more (${charCount} chars)` }}
       <v-icon end size="x-small">
@@ -26,16 +25,26 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   html: { type: String, required: true },
   rawLength: { type: Number, default: 0 },
   maxLines: { type: Number, default: 3 },
   charThreshold: { type: Number, default: 200 },
+  modelValue: { type: Boolean, default: undefined },
 })
 
-const expanded = ref(false)
+const emit = defineEmits(['update:modelValue'])
+
+const expanded = ref(props.modelValue ?? false)
+
+watch(
+  () => props.modelValue,
+  val => {
+    if (val !== undefined) expanded.value = val
+  }
+)
 
 const shouldTruncate = computed(() => props.rawLength > props.charThreshold)
 
@@ -50,6 +59,11 @@ const collapsedStyle = computed(() => {
 })
 
 const displayHtml = computed(() => props.html)
+
+function toggleExpanded() {
+  expanded.value = !expanded.value
+  emit('update:modelValue', expanded.value)
+}
 
 defineExpose({ expanded })
 </script>

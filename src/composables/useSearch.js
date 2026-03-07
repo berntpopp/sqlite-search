@@ -69,6 +69,7 @@ export function useSearch() {
     if (index !== -1) {
       searchStore.setSelectedItemByIndex(index)
     } else {
+      searchStore.clearSelectedItem()
       searchStore.setSelectedItem(item)
     }
     uiStore.openDetailsDialog()

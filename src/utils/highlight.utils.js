@@ -44,8 +44,12 @@ export function highlightSearchTerms(text, searchWords) {
 
   if (!searchWords || searchWords.length === 0) return sanitized
 
+  // Filter to non-empty strings only to avoid matching everywhere
+  const validWords = searchWords.filter(w => typeof w === 'string' && w.length > 0)
+  if (validWords.length === 0) return sanitized
+
   // Build regex from all search words, longest first to avoid partial replacement issues
-  const sorted = [...searchWords].sort((a, b) => b.length - a.length)
+  const sorted = [...validWords].sort((a, b) => b.length - a.length)
   const pattern = sorted.map(w => escapeRegex(w)).join('|')
 
   // eslint-disable-next-line security/detect-non-literal-regexp -- pattern is escaped via escapeRegex()
