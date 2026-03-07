@@ -7,7 +7,9 @@
         <div class="d-flex align-center">
           <v-icon size="small" class="mr-2">mdi-file-document-outline</v-icon>
           <span class="text-h6">Result Details</span>
-          <span class="text-caption text-medium-emphasis ml-2">({{ visibleFields.length }} fields)</span>
+          <span class="text-caption text-medium-emphasis ml-2"
+            >({{ visibleFields.length }} fields)</span
+          >
         </div>
         <v-btn icon variant="text" size="small" @click="uiStore.closeDetailsDialog">
           <v-icon size="small">mdi-close</v-icon>
@@ -28,10 +30,7 @@
               <!-- Field value -->
               <td class="value-cell">
                 <div class="value-content">
-                  <span
-                    v-if="!isLongValue(column.value)"
-                    class="text-body-2"
-                  >
+                  <span v-if="!isLongValue(column.value)" class="text-body-2">
                     {{ formatValue(column.value) }}
                   </span>
                   <v-textarea
@@ -105,7 +104,7 @@ const visibleFields = computed(() => {
   // Filter to only show selected columns in their display order
   return databaseStore.selectedColumns.map(column => ({
     key: column,
-    value: searchStore.selectedItem[column]
+    value: searchStore.selectedItem[column],
   }))
 })
 

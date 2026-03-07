@@ -86,8 +86,8 @@ export const useDatabaseStore = defineStore('database', () => {
       return selectedColumns.value.filter(col => !hiddenColumns.value.includes(col))
     } else {
       // Use custom order, filtered by hidden columns
-      return columnOrder.value.filter(col =>
-        selectedColumns.value.includes(col) && !hiddenColumns.value.includes(col)
+      return columnOrder.value.filter(
+        col => selectedColumns.value.includes(col) && !hiddenColumns.value.includes(col)
       )
     }
   })
@@ -182,17 +182,25 @@ export const useDatabaseStore = defineStore('database', () => {
   }
 
   // Watch for column management changes and persist
-  watch(columnOrder, () => {
-    if (selectedTable.value) {
-      saveColumnOrder(selectedTable.value)
-    }
-  }, { deep: true })
+  watch(
+    columnOrder,
+    () => {
+      if (selectedTable.value) {
+        saveColumnOrder(selectedTable.value)
+      }
+    },
+    { deep: true }
+  )
 
-  watch(hiddenColumns, () => {
-    if (selectedTable.value) {
-      saveHiddenColumns(selectedTable.value)
-    }
-  }, { deep: true })
+  watch(
+    hiddenColumns,
+    () => {
+      if (selectedTable.value) {
+        saveHiddenColumns(selectedTable.value)
+      }
+    },
+    { deep: true }
+  )
 
   // Actions
   /**

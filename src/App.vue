@@ -64,7 +64,9 @@
         </v-row>
 
         <!-- Results table or empty state (search mode or browse mode) -->
-        <ResultsTable v-if="searchStore.hasResults || searchStore.hasSearched || searchStore.isBrowseMode" />
+        <ResultsTable
+          v-if="searchStore.hasResults || searchStore.hasSearched || searchStore.isBrowseMode"
+        />
 
         <!-- Ready to search empty state -->
         <EmptyState

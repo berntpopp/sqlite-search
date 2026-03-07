@@ -47,12 +47,12 @@ pnpm run test:e2e
 
 ## Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm run test:e2e` | Run all E2E tests |
+| Command                    | Description                           |
+| -------------------------- | ------------------------------------- |
+| `pnpm run test:e2e`        | Run all E2E tests                     |
 | `pnpm run test:e2e:headed` | Run tests with visible browser window |
-| `pnpm run test:e2e:ui` | Open Playwright UI mode (interactive) |
-| `pnpm run test:e2e:debug` | Run tests in debug mode |
+| `pnpm run test:e2e:ui`     | Open Playwright UI mode (interactive) |
+| `pnpm run test:e2e:debug`  | Run tests in debug mode               |
 
 ## Test Structure
 
@@ -125,25 +125,25 @@ test('my test', async ({ window, takeScreenshot }) => {
 
 ### Available Fixtures
 
-| Fixture | Description |
-|---------|-------------|
-| `electronApp` | The Electron application instance |
-| `window` | The main browser window (Page object) |
+| Fixture          | Description                                  |
+| ---------------- | -------------------------------------------- |
+| `electronApp`    | The Electron application instance            |
+| `window`         | The main browser window (Page object)        |
 | `takeScreenshot` | Helper function to capture named screenshots |
 
 ### Data Test IDs
 
 Use `data-testid` attributes to locate elements reliably:
 
-| Element | Test ID |
-|---------|---------|
-| Search input | `search-input` |
-| Search button | `search-button` |
-| Table selector | `table-selector` |
+| Element         | Test ID           |
+| --------------- | ----------------- |
+| Search input    | `search-input`    |
+| Search button   | `search-button`   |
+| Table selector  | `table-selector`  |
 | Column selector | `column-selector` |
-| Results card | `results-card` |
-| Results table | `results-table` |
-| Results count | `results-count` |
+| Results card    | `results-card`    |
+| Results table   | `results-table`   |
+| Results count   | `results-count`   |
 
 ### Example Test
 
@@ -161,7 +161,7 @@ test('should perform search', async ({ window }) => {
 
   // Wait for results
   await window.waitForSelector('[data-testid="results-table"]', {
-    timeout: 10000
+    timeout: 10000,
   })
 
   // Verify results exist
@@ -183,6 +183,7 @@ pnpm install
 ### Tests timeout on launch
 
 1. Ensure the app is built:
+
    ```powershell
    pnpm run build
    ```
@@ -211,6 +212,7 @@ pnpm run test:e2e
 ## CI Integration
 
 E2E tests run automatically on:
+
 - Push to `main` branch
 - Pull requests to `main`
 - Push to `feature/**` branches
@@ -230,27 +232,27 @@ The screenshot generator (`screenshots.spec.js`) captures comprehensive UI scree
 
 ### What It Captures
 
-| Screenshot | Description |
-|------------|-------------|
-| `01-initial-launch` | Application just launched |
-| `02-app-header` | Header with title and controls |
-| `02b-theme-dark` | Dark theme enabled |
-| `02c-theme-light` | Light theme restored |
-| `03-help-dialog-open` | Help/FAQ dialog |
-| `03-faq-item-*` | Each FAQ section expanded |
-| `04-database-selector` | Database selection UI |
-| `05-table-selector-*` | Table selector states |
-| `06-column-selector-*` | Column selector states |
-| `07-search-*` | Search input with various queries |
-| `08-search-results` | Search results displayed |
-| `09-results-*` | Results table interactions |
-| `10-row-detail-dialog` | Row detail view |
-| `11-copy-action` | Copy row action |
-| `12-*-clear` | Before/after clearing results |
-| `13-error-state` | Error handling |
-| `14-column-management` | Column visibility dialog |
-| `15-no-results` | Empty results state |
-| `16-final-overview` | Final app overview |
+| Screenshot             | Description                       |
+| ---------------------- | --------------------------------- |
+| `01-initial-launch`    | Application just launched         |
+| `02-app-header`        | Header with title and controls    |
+| `02b-theme-dark`       | Dark theme enabled                |
+| `02c-theme-light`      | Light theme restored              |
+| `03-help-dialog-open`  | Help/FAQ dialog                   |
+| `03-faq-item-*`        | Each FAQ section expanded         |
+| `04-database-selector` | Database selection UI             |
+| `05-table-selector-*`  | Table selector states             |
+| `06-column-selector-*` | Column selector states            |
+| `07-search-*`          | Search input with various queries |
+| `08-search-results`    | Search results displayed          |
+| `09-results-*`         | Results table interactions        |
+| `10-row-detail-dialog` | Row detail view                   |
+| `11-copy-action`       | Copy row action                   |
+| `12-*-clear`           | Before/after clearing results     |
+| `13-error-state`       | Error handling                    |
+| `14-column-management` | Column visibility dialog          |
+| `15-no-results`        | Empty results state               |
+| `16-final-overview`    | Final app overview                |
 
 ### Test Database
 

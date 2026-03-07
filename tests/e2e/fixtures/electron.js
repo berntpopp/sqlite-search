@@ -88,7 +88,7 @@ export const test = base.extend({
   takeScreenshot: async ({ window }, use) => {
     const screenshots = []
 
-    const takeScreenshot = async (name) => {
+    const takeScreenshot = async name => {
       const screenshotPath = path.join(ROOT_DIR, 'e2e-results', 'screenshots', `${name}.png`)
       await window.screenshot({ path: screenshotPath })
       screenshots.push(screenshotPath)

@@ -44,7 +44,7 @@ async function createDatabase() {
   const db = new sqlite3.Database(DB_PATH)
 
   return new Promise((resolve, reject) => {
-    db.exec(sql, (err) => {
+    db.exec(sql, err => {
       if (err) {
         console.error('❌ Error creating database:', err)
         db.close()
@@ -53,46 +53,43 @@ async function createDatabase() {
       }
 
       // Verify tables
-      db.all(
-        `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`,
-        (err, tables) => {
-          if (err) {
-            console.error('❌ Error listing tables:', err)
-            db.close()
-            reject(err)
-            return
+      db.all(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`, (err, tables) => {
+        if (err) {
+          console.error('❌ Error listing tables:', err)
+          db.close()
+          reject(err)
+          return
+        }
+
+        console.log('   Tables created:')
+        tables.forEach(t => console.log(`     - ${t.name}`))
+
+        // Get counts
+        db.get('SELECT COUNT(*) as count FROM genes_fts', (err, row) => {
+          if (!err) {
+            console.log(`   genes_fts: ${row.count} records`)
           }
 
-          console.log('   Tables created:')
-          tables.forEach((t) => console.log(`     - ${t.name}`))
-
-          // Get counts
-          db.get('SELECT COUNT(*) as count FROM genes_fts', (err, row) => {
+          db.get('SELECT COUNT(*) as count FROM variants_fts', (err, row) => {
             if (!err) {
-              console.log(`   genes_fts: ${row.count} records`)
+              console.log(`   variants_fts: ${row.count} records`)
             }
 
-            db.get('SELECT COUNT(*) as count FROM variants_fts', (err, row) => {
-              if (!err) {
-                console.log(`   variants_fts: ${row.count} records`)
-              }
-
-              db.close()
-              console.log('✅ Test database created successfully!')
-              console.log('')
-              console.log('To use in tests:')
-              console.log(`   Database path: ${DB_PATH}`)
-              resolve()
-            })
+            db.close()
+            console.log('✅ Test database created successfully!')
+            console.log('')
+            console.log('To use in tests:')
+            console.log(`   Database path: ${DB_PATH}`)
+            resolve()
           })
-        }
-      )
+        })
+      })
     })
   })
 }
 
 // Run if executed directly
-createDatabase().catch((err) => {
+createDatabase().catch(err => {
   console.error(err)
   process.exit(1)
 })

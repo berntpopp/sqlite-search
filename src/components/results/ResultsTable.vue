@@ -1,11 +1,6 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and browse mode support -->
-  <v-card
-    v-if="shouldShowTable"
-    elevation="1"
-    class="results-card"
-    data-testid="results-card"
-  >
+  <v-card v-if="shouldShowTable" elevation="1" class="results-card" data-testid="results-card">
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -27,9 +22,7 @@
               <template v-if="searchStore.hasActiveFilters">
                 ({{ searchStore.filteredResultCount }} of {{ searchStore.resultCount }} shown)
               </template>
-              <template v-else>
-                ({{ searchStore.resultCount }} found)
-              </template>
+              <template v-else> ({{ searchStore.resultCount }} found) </template>
             </span>
           </template>
         </span>
@@ -205,7 +198,9 @@
           <!-- Left: Page info -->
           <div class="d-flex align-center text-body-2 text-medium-emphasis">
             <span>
-              Showing {{ searchStore.browsePaginationInfo.start }}-{{ searchStore.browsePaginationInfo.end }}
+              Showing {{ searchStore.browsePaginationInfo.start }}-{{
+                searchStore.browsePaginationInfo.end
+              }}
               of {{ formatNumber(searchStore.browsePaginationInfo.total) }}
             </span>
           </div>
@@ -334,7 +329,8 @@
           <!-- Left: Page info -->
           <div class="d-flex align-center text-body-2 text-medium-emphasis">
             <span>
-              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }}
+              Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of
+              {{ paginationInfo.total }}
             </span>
           </div>
 
@@ -414,14 +410,15 @@
       >
         <div class="d-flex align-center justify-space-between header-wrapper">
           <!-- Clickable header text with sort icon -->
-          <div class="d-flex align-center flex-grow-1 sortable-header" @click="toggleSort(headerColumn)">
+          <div
+            class="d-flex align-center flex-grow-1 sortable-header"
+            @click="toggleSort(headerColumn)"
+          >
             <span class="header-title">{{ headerColumn.title }}</span>
             <v-icon v-if="isSorted(headerColumn)" size="small" class="ml-1">
               {{ getSortIcon(headerColumn) }}
             </v-icon>
-            <v-icon v-else size="small" class="ml-1 sort-icon-inactive">
-              mdi-sort
-            </v-icon>
+            <v-icon v-else size="small" class="ml-1 sort-icon-inactive"> mdi-sort </v-icon>
           </div>
           <!-- Filter menu -->
           <v-menu :close-on-content-click="false" location="bottom">
@@ -466,11 +463,7 @@
               <v-divider></v-divider>
               <v-card-actions class="pa-2">
                 <v-spacer></v-spacer>
-                <v-btn
-                  size="small"
-                  variant="text"
-                  @click="searchStore.clearColumnFilter(column)"
-                >
+                <v-btn size="small" variant="text" @click="searchStore.clearColumnFilter(column)">
                   Clear
                 </v-btn>
               </v-card-actions>
@@ -524,7 +517,9 @@
       />
       <!-- Search mode with filters empty state -->
       <EmptyState
-        v-else-if="searchStore.isSearchMode && searchStore.hasActiveFilters && !searchStore.hasResults"
+        v-else-if="
+          searchStore.isSearchMode && searchStore.hasActiveFilters && !searchStore.hasResults
+        "
         variant="no-results"
         icon="mdi-filter-off-outline"
         title="No results match your filters"
@@ -626,7 +621,7 @@ const noResultsSuggestions = [
   'Check spelling of your search terms',
   'Try using wildcards (e.g., gene* instead of gene)',
   'Use broader search terms',
-  'Search fewer columns'
+  'Search fewer columns',
 ]
 
 /**
@@ -647,7 +642,7 @@ function clearSearch() {
 // Watch visible columns and cleanup sortBy when columns are hidden (search mode)
 watch(
   () => databaseStore.visibleColumns,
-  (newVisibleColumns) => {
+  newVisibleColumns => {
     searchStore.cleanupSortByColumns(newVisibleColumns)
   },
   { immediate: true }
@@ -662,7 +657,7 @@ watch(
 )
 
 // Sync browse items per page with store
-watch(browseItemsPerPage, (newValue) => {
+watch(browseItemsPerPage, newValue => {
   if (searchStore.isBrowseMode && newValue !== searchStore.browseData.itemsPerPage) {
     setItemsPerPage(newValue)
   }

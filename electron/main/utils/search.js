@@ -108,7 +108,7 @@ function processFts5BooleanQuery(query) {
   const parts = query.split(/\b(AND|OR|NOT)\b/)
 
   return parts
-    .map((part) => {
+    .map(part => {
       const trimmed = part.trim()
 
       // Empty parts

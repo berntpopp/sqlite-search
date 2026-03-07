@@ -11,10 +11,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.vue",
-    "src/**/*.js"
-  ],
+  "include": ["src/**/*.ts", "src/**/*.vue", "src/**/*.js"],
   "exclude": ["node_modules", "dist", "dist-electron"]
 }

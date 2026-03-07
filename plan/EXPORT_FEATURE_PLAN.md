@@ -12,12 +12,12 @@ This plan implements a table export feature allowing users to download search re
 
 ### Key Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Library | **SheetJS (xlsx)** | Industry standard, MIT licensed, excellent Electron support, handles CSV/Excel natively |
-| Export Location | Main Process | Security: file system access should be in main process with `dialog.showSaveDialog` |
-| Row Limit | 100,000 rows | Balance between utility and performance; Excel supports 1M but UI/memory degrades |
-| UI Pattern | Export menu button in ResultsTable header | Consistent with existing "Columns" button pattern |
+| Decision        | Choice                                    | Rationale                                                                               |
+| --------------- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| Library         | **SheetJS (xlsx)**                        | Industry standard, MIT licensed, excellent Electron support, handles CSV/Excel natively |
+| Export Location | Main Process                              | Security: file system access should be in main process with `dialog.showSaveDialog`     |
+| Row Limit       | 100,000 rows                              | Balance between utility and performance; Excel supports 1M but UI/memory degrades       |
+| UI Pattern      | Export menu button in ResultsTable header | Consistent with existing "Columns" button pattern                                       |
 
 ---
 
@@ -66,6 +66,7 @@ This plan implements a table export feature allowing users to download search re
 **Files to create/modify:**
 
 #### 1.1 Export Configuration
+
 **File:** `src/config/export.config.js` (NEW)
 
 ```javascript
@@ -80,14 +81,14 @@ export const EXPORT_CONFIG = {
       extension: 'csv',
       mimeType: 'text/csv',
       label: 'CSV (Comma Separated)',
-      icon: 'mdi-file-delimited'
+      icon: 'mdi-file-delimited',
     },
     EXCEL: {
       extension: 'xlsx',
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       label: 'Excel Workbook',
-      icon: 'mdi-microsoft-excel'
-    }
+      icon: 'mdi-microsoft-excel',
+    },
   },
 
   // CSV options
@@ -96,11 +97,12 @@ export const EXPORT_CONFIG = {
   CSV_ESCAPE_CHAR: '"',
 
   // Excel options
-  EXCEL_SHEET_NAME: 'Export'
+  EXCEL_SHEET_NAME: 'Export',
 }
 ```
 
 #### 1.2 Add SheetJS Dependency
+
 **File:** `package.json`
 
 ```diff
@@ -138,21 +140,20 @@ import XLSX from 'xlsx'
  * @returns {string} CSV content
  */
 export function generateCSV(data, columns, options = {}) {
-  const {
-    delimiter = ',',
-    quoteChar = '"',
-    escapeChar = '"'
-  } = options
+  const { delimiter = ',', quoteChar = '"', escapeChar = '"' } = options
 
   // Escape function for CSV values
-  const escapeValue = (value) => {
+  const escapeValue = value => {
     if (value === null || value === undefined) return ''
     const str = String(value)
     // Quote if contains delimiter, quote, newline, or carriage return
-    if (str.includes(delimiter) || str.includes(quoteChar) ||
-        str.includes('\n') || str.includes('\r')) {
-      return quoteChar + str.replace(new RegExp(quoteChar, 'g'),
-                                      escapeChar + quoteChar) + quoteChar
+    if (
+      str.includes(delimiter) ||
+      str.includes(quoteChar) ||
+      str.includes('\n') ||
+      str.includes('\r')
+    ) {
+      return quoteChar + str.replace(new RegExp(quoteChar, 'g'), escapeChar + quoteChar) + quoteChar
     }
     return str
   }
@@ -161,9 +162,7 @@ export function generateCSV(data, columns, options = {}) {
   const header = columns.map(escapeValue).join(delimiter)
 
   // Data rows
-  const rows = data.map(row =>
-    columns.map(col => escapeValue(row[col])).join(delimiter)
-  )
+  const rows = data.map(row => columns.map(col => escapeValue(row[col])).join(delimiter))
 
   return [header, ...rows].join('\r\n')
 }
@@ -180,16 +179,14 @@ export function generateExcel(data, columns, sheetName = 'Export') {
   // Create worksheet from data
   const worksheet = XLSX.utils.json_to_sheet(data, {
     header: columns,
-    skipHeader: false
+    skipHeader: false,
   })
 
   // Set column widths based on content
   const colWidths = columns.map(col => {
     const maxLen = Math.max(
       col.length,
-      ...data.slice(0, 100).map(row =>
-        String(row[col] || '').length
-      )
+      ...data.slice(0, 100).map(row => String(row[col] || '').length)
     )
     return { wch: Math.min(maxLen + 2, 50) }
   })
@@ -222,8 +219,8 @@ ipcMain.handle('export-to-csv', async (event, data, columns, defaultFilename) =>
     defaultPath: defaultFilename || 'export.csv',
     filters: [
       { name: 'CSV Files', extensions: ['csv'] },
-      { name: 'All Files', extensions: ['*'] }
-    ]
+      { name: 'All Files', extensions: ['*'] },
+    ],
   })
 
   if (canceled || !filePath) {
@@ -251,8 +248,8 @@ ipcMain.handle('export-to-excel', async (event, data, columns, defaultFilename) 
     defaultPath: defaultFilename || 'export.xlsx',
     filters: [
       { name: 'Excel Files', extensions: ['xlsx'] },
-      { name: 'All Files', extensions: ['*'] }
-    ]
+      { name: 'All Files', extensions: ['*'] },
+    ],
   })
 
   if (canceled || !filePath) {
@@ -395,10 +392,7 @@ export function useExport() {
       const result = await window.electronAPI.exportToCSV(data, columns, filename)
 
       if (result.success) {
-        uiStore.showSnackbar(
-          `Exported ${result.rowCount.toLocaleString()} rows to CSV`,
-          'success'
-        )
+        uiStore.showSnackbar(`Exported ${result.rowCount.toLocaleString()} rows to CSV`, 'success')
       } else if (result.reason !== 'canceled') {
         uiStore.showSnackbar(`Export failed: ${result.reason}`, 'error')
       }
@@ -458,7 +452,7 @@ export function useExport() {
     // Config (for UI)
     MAX_EXPORT_ROWS: EXPORT_CONFIG.MAX_EXPORT_ROWS,
     WARNING_THRESHOLD: EXPORT_CONFIG.WARNING_THRESHOLD,
-    FORMATS: EXPORT_CONFIG.FORMATS
+    FORMATS: EXPORT_CONFIG.FORMATS,
   }
 }
 ```
@@ -554,6 +548,7 @@ Add export menu button next to existing "Columns" button:
 ```
 
 Add to script section:
+
 ```javascript
 import { useExport } from '@/composables/useExport'
 
@@ -605,7 +600,7 @@ ipcMain.handle('export-full-table', async (event, tableName, columns, format, so
   if (countResult.count > EXPORT_CONFIG.MAX_EXPORT_ROWS) {
     return {
       success: false,
-      reason: `Row count (${countResult.count}) exceeds export limit (${EXPORT_CONFIG.MAX_EXPORT_ROWS})`
+      reason: `Row count (${countResult.count}) exceeds export limit (${EXPORT_CONFIG.MAX_EXPORT_ROWS})`,
     }
   }
 
@@ -614,9 +609,7 @@ ipcMain.handle('export-full-table', async (event, tableName, columns, format, so
   const { filePath, canceled } = await dialog.showSaveDialog({
     title: `Export as ${format.toUpperCase()}`,
     defaultPath: `${tableName}_export.${extension}`,
-    filters: [
-      { name: format === 'xlsx' ? 'Excel Files' : 'CSV Files', extensions: [extension] }
-    ]
+    filters: [{ name: format === 'xlsx' ? 'Excel Files' : 'CSV Files', extensions: [extension] }],
   })
 
   if (canceled || !filePath) {
@@ -661,15 +654,15 @@ ipcMain.handle('export-full-table', async (event, tableName, columns, format, so
 
 ## File Summary
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `package.json` | MODIFY | Add `xlsx` dependency |
-| `src/config/export.config.js` | CREATE | Export configuration constants |
-| `electron/main/utils/export.js` | CREATE | CSV/Excel generation utilities |
-| `electron/main/index.js` | MODIFY | Add IPC handlers for export |
-| `electron/preload/index.js` | MODIFY | Expose export APIs to renderer |
-| `src/composables/useExport.js` | CREATE | Export business logic |
-| `src/components/results/ResultsTable.vue` | MODIFY | Add export menu UI |
+| File                                      | Action | Purpose                        |
+| ----------------------------------------- | ------ | ------------------------------ |
+| `package.json`                            | MODIFY | Add `xlsx` dependency          |
+| `src/config/export.config.js`             | CREATE | Export configuration constants |
+| `electron/main/utils/export.js`           | CREATE | CSV/Excel generation utilities |
+| `electron/main/index.js`                  | MODIFY | Add IPC handlers for export    |
+| `electron/preload/index.js`               | MODIFY | Expose export APIs to renderer |
+| `src/composables/useExport.js`            | CREATE | Export business logic          |
+| `src/components/results/ResultsTable.vue` | MODIFY | Add export menu UI             |
 
 ---
 
@@ -733,9 +726,9 @@ ipcMain.handle('export-full-table', async (event, tableName, columns, format, so
 
 ## Dependencies
 
-| Package | Version | Purpose | License |
-|---------|---------|---------|---------|
-| xlsx | ^0.18.5 | Excel file generation | Apache-2.0 |
+| Package | Version | Purpose               | License    |
+| ------- | ------- | --------------------- | ---------- |
+| xlsx    | ^0.18.5 | Excel file generation | Apache-2.0 |
 
 **Note:** SheetJS is only used in main process, not bundled with renderer. This keeps the renderer bundle small.
 

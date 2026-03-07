@@ -5,9 +5,5 @@
     "lib": ["ES2020"],
     "types": ["node"]
   },
-  "include": [
-    "electron.vite.config.ts",
-    "electron/**/*.ts",
-    "electron/**/*.js"
-  ]
+  "include": ["electron.vite.config.ts", "electron/**/*.ts", "electron/**/*.js"]
 }

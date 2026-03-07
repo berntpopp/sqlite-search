@@ -61,7 +61,11 @@
     >
       <v-icon size="small">mdi-format-text</v-icon>
       <v-tooltip activator="parent" location="bottom">
-        {{ uiStore.autoSelectTextColumns ? 'Auto-select TEXT columns: ON' : 'Auto-select TEXT columns: OFF' }}
+        {{
+          uiStore.autoSelectTextColumns
+            ? 'Auto-select TEXT columns: ON'
+            : 'Auto-select TEXT columns: OFF'
+        }}
       </v-tooltip>
     </v-btn>
 

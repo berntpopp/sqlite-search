@@ -52,7 +52,11 @@
               <!-- Requirements list -->
               <ul v-if="section.content.requirements" class="help-list mb-3">
                 <li v-for="(req, idx) in section.content.requirements" :key="idx">
-                  <v-icon icon="mdi-chevron-right" size="x-small" class="mr-2 text-medium-emphasis"></v-icon>
+                  <v-icon
+                    icon="mdi-chevron-right"
+                    size="x-small"
+                    class="mr-2 text-medium-emphasis"
+                  ></v-icon>
                   <span class="text-body-2">{{ req }}</span>
                 </li>
               </ul>
@@ -76,21 +80,23 @@
                   :key="idx"
                   class="option-item"
                 >
-                  <v-icon :icon="option.icon" size="small" class="mr-2 text-medium-emphasis"></v-icon>
+                  <v-icon
+                    :icon="option.icon"
+                    size="small"
+                    class="mr-2 text-medium-emphasis"
+                  ></v-icon>
                   <div>
                     <span class="text-body-2 font-weight-medium">{{ option.name }}</span>
-                    <span class="text-body-2 text-medium-emphasis"> — {{ option.description }}</span>
+                    <span class="text-body-2 text-medium-emphasis">
+                      — {{ option.description }}</span
+                    >
                   </div>
                 </div>
               </div>
 
               <!-- Troubleshooting issues -->
               <div v-if="section.content.issues" class="issues-list mb-3">
-                <div
-                  v-for="(issue, idx) in section.content.issues"
-                  :key="idx"
-                  class="issue-item"
-                >
+                <div v-for="(issue, idx) in section.content.issues" :key="idx" class="issue-item">
                   <div class="text-body-2">
                     <strong>{{ issue.problem }}:</strong>
                     <span class="text-medium-emphasis">{{ issue.solution }}</span>

@@ -10,19 +10,11 @@
       class="mode-toggle mb-3"
       rounded="lg"
     >
-      <v-btn
-        :value="VIEW_MODES.SEARCH"
-        size="small"
-        data-testid="mode-search"
-      >
+      <v-btn :value="VIEW_MODES.SEARCH" size="small" data-testid="mode-search">
         <v-icon start size="small">mdi-magnify</v-icon>
         Search
       </v-btn>
-      <v-btn
-        :value="VIEW_MODES.BROWSE"
-        size="small"
-        data-testid="mode-browse"
-      >
+      <v-btn :value="VIEW_MODES.BROWSE" size="small" data-testid="mode-browse">
         <v-icon start size="small">mdi-table-eye</v-icon>
         Browse
       </v-btn>
@@ -66,23 +58,14 @@
 
     <!-- Browse mode: Info display -->
     <div v-else class="browse-info d-flex align-center justify-center">
-      <v-chip
-        color="primary"
-        variant="tonal"
-        size="default"
-        class="px-4"
-      >
+      <v-chip color="primary" variant="tonal" size="default" class="px-4">
         <v-icon start size="small">mdi-table</v-icon>
-        <span v-if="searchStore.browseLoading">
-          Loading table data...
-        </span>
+        <span v-if="searchStore.browseLoading"> Loading table data... </span>
         <span v-else-if="searchStore.hasBrowseData">
           {{ formatNumber(searchStore.browseData.totalCount) }} rows in
           <strong class="ml-1">{{ databaseStore.selectedTable }}</strong>
         </span>
-        <span v-else>
-          Click Browse to view all rows
-        </span>
+        <span v-else> Click Browse to view all rows </span>
       </v-chip>
 
       <v-btn
@@ -116,13 +99,13 @@ const databaseStore = useDatabaseStore()
 // Two-way binding for view mode with auto-fetch on browse
 const currentViewMode = computed({
   get: () => searchStore.viewMode,
-  set: (value) => {
+  set: value => {
     if (value === VIEW_MODES.BROWSE) {
       enterBrowseMode()
     } else {
       enterSearchMode()
     }
-  }
+  },
 })
 
 // Two-way binding with store for search term
@@ -184,7 +167,11 @@ function handleRefresh() {
 watch(
   () => [databaseStore.selectedTable, databaseStore.selectedColumns.length],
   () => {
-    if (searchStore.isBrowseMode && databaseStore.selectedTable && databaseStore.selectedColumns.length > 0) {
+    if (
+      searchStore.isBrowseMode &&
+      databaseStore.selectedTable &&
+      databaseStore.selectedColumns.length > 0
+    ) {
       refresh()
     }
   }

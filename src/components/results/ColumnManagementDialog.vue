@@ -1,6 +1,10 @@
 <template>
   <!-- Column Management Dialog for show/hide and reordering columns -->
-  <v-dialog :model-value="modelValue" max-width="600" @update:model-value="$emit('update:modelValue', $event)">
+  <v-dialog
+    :model-value="modelValue"
+    max-width="600"
+    @update:model-value="$emit('update:modelValue', $event)"
+  >
     <v-card>
       <!-- Header - unified style with other dialogs -->
       <v-card-title class="d-flex align-center justify-space-between py-3 px-4">
@@ -8,12 +12,7 @@
           <v-icon size="small" class="mr-2">mdi-table-cog</v-icon>
           <span class="text-h6">Manage Columns</span>
         </div>
-        <v-btn
-          icon
-          variant="text"
-          size="small"
-          @click="$emit('update:modelValue', false)"
-        >
+        <v-btn icon variant="text" size="small" @click="$emit('update:modelValue', false)">
           <v-icon size="small">mdi-close</v-icon>
         </v-btn>
       </v-card-title>
@@ -23,9 +22,7 @@
       <!-- Instructions and quick actions -->
       <v-card-text class="pa-4">
         <div class="d-flex align-center justify-space-between mb-4">
-          <div class="text-body-2 text-medium-emphasis">
-            Toggle visibility and reorder columns
-          </div>
+          <div class="text-body-2 text-medium-emphasis">Toggle visibility and reorder columns</div>
           <div class="d-flex ga-2">
             <v-btn
               size="small"
@@ -107,7 +104,8 @@
         <!-- Summary info -->
         <div class="mt-4 d-flex align-center justify-space-between">
           <div class="text-caption text-medium-emphasis">
-            {{ databaseStore.visibleColumns.length }} of {{ effectiveColumnOrder.length }} columns visible
+            {{ databaseStore.visibleColumns.length }} of {{ effectiveColumnOrder.length }} columns
+            visible
           </div>
           <div v-if="databaseStore.hiddenColumnCount > 0" class="text-caption text-warning">
             <v-icon size="small" class="mr-1">mdi-alert-circle-outline</v-icon>
@@ -121,11 +119,7 @@
       <!-- Footer actions - unified style with other dialogs -->
       <v-card-actions class="px-4 py-3">
         <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        >
+        <v-btn color="primary" variant="text" @click="$emit('update:modelValue', false)">
           Close
         </v-btn>
       </v-card-actions>
@@ -166,7 +160,11 @@ const effectiveColumnOrder = computed(() => {
  * Clears ALL cache including sort, filters, and column preferences
  */
 function resetWithConfirm() {
-  if (confirm('Reset ALL settings (columns, sort, filters) for this table? This will clear all cached preferences.')) {
+  if (
+    confirm(
+      'Reset ALL settings (columns, sort, filters) for this table? This will clear all cached preferences.'
+    )
+  ) {
     databaseStore.clearAllTableCache()
 
     // Also clear sort and filters from search store

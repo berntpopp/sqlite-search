@@ -28,7 +28,7 @@ const log = {
     const msg = `[WARN] ${new Date().toISOString()} ${args.join(' ')}\n`
     console.warn('[WARN]', new Date().toISOString(), ...args)
     logStream.write(msg)
-  }
+  },
 }
 
 log.info('='.repeat(80))
@@ -212,7 +212,7 @@ app.on('activate', () => {
 })
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   log.error('Uncaught Exception:', error)
 })
 
@@ -223,17 +223,20 @@ process.on('unhandledRejection', (reason, promise) => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 log.info('Setting up app.whenReady() handler')
-app.whenReady().then(() => {
-  log.info('app.whenReady() fired - Electron initialized')
-  log.info('App path:', app.getAppPath())
-  log.info('Exe path:', app.getPath('exe'))
-  log.info('User data:', app.getPath('userData'))
-  createWindow().catch(err => {
-    log.error('Failed to create window:', err)
+app
+  .whenReady()
+  .then(() => {
+    log.info('app.whenReady() fired - Electron initialized')
+    log.info('App path:', app.getAppPath())
+    log.info('Exe path:', app.getPath('exe'))
+    log.info('User data:', app.getPath('userData'))
+    createWindow().catch(err => {
+      log.error('Failed to create window:', err)
+    })
   })
-}).catch(err => {
-  log.error('app.whenReady() failed:', err)
-})
+  .catch(err => {
+    log.error('app.whenReady() failed:', err)
+  })
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
@@ -354,7 +357,7 @@ function getValidColumns(database, tableName) {
           const columnData = ftsColumns.map(col => ({
             name: col.name,
             // Use type from base table if available, otherwise default to TEXT
-            type: baseTypeMap.get(col.name) || col.type || 'TEXT'
+            type: baseTypeMap.get(col.name) || col.type || 'TEXT',
           }))
           validColumnsCache.set(tableName, columnData)
           console.log(`Loaded column types for FTS5 table ${tableName}:`, columnData.slice(0, 5))
@@ -364,7 +367,7 @@ function getValidColumns(database, tableName) {
         // Non-FTS5 table: use columns directly
         const columnData = ftsColumns.map(col => ({
           name: col.name,
-          type: col.type || 'TEXT'
+          type: col.type || 'TEXT',
         }))
         validColumnsCache.set(tableName, columnData)
         console.log(`Loaded column types for ${tableName}:`, columnData.slice(0, 5))
@@ -421,14 +424,16 @@ function initDbConnection(dbPath) {
       log.info('Connected to sqlite database at:', dbPath)
       currentDatabasePath = dbPath
       // Initialize table whitelist on connection
-      refreshValidTables(newDb).then(() => {
-        // Notify renderer that database is loaded (for E2E testing)
-        notifyDatabaseLoaded(dbPath)
-      }).catch(err => {
-        log.error('Failed to initialize table whitelist:', err)
-        // Still notify even if whitelist fails
-        notifyDatabaseLoaded(dbPath)
-      })
+      refreshValidTables(newDb)
+        .then(() => {
+          // Notify renderer that database is loaded (for E2E testing)
+          notifyDatabaseLoaded(dbPath)
+        })
+        .catch(err => {
+          log.error('Failed to initialize table whitelist:', err)
+          // Still notify even if whitelist fails
+          notifyDatabaseLoaded(dbPath)
+        })
     }
   })
 
@@ -483,7 +488,7 @@ ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedCo
       columns: selectedColumns,
       originalTerm: searchTerm,
       escapedTerm: escapedSearchTerm,
-      matchQuery
+      matchQuery,
     })
 
     // Execute the query
@@ -639,7 +644,12 @@ ipcMain.on('browse-table', async (event, tableName, columns, page, itemsPerPage,
     const dataQuery = `SELECT ${columnList} FROM "${tableName}" ${orderByClause} LIMIT ? OFFSET ?`
     const countQuery = `SELECT COUNT(*) as count FROM "${tableName}"`
 
-    log.info('Browse query:', { table: tableName, page: safePage, itemsPerPage: safeItemsPerPage, sort })
+    log.info('Browse query:', {
+      table: tableName,
+      page: safePage,
+      itemsPerPage: safeItemsPerPage,
+      sort,
+    })
 
     const [rows, countResult] = await Promise.all([
       new Promise((resolve, reject) => {
@@ -653,7 +663,7 @@ ipcMain.on('browse-table', async (event, tableName, columns, page, itemsPerPage,
           if (err) reject(err)
           else resolve(row)
         })
-      })
+      }),
     ])
 
     log.info(`Browse completed: ${rows.length} rows returned, ${countResult.count} total`)
@@ -662,7 +672,7 @@ ipcMain.on('browse-table', async (event, tableName, columns, page, itemsPerPage,
       rows,
       totalCount: countResult.count,
       page: safePage,
-      itemsPerPage: safeItemsPerPage
+      itemsPerPage: safeItemsPerPage,
     })
   } catch (error) {
     log.error('Browse error:', error.message)

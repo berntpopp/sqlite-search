@@ -13,7 +13,7 @@ import { SEARCH_CONFIG } from '@/config/search.config'
  */
 export const VIEW_MODES = {
   SEARCH: 'search',
-  BROWSE: 'browse'
+  BROWSE: 'browse',
 }
 
 export const useSearchStore = defineStore('search', () => {
@@ -46,7 +46,7 @@ export const useSearchStore = defineStore('search', () => {
     rows: [],
     totalCount: 0,
     page: 1,
-    itemsPerPage: 25
+    itemsPerPage: 25,
   })
   const browseLoading = ref(false)
   const browseError = ref(null)
@@ -69,7 +69,8 @@ export const useSearchStore = defineStore('search', () => {
    * Count of active filters
    */
   const activeFilterCount = computed(() => {
-    return Object.values(columnFilters.value).filter(filter => filter && filter.trim() !== '').length
+    return Object.values(columnFilters.value).filter(filter => filter && filter.trim() !== '')
+      .length
   })
 
   /**
@@ -222,18 +223,26 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   // Watch for sort changes and persist
-  watch(sortBy, () => {
-    if (currentTableName.value) {
-      saveSortPreferences(currentTableName.value)
-    }
-  }, { deep: true })
+  watch(
+    sortBy,
+    () => {
+      if (currentTableName.value) {
+        saveSortPreferences(currentTableName.value)
+      }
+    },
+    { deep: true }
+  )
 
   // Watch for filter changes and persist (debounced handled in component)
-  watch(columnFilters, () => {
-    if (currentTableName.value) {
-      saveFilterPreferences(currentTableName.value)
-    }
-  }, { deep: true })
+  watch(
+    columnFilters,
+    () => {
+      if (currentTableName.value) {
+        saveFilterPreferences(currentTableName.value)
+      }
+    },
+    { deep: true }
+  )
 
   // Actions
   /**
@@ -412,7 +421,7 @@ export const useSearchStore = defineStore('search', () => {
       rows: data.rows || [],
       totalCount: data.totalCount || 0,
       page: data.page || 1,
-      itemsPerPage: data.itemsPerPage || 25
+      itemsPerPage: data.itemsPerPage || 25,
     }
     browseLoading.value = false
     browseError.value = null

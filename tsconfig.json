@@ -17,10 +17,7 @@
     "allowJs": true,
     "checkJs": false
   },
-  "references": [
-    { "path": "./tsconfig.node.json" },
-    { "path": "./tsconfig.renderer.json" }
-  ],
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.renderer.json" }],
   "include": [],
   "exclude": ["node_modules", "dist", "dist-electron"]
 }

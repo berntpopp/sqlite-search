@@ -3,9 +3,11 @@
 ## Current State
 
 ### Already Configured
+
 - **Dependabot** (`.github/dependabot.yml`): Weekly npm and GitHub Actions updates with grouping
 
 ### Missing
+
 - No `pnpm audit` in CI pipeline
 - No GitHub CodeQL scanning
 - No ESLint security plugin
@@ -37,7 +39,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 6 * * 1'  # Weekly Monday 6 AM
+    - cron: '0 6 * * 1' # Weekly Monday 6 AM
 
 jobs:
   analyze:
@@ -88,12 +90,12 @@ npx electronegativity -i ./electron
 
 ## Files to Create/Modify
 
-| File | Action | Description |
-|------|--------|-------------|
-| `.github/workflows/build.yml` | Modify | Add pnpm audit step |
-| `.github/workflows/codeql.yml` | Create | CodeQL security scanning |
-| `eslint.config.js` | Modify | Add security plugin |
-| `package.json` | Modify | Add eslint-plugin-security |
+| File                           | Action | Description                |
+| ------------------------------ | ------ | -------------------------- |
+| `.github/workflows/build.yml`  | Modify | Add pnpm audit step        |
+| `.github/workflows/codeql.yml` | Create | CodeQL security scanning   |
+| `eslint.config.js`             | Modify | Add security plugin        |
+| `package.json`                 | Modify | Add eslint-plugin-security |
 
 ## Success Criteria
 

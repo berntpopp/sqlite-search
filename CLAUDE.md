@@ -106,6 +106,7 @@ const query = `SELECT * FROM ${validatedTable} WHERE ${validatedTable} MATCH ?`
 ```
 
 The search utility (`electron/main/utils/search.js`) handles:
+
 - FTS5 syntax detection (AND/OR/NOT/NEAR, prefix `*`, phrases)
 - Special character escaping (quotes terms that contain periods, colons, hyphens, etc.)
 - Boolean operator preservation when escaping

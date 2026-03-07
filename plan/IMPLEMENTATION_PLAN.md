@@ -25,6 +25,7 @@ This plan addresses 5 open GitHub issues. One issue (#15 - CI/CD) is already com
 ### Status: COMPLETED
 
 **Evidence:**
+
 - `.github/workflows/build.yml` - Multi-platform CI on every push
 - `.github/workflows/release.yml` - Automated releases on version tags
 - Both workflows use modern best practices (pnpm caching, matrix builds)
@@ -36,10 +37,13 @@ This plan addresses 5 open GitHub issues. One issue (#15 - CI/CD) is already com
 ## Issue #16: Bug - Search fails with special characters
 
 ### Priority: **HIGH** (Critical Bug)
+
 ### Complexity: **LOW**
+
 ### Estimated Time: 2-3 hours
 
 ### Problem
+
 FTS5 special characters (`:`, `"`, `-`, `*`, `OR`, `AND`, `NOT`) cause syntax errors when used in search terms.
 
 ### Solution: FTS5 Query Escaping
@@ -47,6 +51,7 @@ FTS5 special characters (`:`, `"`, `-`, `*`, `OR`, `AND`, `NOT`) cause syntax er
 **Key Insight:** In FTS5, the ONLY character that needs escaping is the double quote (`"`), which must be doubled (`""`). Wrapping the entire term in quotes treats it as a literal string.
 
 **Transformation:**
+
 ```javascript
 // Input: hello:world "test"
 // Output: "hello:world ""test"""
@@ -55,6 +60,7 @@ FTS5 special characters (`:`, `"`, `-`, `*`, `OR`, `AND`, `NOT`) cause syntax er
 ### Implementation Steps
 
 #### 1. Create Utility Function
+
 **File:** `src/utils/fts5.js` (NEW)
 
 ```javascript
@@ -71,6 +77,7 @@ export function escapeFts5Query(searchTerm) {
 ```
 
 #### 2. Apply Escaping in Search Handler
+
 **File:** `electron/main/index.js` (line ~355)
 
 ```javascript
@@ -80,9 +87,11 @@ const matchQuery = `{${searchColumns}}: ${escapedSearchTerm}`
 ```
 
 #### 3. Add User Feedback (Optional)
+
 **File:** `src/components/search/SearchInput.vue`
 
 Show hint when special characters detected:
+
 ```javascript
 const searchHint = computed(() => {
   const hasSpecialChars = /[:"*\-(){}]/.test(searchTerm.value || '')
@@ -104,6 +113,7 @@ const searchHint = computed(() => {
 - [ ] Search: `   ` (whitespace only)
 
 ### Files Modified
+
 - NEW: `src/utils/fts5.js`
 - MODIFY: `electron/main/index.js` (1 function)
 - OPTIONAL: `src/components/search/SearchInput.vue` (hint)
@@ -113,11 +123,15 @@ const searchHint = computed(() => {
 ## Issue #14: Bug - MDI fonts not included in build
 
 ### Priority: **MEDIUM** (Build Quality)
+
 ### Complexity: **LOW**
+
 ### Estimated Time: 1-2 hours
 
 ### Problem
+
 MDI icons loaded via CDN, causing:
+
 - No offline support
 - CSP security issues
 - Slower first load
@@ -130,17 +144,25 @@ MDI icons loaded via CDN, causing:
 ### Implementation Steps
 
 #### 1. Remove CDN Link
+
 **File:** `index.html`
 
 ```html
 <!-- REMOVE THIS LINE: -->
-<link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.x/css/materialdesignicons.min.css" rel="stylesheet">
+<link
+  href="https://cdn.jsdelivr.net/npm/@mdi/font@7.x/css/materialdesignicons.min.css"
+  rel="stylesheet"
+/>
 
 <!-- UPDATE CSP (remove cdn.jsdelivr.net): -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;">
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
+/>
 ```
 
 #### 2. Import MDI CSS in JavaScript
+
 **File:** `src/main.js`
 
 ```javascript
@@ -156,6 +178,7 @@ import '@mdi/font/css/materialdesignicons.css'
 ```
 
 #### 3. Verify Vuetify Config
+
 **File:** `src/plugins/vuetify.js`
 
 ```javascript
@@ -176,6 +199,7 @@ export default createVuetify({
 - [ ] Offline test: Disconnect internet, launch built app - icons still work
 
 ### Files Modified
+
 - MODIFY: `index.html` (remove CDN link, update CSP)
 - MODIFY: `src/main.js` (add import)
 - VERIFY: `src/plugins/vuetify.js` (already correct)
@@ -185,10 +209,13 @@ export default createVuetify({
 ## Issue #11: Enhanced Dynamic Table and Column Loading
 
 ### Priority: **MEDIUM** (UX Enhancement)
+
 ### Complexity: **LOW-MEDIUM**
+
 ### Estimated Time: 3-4 hours
 
 ### Current State
+
 - ✅ Dynamic table loading
 - ✅ Dynamic column loading
 - ✅ Multi-select column picker
@@ -202,6 +229,7 @@ export default createVuetify({
 ### Implementation Steps
 
 #### 1. Create Configuration
+
 **File:** `src/config/search.config.js` (NEW)
 
 ```javascript
@@ -213,6 +241,7 @@ export const SEARCH_CONFIG = {
 ```
 
 #### 2. Update Auto-Selection Logic
+
 **File:** `src/App.vue` (line ~129)
 
 ```javascript
@@ -232,7 +261,7 @@ const onColumnsListHandler = (event, columns) => {
     if (columns.length > limit) {
       uiStore.showInfo(
         `Selected first ${limit} of ${columns.length} columns. ` +
-        `You can add or remove columns using the dropdown.`
+          `You can add or remove columns using the dropdown.`
       )
     } else {
       uiStore.showSuccess(`All ${columns.length} column(s) selected`)
@@ -242,6 +271,7 @@ const onColumnsListHandler = (event, columns) => {
 ```
 
 #### 3. Enhanced Column Selector UI
+
 **File:** `src/components/database/ColumnSelector.vue`
 
 Add quick action buttons and better chip display:
@@ -272,12 +302,8 @@ Add quick action buttons and better chip display:
     <!-- Quick action buttons -->
     <template #prepend-item>
       <v-list-item>
-        <v-btn size="small" variant="text" @click="selectFirstFive">
-          First 5
-        </v-btn>
-        <v-btn size="small" variant="text" @click="selectAll">
-          Select All
-        </v-btn>
+        <v-btn size="small" variant="text" @click="selectFirstFive"> First 5 </v-btn>
+        <v-btn size="small" variant="text" @click="selectAll"> Select All </v-btn>
       </v-list-item>
       <v-divider class="mb-2" />
     </template>
@@ -315,6 +341,7 @@ function selectAll() {
 - [ ] Persistence - verify custom selection survives refresh
 
 ### Files Modified
+
 - NEW: `src/config/search.config.js`
 - MODIFY: `src/App.vue` (auto-selection logic)
 - MODIFY: `src/components/database/ColumnSelector.vue` (UI enhancements)
@@ -324,11 +351,15 @@ function selectAll() {
 ## Issue #5: Enhancement - Search in Non-FTS5 Tables
 
 ### Priority: **LOW** (Feature Expansion)
+
 ### Complexity: **HIGH**
+
 ### Estimated Time: 8-12 hours
+
 ### Dependencies: Issue #16 (uses FTS5 escaping)
 
 ### Current State
+
 - ❌ Only FTS5 tables shown in table list
 - ❌ Regular tables completely ignored
 - ❌ No fallback search method
@@ -336,6 +367,7 @@ function selectAll() {
 ### Solution: Dual-Mode Search
 
 **Approach:**
+
 1. Detect table type (FTS5 vs regular)
 2. Use FTS5 MATCH for indexed tables
 3. Use LIKE fallback for regular tables
@@ -371,7 +403,7 @@ function refreshValidTables(database) {
       validTables = tables.map(t => ({
         name: t.name,
         type: t.table_type,
-        isFts5: t.table_type === 'fts5'
+        isFts5: t.table_type === 'fts5',
       }))
       resolve(validTables)
     }
@@ -392,7 +424,7 @@ const tableList = computed(() => {
     title: t.name + (t.isFts5 ? ' [FTS5]' : ' [Table]'),
     value: t.name,
     type: t.type,
-    isFts5: t.isFts5
+    isFts5: t.isFts5,
   }))
 })
 
@@ -480,10 +512,7 @@ ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedCo
 
 ```vue
 <template>
-  <v-text-field
-    :label="searchLabel"
-    :hint="searchHint"
-  >
+  <v-text-field :label="searchLabel" :hint="searchHint">
     <template #prepend-inner>
       <v-icon :color="searchIconColor">{{ searchIcon }}</v-icon>
     </template>
@@ -492,9 +521,7 @@ ipcMain.on('perform-search', async (event, searchTerm, selectedTable, selectedCo
 
 <script setup>
 const searchLabel = computed(() => {
-  return databaseStore.isFts5Table
-    ? 'Search Term (Full-Text Search)'
-    : 'Search Term (Text Match)'
+  return databaseStore.isFts5Table ? 'Search Term (Full-Text Search)' : 'Search Term (Text Match)'
 })
 
 const searchIcon = computed(() => {
@@ -520,7 +547,7 @@ const onColumnsListHandler = (event, columns) => {
   if (!databaseStore.isFts5Table) {
     uiStore.showWarning(
       'This table lacks FTS5 indexing. Search will use LIKE queries ' +
-      'which may be slower on large datasets.',
+        'which may be slower on large datasets.',
       { timeout: 6000 }
     )
   }
@@ -530,6 +557,7 @@ const onColumnsListHandler = (event, columns) => {
 ### Testing Checklist
 
 **Setup Test Database:**
+
 ```sql
 -- FTS5 table
 CREATE VIRTUAL TABLE articles USING fts5(title, content);
@@ -541,6 +569,7 @@ INSERT INTO users VALUES (1, 'Alice', 'alice@test.com');
 ```
 
 **Tests:**
+
 - [ ] Table list shows both FTS5 and regular tables
 - [ ] FTS5 tables have [FTS5] indicator
 - [ ] Regular tables have [Table] indicator
@@ -550,16 +579,19 @@ INSERT INTO users VALUES (1, 'Alice', 'alice@test.com');
 - [ ] Performance comparison on large dataset
 
 ### Files Modified (Phase 1)
+
 - MODIFY: `electron/main/index.js` (table query)
 - MODIFY: `src/stores/database.store.js` (table type tracking)
 - MODIFY: `src/components/database/TableSelector.vue` (UI indicators)
 
 ### Files Modified (Phase 2)
+
 - MODIFY: `electron/main/index.js` (search methods)
 - MODIFY: `src/components/search/SearchInput.vue` (feedback)
 - MODIFY: `src/App.vue` (warnings)
 
 ### Risk Mitigation
+
 - **SQL Injection:** Use existing whitelist validation
 - **Performance:** Show clear warnings for non-FTS5 tables
 - **Breaking Changes:** FTS5 remains default/preferred method
@@ -568,13 +600,13 @@ INSERT INTO users VALUES (1, 'Alice', 'alice@test.com');
 
 ## Summary Matrix
 
-| Issue | Priority | Complexity | Time | Dependencies | Status |
-|-------|----------|------------|------|--------------|--------|
-| #15 - CI/CD | - | - | 0h | None | ✅ COMPLETED |
-| #16 - Special Chars | HIGH | LOW | 2-3h | None | Ready |
-| #14 - MDI Fonts | MEDIUM | LOW | 1-2h | None | Ready |
-| #11 - Column UX | MEDIUM | LOW-MED | 3-4h | None | Ready |
-| #5 - Non-FTS5 | LOW | HIGH | 8-12h | #16 | Ready |
+| Issue               | Priority | Complexity | Time  | Dependencies | Status       |
+| ------------------- | -------- | ---------- | ----- | ------------ | ------------ |
+| #15 - CI/CD         | -        | -          | 0h    | None         | ✅ COMPLETED |
+| #16 - Special Chars | HIGH     | LOW        | 2-3h  | None         | Ready        |
+| #14 - MDI Fonts     | MEDIUM   | LOW        | 1-2h  | None         | Ready        |
+| #11 - Column UX     | MEDIUM   | LOW-MED    | 3-4h  | None         | Ready        |
+| #5 - Non-FTS5       | LOW      | HIGH       | 8-12h | #16          | Ready        |
 
 **Total Implementation Time:** 14-21 hours
 
@@ -593,6 +625,7 @@ INSERT INTO users VALUES (1, 'Alice', 'alice@test.com');
 ## Future Enhancements
 
 Consider creating new issues for:
+
 - Search history tracking
 - Export results to CSV/JSON
 - Advanced FTS5 features (wildcards, phrase search)

@@ -75,10 +75,7 @@ export function generateCSV(data, columns, options = {}) {
 
     // Check if quoting is needed (contains delimiter, quote, newline, or carriage return)
     const needsQuoting =
-      str.includes(delimiter) ||
-      str.includes(quoteChar) ||
-      str.includes('\n') ||
-      str.includes('\r')
+      str.includes(delimiter) || str.includes(quoteChar) || str.includes('\n') || str.includes('\r')
 
     if (needsQuoting) {
       // Escape internal quotes by doubling them
