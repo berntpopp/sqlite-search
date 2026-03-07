@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
+    "electron-updater": "^6.8.3",
     "exceljs": "^4.4.0",
     "pinia": "^3.0.4",
     "sortablejs": "^1.15.7",

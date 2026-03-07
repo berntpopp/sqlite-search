@@ -8,6 +8,7 @@ import fs from 'node:fs'
 import sqlite3 from 'sqlite3'
 import { escapeFts5SearchTerm, buildFts5MatchQuery, isValidSearchTerm } from './utils/search.js'
 import { generateCSV, generateExcel, validateExportParams } from './utils/export.js'
+import { setupAutoUpdater, cleanupAutoUpdater } from './updater.js'
 
 // Enhanced logging for production debugging with file output
 const logFile = path.join(app.getPath('temp'), 'sqlite-search-debug.log')
@@ -154,6 +155,9 @@ async function createWindow() {
       log.error('Renderer process crashed!', { killed })
     })
 
+    // Set up auto-updater (only runs in packaged builds)
+    setupAutoUpdater(win, log)
+
     log.info('Window setup complete')
   } catch (error) {
     log.error('Error in createWindow():', error)
@@ -173,6 +177,9 @@ function cleanupApp() {
   ipcMain.removeAllListeners('change-database')
   ipcMain.removeAllListeners('browse-table')
   ipcMain.removeAllListeners('get-table-row-count')
+
+  // Remove auto-updater IPC handlers
+  cleanupAutoUpdater()
 
   // Close database connection
   if (db) {

@@ -83,6 +83,24 @@
       <v-tooltip activator="parent" location="bottom"> Reset application state </v-tooltip>
     </v-btn>
 
+    <!-- Update button (visible when update available or downloaded) -->
+    <v-btn
+      v-if="updateStore.hasUpdate || updateStore.isDownloading"
+      icon
+      variant="text"
+      size="small"
+      class="mx-1"
+      :color="updateButtonColor"
+      :loading="updateStore.isDownloading"
+      data-testid="update-btn"
+      @click="handleUpdateAction"
+    >
+      <v-icon size="small">{{ updateIcon }}</v-icon>
+      <v-tooltip activator="parent" location="bottom">
+        {{ updateTooltip }}
+      </v-tooltip>
+    </v-btn>
+
     <!-- Help/FAQ button -->
     <v-btn variant="text" size="small" class="mx-1" @click="uiStore.openHelpDialog">
       <v-icon start size="small">mdi-help-circle-outline</v-icon>
@@ -100,6 +118,7 @@ import { useUIStore } from '@/stores/ui.store'
 import { useDatabaseStore } from '@/stores/database.store'
 import { useSearchStore } from '@/stores/search.store'
 import { useHistoryStore } from '@/stores/history.store'
+import { useUpdateStore } from '@/stores/update.store'
 import packageJson from '../../../package.json'
 
 // Emits
@@ -114,6 +133,7 @@ const uiStore = useUIStore()
 const databaseStore = useDatabaseStore()
 const searchStore = useSearchStore()
 const historyStore = useHistoryStore()
+const updateStore = useUpdateStore()
 
 // App version from package.json
 const version = packageJson.version
@@ -121,6 +141,43 @@ const version = packageJson.version
 // Computed properties for theme
 const themeIcon = computed(() => getThemeIcon())
 const themeTooltip = computed(() => getThemeTooltip())
+
+// Computed properties for update button
+const updateIcon = computed(() => {
+  if (updateStore.isDownloaded) return 'mdi-restart'
+  if (updateStore.isDownloading) return 'mdi-download'
+  return 'mdi-download'
+})
+
+const updateButtonColor = computed(() => {
+  if (updateStore.isDownloaded) return 'success'
+  return 'info'
+})
+
+const updateTooltip = computed(() => {
+  if (updateStore.isDownloaded) return `Restart to update to v${updateStore.availableVersion}`
+  if (updateStore.isDownloading) {
+    return `Downloading update... ${Math.round(updateStore.downloadProgress)}%`
+  }
+  return `Download update v${updateStore.availableVersion}`
+})
+
+/**
+ * Handle update button click
+ * Downloads update or installs if already downloaded
+ */
+async function handleUpdateAction() {
+  if (updateStore.isDownloaded) {
+    window.electronAPI.installUpdate()
+  } else if (updateStore.status === 'available') {
+    updateStore.setDownloading()
+    try {
+      await window.electronAPI.downloadUpdate()
+    } catch {
+      uiStore.showError('Failed to download update')
+    }
+  }
+}
 
 /**
  * Handle reset action
