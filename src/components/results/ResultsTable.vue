@@ -1,6 +1,12 @@
 <template>
   <!-- Enhanced results table with sorting, filtering, and browse mode support -->
-  <v-card v-if="shouldShowTable" ref="resultsCardRef" elevation="1" class="results-card" data-testid="results-card">
+  <v-card
+    v-if="shouldShowTable"
+    ref="resultsCardRef"
+    elevation="1"
+    class="results-card"
+    data-testid="results-card"
+  >
     <!-- Results count header with filter info -->
     <v-card-title class="py-2 px-4 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
@@ -589,16 +595,30 @@ const showColumnManagement = ref(false)
 // Horizontal scroll detection for fade hint
 const resultsCardRef = ref(null)
 
+let resizeObserver = null
+
 function checkHorizontalScroll() {
   const card = resultsCardRef.value?.$el || resultsCardRef.value
   if (!card) return
   const wrapper = card.querySelector('.v-table__wrapper')
   if (!wrapper) return
   const hasScroll = wrapper.scrollWidth > wrapper.clientWidth
-  card.classList.toggle('has-horizontal-scroll', hasScroll)
+  const atEnd = wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 1
+  const atStart = wrapper.scrollLeft <= 1
+  card.classList.toggle('has-horizontal-scroll', hasScroll && !atEnd)
+  card.classList.toggle('has-scroll-left', hasScroll && !atStart)
 }
 
-let resizeObserver = null
+function setupResizeObserver() {
+  const card = resultsCardRef.value?.$el || resultsCardRef.value
+  if (!card) return
+  const wrapper = card.querySelector('.v-table__wrapper')
+  if (!wrapper) return
+  if (resizeObserver) resizeObserver.disconnect()
+  resizeObserver = new ResizeObserver(() => checkHorizontalScroll())
+  resizeObserver.observe(wrapper)
+  wrapper.addEventListener('scroll', checkHorizontalScroll, { passive: true })
+}
 
 watch(
   () => [
@@ -608,17 +628,14 @@ watch(
   ],
   async () => {
     await nextTick()
+    await nextTick()
     checkHorizontalScroll()
-  },
+    setupResizeObserver()
+  }
 )
 
 onMounted(() => {
-  resizeObserver = new ResizeObserver(() => checkHorizontalScroll())
-  const card = resultsCardRef.value?.$el || resultsCardRef.value
-  if (card) {
-    const wrapper = card.querySelector('.v-table__wrapper')
-    if (wrapper) resizeObserver.observe(wrapper)
-  }
+  setupResizeObserver()
 })
 
 onUnmounted(() => {
@@ -863,15 +880,33 @@ function copyRow(item) {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 24px;
-  background: linear-gradient(to right, transparent, rgba(var(--v-theme-surface), 0.8));
+  width: 32px;
+  background: linear-gradient(to right, transparent, rgba(var(--v-theme-surface), 0.9));
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
   opacity: 0;
   transition: opacity 0.3s;
 }
 
 .results-card.has-horizontal-scroll::after {
+  opacity: 1;
+}
+
+.results-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 32px;
+  background: linear-gradient(to left, transparent, rgba(var(--v-theme-surface), 0.9));
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.results-card.has-scroll-left::before {
   opacity: 1;
 }
 

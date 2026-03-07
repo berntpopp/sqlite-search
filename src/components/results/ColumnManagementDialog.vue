@@ -22,7 +22,7 @@
       <!-- Instructions and quick actions -->
       <v-card-text class="pa-4">
         <div class="d-flex align-center justify-space-between mb-4">
-          <div class="text-body-2 text-medium-emphasis">Toggle visibility and reorder columns</div>
+          <div class="text-body-2 text-medium-emphasis">Toggle visibility or drag to reorder</div>
           <div class="d-flex ga-2">
             <v-btn
               size="small"
@@ -171,14 +171,14 @@ function destroySortable() {
 // Initialize sortable when dialog opens
 watch(
   () => props.modelValue,
-  async (isOpen) => {
+  async isOpen => {
     if (isOpen) {
       await nextTick()
       initSortable()
     } else {
       destroySortable()
     }
-  },
+  }
 )
 
 onBeforeUnmount(() => {
@@ -247,7 +247,7 @@ function canHideColumn(columnName) {
 }
 
 .column-item:hover .drag-handle {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 /* SortableJS drag states */
