@@ -65,7 +65,12 @@ export function useSearch() {
    * Select an item to view details
    */
   function viewDetails(item) {
-    searchStore.setSelectedItem(item)
+    const index = searchStore.filteredResults.indexOf(item)
+    if (index !== -1) {
+      searchStore.setSelectedItemByIndex(index)
+    } else {
+      searchStore.setSelectedItem(item)
+    }
     uiStore.openDetailsDialog()
   }
 

@@ -46,7 +46,7 @@ export function highlightSearchTerms(text, searchWords) {
 
   // Build regex from all search words, longest first to avoid partial replacement issues
   const sorted = [...searchWords].sort((a, b) => b.length - a.length)
-  const pattern = sorted.map((w) => escapeRegex(w)).join('|')
+  const pattern = sorted.map(w => escapeRegex(w)).join('|')
 
   const regex = new RegExp(`(${pattern})`, 'gi')
   return sanitized.replace(regex, '<mark>$1</mark>')

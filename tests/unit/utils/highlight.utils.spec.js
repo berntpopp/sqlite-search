@@ -4,7 +4,7 @@ import { highlightSearchTerms, sanitizeForHighlight } from '@/utils/highlight.ut
 describe('sanitizeForHighlight', () => {
   it('should escape HTML entities', () => {
     expect(sanitizeForHighlight('<script>alert("xss")</script>')).toBe(
-      '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;',
+      '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
     )
   })
 
@@ -21,27 +21,24 @@ describe('sanitizeForHighlight', () => {
 describe('highlightSearchTerms', () => {
   it('should wrap matching text in <mark> tags', () => {
     expect(highlightSearchTerms('Hello GRIN2B world', ['GRIN2B'])).toBe(
-      'Hello <mark>GRIN2B</mark> world',
+      'Hello <mark>GRIN2B</mark> world'
     )
   })
 
   it('should be case-insensitive', () => {
     expect(highlightSearchTerms('Hello grin2b world', ['GRIN2B'])).toBe(
-      'Hello <mark>grin2b</mark> world',
+      'Hello <mark>grin2b</mark> world'
     )
   })
 
   it('should highlight multiple occurrences', () => {
     expect(highlightSearchTerms('GRIN2B causes GRIN2B issues', ['GRIN2B'])).toBe(
-      '<mark>GRIN2B</mark> causes <mark>GRIN2B</mark> issues',
+      '<mark>GRIN2B</mark> causes <mark>GRIN2B</mark> issues'
     )
   })
 
   it('should highlight multiple different terms', () => {
-    const result = highlightSearchTerms('GRIN2B and epilepsy are related', [
-      'GRIN2B',
-      'epilepsy',
-    ])
+    const result = highlightSearchTerms('GRIN2B and epilepsy are related', ['GRIN2B', 'epilepsy'])
     expect(result).toContain('<mark>GRIN2B</mark>')
     expect(result).toContain('<mark>epilepsy</mark>')
   })
@@ -53,9 +50,7 @@ describe('highlightSearchTerms', () => {
   })
 
   it('should return sanitized text when no search terms', () => {
-    expect(highlightSearchTerms('Hello <b>world</b>', [])).toBe(
-      'Hello &lt;b&gt;world&lt;/b&gt;',
-    )
+    expect(highlightSearchTerms('Hello <b>world</b>', [])).toBe('Hello &lt;b&gt;world&lt;/b&gt;')
   })
 
   it('should handle empty text', () => {
@@ -65,13 +60,13 @@ describe('highlightSearchTerms', () => {
 
   it('should handle regex special characters in search terms', () => {
     expect(highlightSearchTerms('test (value) here', ['(value)'])).toBe(
-      'test <mark>(value)</mark> here',
+      'test <mark>(value)</mark> here'
     )
   })
 
   it('should handle partial word matches for prefix searches', () => {
     expect(highlightSearchTerms('BRCA1 and BRCA2 genes', ['BRCA'])).toBe(
-      '<mark>BRCA</mark>1 and <mark>BRCA</mark>2 genes',
+      '<mark>BRCA</mark>1 and <mark>BRCA</mark>2 genes'
     )
   })
 })

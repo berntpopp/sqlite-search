@@ -27,7 +27,7 @@ export function extractSearchWords(query) {
   const remaining = withoutQuoted.replace(FTS5_OPERATORS, '').trim()
 
   if (remaining) {
-    remaining.split(/\s+/).forEach((word) => {
+    remaining.split(/\s+/).forEach(word => {
       // Strip prefix asterisk
       const cleaned = word.replace(/\*$/, '').trim()
       if (cleaned) words.push(cleaned)

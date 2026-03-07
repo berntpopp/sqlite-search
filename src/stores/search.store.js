@@ -25,6 +25,7 @@ export const useSearchStore = defineStore('search', () => {
   const loading = ref(false)
   const error = ref(null)
   const selectedItem = ref(null)
+  const selectedItemIndex = ref(-1)
 
   // Advanced features state
   const sortBy = ref([]) // Array of { key: string, order: 'asc' | 'desc' }
@@ -102,6 +103,18 @@ export const useSearchStore = defineStore('search', () => {
    * Get count of filtered results
    */
   const filteredResultCount = computed(() => filteredResults.value.length)
+
+  // Navigation getters
+  const canNavigateNext = computed(
+    () => selectedItemIndex.value >= 0 && selectedItemIndex.value < filteredResults.value.length - 1
+  )
+
+  const canNavigatePrevious = computed(() => selectedItemIndex.value > 0)
+
+  const navigationPosition = computed(() => {
+    if (selectedItemIndex.value < 0) return ''
+    return `${selectedItemIndex.value + 1} of ${filteredResults.value.length}`
+  })
 
   // ===========================================
   // BROWSE MODE GETTERS
@@ -300,6 +313,30 @@ export const useSearchStore = defineStore('search', () => {
    */
   function clearSelectedItem() {
     selectedItem.value = null
+    selectedItemIndex.value = -1
+  }
+
+  /**
+   * Set selected item by index in filtered results
+   */
+  function setSelectedItemByIndex(index) {
+    const results = filteredResults.value
+    if (index >= 0 && index < results.length) {
+      selectedItemIndex.value = index
+      selectedItem.value = results[index]
+    }
+  }
+
+  function navigateNext() {
+    if (canNavigateNext.value) {
+      setSelectedItemByIndex(selectedItemIndex.value + 1)
+    }
+  }
+
+  function navigatePrevious() {
+    if (canNavigatePrevious.value) {
+      setSelectedItemByIndex(selectedItemIndex.value - 1)
+    }
   }
 
   /**
@@ -483,6 +520,7 @@ export const useSearchStore = defineStore('search', () => {
     loading.value = false
     error.value = null
     selectedItem.value = null
+    selectedItemIndex.value = -1
     sortBy.value = []
     columnFilters.value = {}
     currentTableName.value = ''
@@ -503,6 +541,7 @@ export const useSearchStore = defineStore('search', () => {
     loading,
     error,
     selectedItem,
+    selectedItemIndex,
     sortBy,
     columnFilters,
     currentTableName,
@@ -526,6 +565,9 @@ export const useSearchStore = defineStore('search', () => {
     activeFilterCount,
     filteredResults,
     filteredResultCount,
+    canNavigateNext,
+    canNavigatePrevious,
+    navigationPosition,
 
     // View Mode Getters
     isBrowseMode,
@@ -544,6 +586,9 @@ export const useSearchStore = defineStore('search', () => {
     clearError,
     setSelectedItem,
     clearSelectedItem,
+    setSelectedItemByIndex,
+    navigateNext,
+    navigatePrevious,
     clearResults,
     setCurrentTable,
     setSortBy,

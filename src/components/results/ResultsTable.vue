@@ -280,9 +280,7 @@
         :key="`browse-cell-${column}`"
         #[`item.${column}`]="{ value }"
       >
-        <span class="text-truncate-cell" :title="value">
-          {{ truncateText(value, 60) }}
-        </span>
+        <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 
       <!-- Actions column -->
@@ -479,9 +477,7 @@
         :key="column"
         #[`item.${column}`]="{ value }"
       >
-        <span class="text-truncate-cell" :title="value">
-          {{ truncateText(value, 60) }}
-        </span>
+        <span class="text-truncate-cell" :title="value" v-html="highlightedCell(value)"></span>
       </template>
 
       <!-- Actions column -->
@@ -557,12 +553,27 @@ import { useSearch } from '@/composables/useSearch'
 import { useBrowse } from '@/composables/useBrowse'
 import { useExport } from '@/composables/useExport'
 import { SEARCH_CONFIG } from '@/config/search.config'
+import { highlightSearchTerms } from '@/utils/highlight.utils'
+import { extractSearchWords, stripMarkupTags } from '@/utils/text.utils'
 import ColumnManagementDialog from './ColumnManagementDialog.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 const searchStore = useSearchStore()
 const databaseStore = useDatabaseStore()
-const { viewDetails, truncateText, copyToClipboard } = useSearch()
+const { viewDetails, copyToClipboard } = useSearch()
+
+const searchWords = computed(() => extractSearchWords(searchStore.searchTerm))
+
+/**
+ * Process cell value: strip tags, truncate, highlight.
+ * Returns HTML string for v-html.
+ */
+function highlightedCell(value, maxLength = 60) {
+  if (!value && value !== 0) return ''
+  const cleaned = stripMarkupTags(String(value))
+  const truncated = cleaned.length > maxLength ? `${cleaned.substring(0, maxLength)}...` : cleaned
+  return highlightSearchTerms(truncated, searchWords.value)
+}
 const { goToPage, setItemsPerPage, sortBy: browseSortBy, clearSort: browseClearSort } = useBrowse()
 const exportComposable = useExport()
 
@@ -857,6 +868,12 @@ function copyRow(item) {
 
 .sortable-header:hover .sort-icon-inactive {
   opacity: 0.6;
+}
+
+:deep(mark) {
+  background-color: rgba(255, 213, 0, 0.4);
+  border-radius: 2px;
+  padding: 0 1px;
 }
 
 /* Truncate long cell content */

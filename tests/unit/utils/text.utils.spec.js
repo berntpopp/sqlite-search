@@ -49,7 +49,7 @@ describe('stripMarkupTags', () => {
 
   it('should strip multiple different tags', () => {
     expect(stripMarkupTags('<u>Molekulargenetik</u> und <k>Klinik</k>')).toBe(
-      'Molekulargenetik und Klinik',
+      'Molekulargenetik und Klinik'
     )
   })
 
