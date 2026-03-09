@@ -44,7 +44,7 @@
     "@vitejs/plugin-vue": "^6.0.4",
     "@vitest/coverage-v8": "^2.1.8",
     "@vue/test-utils": "^2.4.6",
-    "electron": "^39.2.1",
+    "electron": "^40.8.0",
     "electron-builder": "^26.8.2",
     "electron-playwright-helpers": "^1.8.2",
     "electron-vite": "^5.0.0",
